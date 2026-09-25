@@ -37,6 +37,17 @@ import { SiteDetailModal } from './components/Admin/SiteDetailModal';
 import { LeafletMap } from './components/Common/LeafletMap';
 import { getDaysRemaining } from './utils/date';
 import { 
+  fetchDatabaseData,
+  apiSaveUser,
+  apiToggleUser,
+  apiSaveSite,
+  apiApproveSite,
+  apiUpdateSiteStatus,
+  apiSaveVisit,
+  apiSaveFollowUp,
+  apiSaveSettings
+} from './utils/api';
+import { 
   Home, 
   MapPin, 
   Bell, 
@@ -72,6 +83,19 @@ export default function App() {
   const [isNewVisitModalOpen, setIsNewVisitModalOpen] = useState(false);
   const [selectedSiteToVisit, setSelectedSiteToVisit] = useState<Site | null>(null);
   const [selectedSiteForDetail, setSelectedSiteForDetail] = useState<Site | null>(null);
+
+  // Initial load from central API database
+  useEffect(() => {
+    fetchDatabaseData().then((dbData) => {
+      if (dbData) {
+        setUsers(dbData.users);
+        setSites(dbData.sites);
+        setVisits(dbData.visits);
+        setFollowups(dbData.followups);
+        if (dbData.settings) setSettings(dbData.settings);
+      }
+    });
+  }, []);
 
   // Save changes to storage whenever states change
   useEffect(() => {
@@ -152,6 +176,11 @@ export default function App() {
       summary: `تمت زيارة ميدانية للمنشأة (${newVisit.durationMinutes} دقيقة) - الحالة: ${newVisit.outcomeStatus}`,
     };
     setFollowups((prev) => [newFol, ...prev]);
+
+    // Persist to central database
+    apiSaveSite(newSite);
+    apiSaveVisit(newVisit);
+    apiSaveFollowUp(newFol);
   };
 
   const handleApproveSite = (siteId: string, approved: boolean, reason?: string) => {
@@ -182,6 +211,9 @@ export default function App() {
           : null
       );
     }
+
+    // Persist approval to central database
+    apiApproveSite(siteId, approved, reason, currentUser?.name);
   };
 
   const handleUpdateStatus = (siteId: string, newStatus: SiteStatus) => {
@@ -191,6 +223,9 @@ export default function App() {
     if (selectedSiteForDetail && selectedSiteForDetail.id === siteId) {
       setSelectedSiteForDetail((prev) => (prev ? { ...prev, status: newStatus } : null));
     }
+
+    // Persist status change to central database
+    apiUpdateSiteStatus(siteId, newStatus);
   };
 
   const handleAddFollowUp = (
@@ -209,6 +244,9 @@ export default function App() {
       summary: note,
     };
     setFollowups((prev) => [newFol, ...prev]);
+
+    // Persist follow-up to central database
+    apiSaveFollowUp(newFol);
   };
 
   const handleSaveAgent = (agent: User) => {
@@ -221,12 +259,18 @@ export default function App() {
       }
       return [...prev, agent];
     });
+
+    // Persist agent to central database
+    apiSaveUser(agent);
   };
 
   const handleToggleAgentStatus = (agentId: string) => {
     setUsers((prev) =>
       prev.map((u) => (u.id === agentId ? { ...u, active: !u.active } : u))
     );
+
+    // Persist status toggle to central database
+    apiToggleUser(agentId);
   };
 
   // If user is not logged in, show the login portal
@@ -458,7 +502,10 @@ export default function App() {
               sites={sites}
               agents={users}
               settings={settings}
-              onUpdateSettings={(newSettings) => setSettings(newSettings)}
+              onUpdateSettings={(newSettings) => {
+                setSettings(newSettings);
+                apiSaveSettings(newSettings);
+              }}
               onApproveSite={handleApproveSite}
               onSelectSite={(site) => setSelectedSiteForDetail(site)}
             />

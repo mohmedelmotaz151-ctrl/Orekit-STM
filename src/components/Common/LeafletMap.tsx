@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { Site } from '../../types';
+import { getCurrentPosition } from '../../utils/geo';
 
 interface LeafletMapProps {
   sites?: Site[];
@@ -20,7 +21,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   selectedSiteId,
   onSelectSite,
   center = [24.7136, 46.6753], // Riyadh default
-  zoom = 12,
+  zoom = 6,
   interactivePicker = false,
   onLocationPicked,
   pickedLocation,
@@ -44,9 +45,15 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         zoomControl: true,
       });
 
-      // CartoDB Dark Matter / Voyager tiles for sleek professional theme
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      // CartoDB Voyager tiles with CARTO API Key
+      const CARTO_API_KEY = import.meta.env.VITE_CARTO_API_KEY || 'cb1_3yo7_1_13ca9026653fe92c79527253';
+      const cartoTileUrl = CARTO_API_KEY
+        ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?api_key=${CARTO_API_KEY}`
+        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
+      L.tileLayer(cartoTileUrl, {
         attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+        subdomains: 'abcd',
         maxZoom: 19,
       }).addTo(map);
 
@@ -54,11 +61,26 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
       markersLayerRef.current = markersGroup;
       mapInstanceRef.current = map;
 
+      // Handle map resizing reliably
+      const resizeTimer = setTimeout(() => {
+        map.invalidateSize();
+      }, 150);
+
+      const resizeTimer2 = setTimeout(() => {
+        map.invalidateSize();
+      }, 500);
+
+      // Interactive location picking
       if (interactivePicker && onLocationPicked) {
         map.on('click', (e: L.LeafletMouseEvent) => {
           onLocationPicked(Number(e.latlng.lat.toFixed(6)), Number(e.latlng.lng.toFixed(6)));
         });
       }
+
+      return () => {
+        clearTimeout(resizeTimer);
+        clearTimeout(resizeTimer2);
+      };
     }
 
     return () => {
@@ -69,10 +91,23 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     };
   }, []);
 
+  // ResizeObserver to ensure map always fills container without grey tiles
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    const observer = new ResizeObserver(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    });
+    observer.observe(mapContainerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   // Update center when center or zoom changes externally
   useEffect(() => {
-    if (mapInstanceRef.current && center) {
+    if (mapInstanceRef.current && center && !selectedSiteId && !pickedLocation) {
       mapInstanceRef.current.setView(center, zoom);
+      mapInstanceRef.current.invalidateSize();
     }
   }, [center[0], center[1], zoom]);
 
@@ -126,7 +161,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           radius: highlightProximityRadius.meters,
           color: '#f97316',
           fillColor: '#ea580c',
-          fillOpacity: 0.15,
+          fillOpacity: 0.18,
           weight: 2,
           dashArray: '4, 4',
         }).addTo(map);
@@ -137,7 +172,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     }
   }, [pickedLocation, highlightProximityRadius, interactivePicker]);
 
-  // Update site markers
+  // Update site markers and automatically center/fit bounds
   useEffect(() => {
     const markersGroup = markersLayerRef.current;
     const map = mapInstanceRef.current;
@@ -145,9 +180,16 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
 
     markersGroup.clearLayers();
 
-    sites.forEach((site) => {
-      if (!site.latitude || !site.longitude) return;
+    const validSites = sites.filter(
+      (s) =>
+        typeof s.latitude === 'number' &&
+        typeof s.longitude === 'number' &&
+        !isNaN(s.latitude) &&
+        !isNaN(s.longitude) &&
+        s.latitude !== 0
+    );
 
+    validSites.forEach((site) => {
       const isSelected = selectedSiteId === site.id;
 
       // Color mapping for pins
@@ -177,20 +219,22 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         className: 'site-marker-icon',
         html: `
           <div style="transform: translate(-50%, -100%); cursor: pointer;" class="flex flex-col items-center group">
-            <div class="px-2 py-0.5 rounded text-[11px] font-bold shadow-md whitespace-nowrap mb-1 ${
-              isSelected ? 'bg-amber-400 text-slate-900 border-2 border-white scale-110' : 'bg-slate-900/90 text-white border border-slate-700'
+            <div class="px-2 py-0.5 rounded text-[11px] font-bold shadow-lg whitespace-nowrap mb-1 transition-all ${
+              isSelected
+                ? 'bg-amber-400 text-slate-950 border-2 border-white scale-125 z-50'
+                : 'bg-slate-900/95 text-white border border-slate-700'
             }">
-              ${site.name.slice(0, 16)}${site.name.length > 16 ? '...' : ''}
+              ${site.name.slice(0, 18)}${site.name.length > 18 ? '...' : ''}
             </div>
             <div style="background-color: ${markerBg}; border-color: ${isSelected ? '#ffffff' : markerBorder};" 
-                 class="w-7 h-7 rounded-full flex items-center justify-center text-xs shadow-lg border-2 text-white font-bold transition-transform group-hover:scale-125">
+                 class="w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-xl border-2 text-white font-bold transition-transform group-hover:scale-125">
               ${iconSymbol}
             </div>
             <div style="border-top-color: ${markerBg};" class="w-0 h-0 border-x-4 border-x-transparent border-t-6"></div>
           </div>
         `,
-        iconSize: [32, 48],
-        iconAnchor: [16, 48],
+        iconSize: [36, 52],
+        iconAnchor: [18, 52],
       });
 
       const marker = L.marker([site.latitude, site.longitude], { icon: customIcon });
@@ -202,13 +246,14 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
       });
 
       const popupContent = `
-        <div class="text-right p-1 min-w-[200px]">
-          <h4 class="font-bold text-sm text-slate-100 mb-1">${site.name}</h4>
-          <p class="text-xs text-slate-400 mb-2">📍 ${site.city} - ${site.district}</p>
+        <div class="text-right p-1.5 min-w-[210px] font-['Cairo',sans-serif]">
+          <h4 class="font-bold text-sm text-white mb-1">${site.name}</h4>
+          <p class="text-xs text-orange-400 mb-2">📍 ${site.city} - ${site.district}</p>
           <div class="text-xs text-slate-300 space-y-1 border-t border-slate-700/80 pt-1.5">
             <div><strong>المسؤول:</strong> ${site.managerName} (${site.phone})</div>
             <div><strong>النشاط:</strong> ${site.type}</div>
             <div><strong>المندوب:</strong> ${site.createdByAgentName}</div>
+            <div class="text-emerald-400 font-bold mt-1">طفايات: ${site.equipment?.extinguishers?.totalCount || 0}</div>
           </div>
         </div>
       `;
@@ -216,14 +261,88 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
       marker.bindPopup(popupContent);
       markersGroup.addLayer(marker);
     });
-  }, [sites, selectedSiteId, onSelectSite]);
+
+    // Auto-fit bounds on added sites so the user always sees their added sites!
+    if (!interactivePicker && !pickedLocation) {
+      if (selectedSiteId) {
+        const selected = validSites.find((s) => s.id === selectedSiteId);
+        if (selected) {
+          map.setView([selected.latitude, selected.longitude], 15, { animate: true });
+        }
+      } else if (validSites.length === 1) {
+        map.setView([validSites[0].latitude, validSites[0].longitude], 14, { animate: true });
+      } else if (validSites.length > 1) {
+        const bounds = L.latLngBounds(validSites.map((s) => [s.latitude, s.longitude]));
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: true });
+      }
+    }
+  }, [sites, selectedSiteId, onSelectSite, interactivePicker, pickedLocation]);
+
+  // Fit all sites manually button
+  const handleFitAllSites = () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const validSites = sites.filter(
+      (s) => typeof s.latitude === 'number' && typeof s.longitude === 'number' && s.latitude !== 0
+    );
+    if (validSites.length === 1) {
+      map.setView([validSites[0].latitude, validSites[0].longitude], 14);
+    } else if (validSites.length > 1) {
+      const bounds = L.latLngBounds(validSites.map((s) => [s.latitude, s.longitude]));
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    } else {
+      map.setView(center, zoom);
+    }
+    map.invalidateSize();
+  };
+
+  // Locate me button
+  const handleLocateMe = async () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const pos = await getCurrentPosition();
+    map.setView([pos.latitude, pos.longitude], 15, { animate: true });
+    map.invalidateSize();
+  };
+
+  const validSitesCount = sites.filter((s) => s.latitude && s.longitude).length;
 
   return (
     <div className={`relative ${className}`}>
       <div ref={mapContainerRef} className="w-full h-full" />
+      
+      {/* On-map header controls */}
+      {!interactivePicker && (
+        <div className="absolute top-3 right-3 z-[1000] flex items-center gap-2 pointer-events-auto">
+          <span className="bg-slate-900/90 text-white text-xs px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl backdrop-blur-sm font-bold flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>المواقع على الخريطة: {validSitesCount}</span>
+          </span>
+
+          {validSitesCount > 1 && (
+            <button
+              onClick={handleFitAllSites}
+              className="bg-slate-900/90 hover:bg-slate-800 text-orange-400 text-xs px-2.5 py-1.5 rounded-xl border border-slate-700 shadow-xl backdrop-blur-sm font-bold transition"
+              title="عرض واحتواء جميع المواقع"
+            >
+              🎯 إظهار الكل
+            </button>
+          )}
+
+          <button
+            onClick={handleLocateMe}
+            className="bg-slate-900/90 hover:bg-slate-800 text-sky-400 text-xs px-2.5 py-1.5 rounded-xl border border-slate-700 shadow-xl backdrop-blur-sm font-bold transition"
+            title="تحديد موقعي الآن"
+          >
+            📍 موقعي
+          </button>
+        </div>
+      )}
+
       {interactivePicker && (
-        <div className="absolute bottom-3 right-3 z-[1000] bg-slate-900/90 text-amber-300 text-xs px-3 py-1.5 rounded-lg border border-amber-500/40 shadow-lg pointer-events-none backdrop-blur-sm">
-          💡 انقر على الخريطة أو اسحب المؤشر لتحديد موقع المنشأة بدقة
+        <div className="absolute bottom-3 right-3 z-[1000] bg-slate-900/95 text-amber-300 text-xs px-3.5 py-2 rounded-xl border border-amber-500/40 shadow-xl pointer-events-none backdrop-blur-sm flex items-center gap-1.5">
+          <span>💡</span>
+          <span>انقر على الخريطة أو اسحب المؤشر لتحديد موقع المنشأة بدقة</span>
         </div>
       )}
     </div>

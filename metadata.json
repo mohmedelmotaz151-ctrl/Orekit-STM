@@ -1,0 +1,7 @@
+{
+  "name": "أوريكيت للسلامة | Oriket Safety CRM & Field Operations",
+  "description": "منظومة إدارة مندوبي شركة أوريكيت، زيارات المواقع، عقود الصيانة، حصر أجهزة السلامة، والحوافز الذكية ومنع التلاعب",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

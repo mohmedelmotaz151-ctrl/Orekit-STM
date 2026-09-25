@@ -45,15 +45,11 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         zoomControl: true,
       });
 
-      // CartoDB Voyager tiles with CARTO API Key
-      const CARTO_API_KEY = import.meta.env.VITE_CARTO_API_KEY || 'cb1_3yo7_1_13ca9026653fe92c79527253';
-      const cartoTileUrl = CARTO_API_KEY
-        ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?api_key=${CARTO_API_KEY}`
-        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+      // CartoDB Voyager tiles with exact CARTO API Key URL provided by user
+      const cartoTileUrl = 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=cb1_3yo7_1_13ca9026653fe92c79527253';
 
       L.tileLayer(cartoTileUrl, {
         attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-        subdomains: 'abcd',
         maxZoom: 19,
       }).addTo(map);
 

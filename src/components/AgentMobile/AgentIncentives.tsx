@@ -27,8 +27,11 @@ export const AgentIncentives: React.FC<AgentIncentivesProps> = ({
   settings,
   onSelectSite,
 }) => {
-  const inc = calculateAgentIncentives(currentUser.id, sites, settings);
-  const agentSites = sites.filter((s) => s.createdByAgentId === currentUser.id);
+  const inc = calculateAgentIncentives(currentUser.id, sites, settings, currentUser.name);
+  const agentSites = sites.filter(
+    (s) => s.createdByAgentId === currentUser.id || 
+           (s.createdByAgentName && s.createdByAgentName === currentUser.name)
+  );
 
   return (
     <div className="space-y-4 max-w-md mx-auto pb-6">

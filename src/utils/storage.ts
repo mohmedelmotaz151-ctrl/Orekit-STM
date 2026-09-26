@@ -198,7 +198,8 @@ export function saveStoredCurrentUser(user: User | null): void {
 export function calculateAgentIncentives(
   agentId: string,
   sites: Site[],
-  settings: IncentiveSettings
+  settings: IncentiveSettings,
+  agentName?: string
 ): {
   approvedCount: number;
   pendingCount: number;
@@ -210,7 +211,9 @@ export function calculateAgentIncentives(
   grandTotalSAR: number;
   progressPercent: number;
 } {
-  const agentSites = sites.filter((s) => s.createdByAgentId === agentId);
+  const agentSites = sites.filter(
+    (s) => s.createdByAgentId === agentId || (agentName && s.createdByAgentName === agentName)
+  );
   const approvedSites = agentSites.filter((s) => s.approvalStatus === 'approved');
   const pendingSites = agentSites.filter((s) => s.approvalStatus === 'pending');
   const rejectedSites = agentSites.filter((s) => s.approvalStatus === 'rejected');

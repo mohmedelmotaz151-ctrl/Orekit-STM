@@ -180,11 +180,31 @@ export function subscribeToSettings(callback: (settings: IncentiveSettings) => v
 }
 
 // Cloud Mutation Operations (Writes to Firestore)
+function cleanForFirestore(data: any): any {
+  if (data === undefined) {
+    return null;
+  }
+  if (data === null || typeof data !== 'object') {
+    return data;
+  }
+  if (Array.isArray(data)) {
+    return data.map(cleanForFirestore);
+  }
+  const res: Record<string, any> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (value !== undefined) {
+      res[key] = cleanForFirestore(value);
+    }
+  }
+  return res;
+}
+
 export async function fsSaveUser(user: User): Promise<void> {
   const path = `${USERS_COL}/${user.id}`;
   try {
+    const cleaned = cleanForFirestore(user);
     const docRef = doc(db, USERS_COL, user.id);
-    await setDoc(docRef, user, { merge: true });
+    await setDoc(docRef, cleaned, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -193,8 +213,9 @@ export async function fsSaveUser(user: User): Promise<void> {
 export async function fsSaveSite(site: Site): Promise<void> {
   const path = `${SITES_COL}/${site.id}`;
   try {
+    const cleaned = cleanForFirestore(site);
     const docRef = doc(db, SITES_COL, site.id);
-    await setDoc(docRef, site, { merge: true });
+    await setDoc(docRef, cleaned, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -209,13 +230,13 @@ export async function fsApproveSite(
   const path = `${SITES_COL}/${siteId}`;
   try {
     const docRef = doc(db, SITES_COL, siteId);
-    await updateDoc(docRef, {
+    await updateDoc(docRef, cleanForFirestore({
       approvalStatus: approved ? 'approved' : 'rejected',
       rejectionReason: approved ? null : (reason || null),
       approvedAt: approved ? new Date().toISOString().split('T')[0] : null,
       approvedBy: approved ? (approvedBy || null) : null,
       incentivePaid: approved,
-    });
+    }));
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
   }
@@ -225,10 +246,10 @@ export async function fsUpdateSiteStatus(siteId: string, status: string): Promis
   const path = `${SITES_COL}/${siteId}`;
   try {
     const docRef = doc(db, SITES_COL, siteId);
-    await updateDoc(docRef, {
+    await updateDoc(docRef, cleanForFirestore({
       status,
       updatedAt: new Date().toISOString().split('T')[0],
-    });
+    }));
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
   }
@@ -237,8 +258,9 @@ export async function fsUpdateSiteStatus(siteId: string, status: string): Promis
 export async function fsSaveVisit(visit: Visit): Promise<void> {
   const path = `${VISITS_COL}/${visit.id}`;
   try {
+    const cleaned = cleanForFirestore(visit);
     const docRef = doc(db, VISITS_COL, visit.id);
-    await setDoc(docRef, visit, { merge: true });
+    await setDoc(docRef, cleaned, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -247,8 +269,9 @@ export async function fsSaveVisit(visit: Visit): Promise<void> {
 export async function fsSaveFollowUp(followup: FollowUpLog): Promise<void> {
   const path = `${FOLLOWUPS_COL}/${followup.id}`;
   try {
+    const cleaned = cleanForFirestore(followup);
     const docRef = doc(db, FOLLOWUPS_COL, followup.id);
-    await setDoc(docRef, followup, { merge: true });
+    await setDoc(docRef, cleaned, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -257,8 +280,9 @@ export async function fsSaveFollowUp(followup: FollowUpLog): Promise<void> {
 export async function fsSaveSettings(settings: IncentiveSettings): Promise<void> {
   const path = `${SETTINGS_COL}/global`;
   try {
+    const cleaned = cleanForFirestore(settings);
     const docRef = doc(db, SETTINGS_COL, 'global');
-    await setDoc(docRef, settings, { merge: true });
+    await setDoc(docRef, cleaned, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }

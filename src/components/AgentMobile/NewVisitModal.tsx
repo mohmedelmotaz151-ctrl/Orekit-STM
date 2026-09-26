@@ -35,6 +35,7 @@ import {
   formatCoordinates 
 } from '../../utils/geo';
 import { LeafletMap } from '../Common/LeafletMap';
+import { PhotoCapture } from '../Common/PhotoCapture';
 
 interface NewVisitModalProps {
   currentUser: User;
@@ -245,6 +246,11 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
       setStep(2);
       return;
     }
+    if (!sitePhoto.trim()) {
+      alert('الرجاء التقاط صورة واجهة المنشأة بالكاميرا أو اختيارها من الاستديو لتوثيق الموقع');
+      setStep(2);
+      return;
+    }
 
     const nowEnd = new Date();
     const duration = startDateObj
@@ -259,26 +265,26 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
       type: siteType,
       managerName: managerName.trim() || 'المسؤول المباشر',
       phone: phone.trim(),
-      altPhone: altPhone.trim() || undefined,
+      altPhone: altPhone.trim() || '',
       city: city || 'الرياض',
       district: district.trim() || 'حي المروج',
       address: address.trim() || `${city} - ${district}`,
       latitude: currentLat,
       longitude: currentLon,
-      sitePhoto: sitePhoto || defaultSiteToVisit?.sitePhoto || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+      sitePhoto: sitePhoto.trim(),
       license: {
         hasLicense,
         licenseType,
         licenseNumber: licenseNumber || 'TR-2024-DEF',
         expiryDate: licenseExpiry,
-        licensePhoto,
+        licensePhoto: licensePhoto || '',
       },
       contract: {
         hasContract,
         companyName: contractCompany,
         startDate: contractStart,
         endDate: contractEnd,
-        contractPhoto,
+        contractPhoto: contractPhoto || '',
       },
       equipment: {
         extinguishers: {
@@ -287,7 +293,7 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
           needsMaintenance: extNeedsMaintenance,
           needsReplacement: extNeedsReplacement,
           needsNewInstall: extNeedsNewInstall,
-          notes: extNotes,
+          notes: extNotes || '',
         },
         alarmSystem: {
           exists: alarmExists,
@@ -316,7 +322,7 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
         lastVisitDate: cdLastVisit,
         nextVisitDate: cdNextVisit,
         reportNumber: cdReportNumber,
-        notes: cdNotes,
+        notes: cdNotes || '',
       },
       status: outcomeStatus,
       approvalStatus: 'pending', // Sent for Admin audit & approval before incentive release
@@ -651,27 +657,16 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
                 />
               </div>
 
-              {/* Site Photo Capture */}
-              <div className="space-y-2 pt-2">
-                <label className="block text-xs font-bold text-slate-300">تصوير واجهة الموقع / اللوحة</label>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handlePhotoUploadSim('site')}
-                    className="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-dashed border-slate-600 text-slate-300 text-xs flex items-center justify-center gap-2 transition"
-                  >
-                    <Camera className="w-4 h-4 text-orange-400" />
-                    <span>التقاط صورة للمنشأة أو رفع ملف</span>
-                  </button>
-                  {sitePhoto && (
-                    <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-emerald-500">
-                      <img src={sitePhoto} alt="Site" className="w-full h-full object-cover" />
-                      <span className="absolute bottom-0 inset-x-0 bg-emerald-600 text-[9px] text-center text-white font-bold py-0.5">
-                        تم الرفع
-                      </span>
-                    </div>
-                  )}
-                </div>
+              {/* Site Photo Capture (Camera or Studio) */}
+              <div className="pt-2">
+                <PhotoCapture
+                  label="تصوير واجهة الموقع / اللوحة"
+                  sublabel="افتح الكاميرا لالتقاط صورة مباشرة للمنشأة أو اختر من الاستديو لتوثيق الموقع"
+                  photoUrl={sitePhoto}
+                  onPhotoCaptured={(photo) => setSitePhoto(photo)}
+                  onPhotoRemoved={() => setSitePhoto('')}
+                  required={true}
+                />
               </div>
             </div>
           )}
@@ -738,16 +733,14 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
                         className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-400 mb-1">صورة الترخيص</label>
-                      <button
-                        type="button"
-                        onClick={() => handlePhotoUploadSim('license')}
-                        className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-700 text-slate-300 text-xs flex items-center justify-center gap-1.5"
-                      >
-                        <Camera className="w-3.5 h-3.5 text-amber-400" />
-                        <span>{licensePhoto ? '✓ تم إرفاق صورة الترخيص' : 'إرفاق صورة الترخيص'}</span>
-                      </button>
+                    <div className="sm:col-span-2">
+                      <PhotoCapture
+                        label="صورة الترخيص"
+                        sublabel="التقط صورة للترخيص بالكاميرا أو اخترها من الاستديو"
+                        photoUrl={licensePhoto}
+                        onPhotoCaptured={(photo) => setLicensePhoto(photo)}
+                        onPhotoRemoved={() => setLicensePhoto('')}
+                      />
                     </div>
                   </div>
                 )}
@@ -813,15 +806,13 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
                       />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-medium text-slate-400 mb-1">صورة العقد إن وجدت</label>
-                      <button
-                        type="button"
-                        onClick={() => handlePhotoUploadSim('contract')}
-                        className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-700 text-slate-300 text-xs flex items-center justify-center gap-1.5"
-                      >
-                        <Camera className="w-3.5 h-3.5 text-sky-400" />
-                        <span>{contractPhoto ? '✓ تم إرفاق صورة العقد' : 'تصوير أو إرفاق مستند العقد'}</span>
-                      </button>
+                      <PhotoCapture
+                        label="صورة العقد إن وجدت"
+                        sublabel="التقط صورة لمستند العقد بالكاميرا أو اخترها من الاستديو"
+                        photoUrl={contractPhoto}
+                        onPhotoCaptured={(photo) => setContractPhoto(photo)}
+                        onPhotoRemoved={() => setContractPhoto('')}
+                      />
                     </div>
                   </div>
                 )}

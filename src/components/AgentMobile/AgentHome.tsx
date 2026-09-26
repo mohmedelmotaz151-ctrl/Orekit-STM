@@ -38,11 +38,17 @@ export const AgentHome: React.FC<AgentHomeProps> = ({
   onNavigateTab,
   onSelectSite,
 }) => {
-  const agentSites = sites.filter((s) => s.createdByAgentId === currentUser.id);
-  const agentVisits = visits.filter((v) => v.agentId === currentUser.id);
+  const agentSites = sites.filter(
+    (s) => s.createdByAgentId === currentUser.id || 
+           (s.createdByAgentName && s.createdByAgentName === currentUser.name)
+  );
+  const agentVisits = visits.filter(
+    (v) => v.agentId === currentUser.id || 
+           (v.agentName && v.agentName === currentUser.name)
+  );
 
   // Incentive metrics
-  const inc = calculateAgentIncentives(currentUser.id, sites, settings);
+  const inc = calculateAgentIncentives(currentUser.id, sites, settings, currentUser.name);
 
   // Sites needing follow-up
   const followUpSites = agentSites.filter(

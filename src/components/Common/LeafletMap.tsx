@@ -65,9 +65,12 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         zoomControl: true,
       });
 
-      // CartoDB Voyager tiles with exact CARTO API Key URL
-      const cartoTileUrl =
-        'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=cb1_3yo7_1_13ca9026653fe92c79527253';
+      // CartoDB Voyager tiles with CARTO API Key
+      const cartoKey =
+        (import.meta as any)?.env?.VITE_CARTO_API_KEY ||
+        'cb1_3yo7_1_13ca9026653fe92c79527253';
+      const cartoTileUrl = `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${cartoKey}`;
+
 
       L.tileLayer(cartoTileUrl, {
         attribution:

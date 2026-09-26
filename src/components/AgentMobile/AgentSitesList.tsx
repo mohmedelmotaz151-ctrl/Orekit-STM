@@ -39,7 +39,9 @@ export const AgentSitesList: React.FC<AgentSitesListProps> = ({
   const [activeMapSiteId, setActiveMapSiteId] = useState<string | undefined>(undefined);
 
   const filteredSites = sites.filter((site) => {
-    if (showOnlyMine && site.createdByAgentId !== currentUser.id) {
+    const isMine = site.createdByAgentId === currentUser.id || 
+                   (site.createdByAgentName && site.createdByAgentName === currentUser.name);
+    if (showOnlyMine && !isMine) {
       return false;
     }
     if (selectedType !== 'all' && site.type !== selectedType) {

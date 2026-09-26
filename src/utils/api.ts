@@ -188,15 +188,23 @@ export async function apiSaveSite(site: Site): Promise<void> {
   saveStoredSites(currentSites);
 
   // 2. Save to Cloud Firestore
-  fsSaveSite(site).catch((e) => console.warn('Firestore site save warning:', e));
+  try {
+    await fsSaveSite(site);
+    console.log('[API] Site successfully persisted to Cloud Firestore:', site.id, site.name);
+  } catch (e) {
+    console.warn('[API] Firestore site save warning:', e);
+  }
 
   // 3. Send to Server API
   try {
-    await fetch('/api/sites', {
+    const res = await fetch('/api/sites', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(site),
     });
+    if (res.ok) {
+      console.log('[API] Site saved to server database:', site.id);
+    }
   } catch (e) {
     console.error('Failed to save site to API database:', e);
   }

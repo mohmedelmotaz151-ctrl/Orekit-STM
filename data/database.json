@@ -1,0 +1,26 @@
+{
+  "users": [
+    {
+      "id": "user_admin_oriket",
+      "name": "إدارة شركة أوريكيت",
+      "username": "0555335477",
+      "phone": "0555335477",
+      "password": "5520",
+      "role": "admin",
+      "active": true,
+      "targetSitesMonth": 0,
+      "assignedCity": "المملكة العربية السعودية",
+      "joinedDate": "2026-09-26"
+    }
+  ],
+  "sites": [],
+  "visits": [],
+  "followups": [],
+  "settings": {
+    "ratePerApprovedSiteSAR": 1.5,
+    "minTargetSites": 300,
+    "targetBonusSAR": 100,
+    "tier2TargetSites": 500,
+    "tier2BonusSAR": 250
+  }
+}

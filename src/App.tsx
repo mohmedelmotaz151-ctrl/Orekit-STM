@@ -47,6 +47,14 @@ import {
   apiSaveFollowUp,
   apiSaveSettings
 } from './utils/api';
+import {
+  bootstrapFirestore,
+  subscribeToSites,
+  subscribeToUsers,
+  subscribeToVisits,
+  subscribeToFollowups,
+  subscribeToSettings,
+} from './utils/firestoreService';
 import { 
   Home, 
   MapPin, 
@@ -84,17 +92,73 @@ export default function App() {
   const [selectedSiteToVisit, setSelectedSiteToVisit] = useState<Site | null>(null);
   const [selectedSiteForDetail, setSelectedSiteForDetail] = useState<Site | null>(null);
 
-  // Initial load from central API database
+  // Initial load and real-time cloud sync across all devices via Firestore + Server
   useEffect(() => {
-    fetchDatabaseData().then((dbData) => {
-      if (dbData) {
-        setUsers(dbData.users);
-        setSites(dbData.sites);
-        setVisits(dbData.visits);
-        setFollowups(dbData.followups);
-        if (dbData.settings) setSettings(dbData.settings);
+    // 1. Initialize Firestore cloud database
+    bootstrapFirestore();
+
+    // 2. Real-time Firestore cloud subscriptions (instant multi-device sync)
+    const unsubUsers = subscribeToUsers((cloudUsers) => {
+      if (cloudUsers && cloudUsers.length > 0) {
+        setUsers(cloudUsers);
+        saveStoredUsers(cloudUsers);
       }
     });
+
+    const unsubSites = subscribeToSites((cloudSites) => {
+      setSites(cloudSites);
+      saveStoredSites(cloudSites);
+    });
+
+    const unsubVisits = subscribeToVisits((cloudVisits) => {
+      setVisits(cloudVisits);
+      saveStoredVisits(cloudVisits);
+    });
+
+    const unsubFollowups = subscribeToFollowups((cloudFollowups) => {
+      setFollowups(cloudFollowups);
+      saveStoredFollowups(cloudFollowups);
+    });
+
+    const unsubSettings = subscribeToSettings((cloudSettings) => {
+      setSettings(cloudSettings);
+      saveStoredSettings(cloudSettings);
+    });
+
+    // 3. Fallback server sync
+    const doSync = () => {
+      fetchDatabaseData().then((dbData) => {
+        if (dbData) {
+          if (dbData.users && dbData.users.length > 0) setUsers(dbData.users);
+          if (dbData.sites) setSites(dbData.sites);
+          if (dbData.visits) setVisits(dbData.visits);
+          if (dbData.followups) setFollowups(dbData.followups);
+          if (dbData.settings) setSettings(dbData.settings);
+        }
+      });
+    };
+
+    doSync();
+    const interval = setInterval(doSync, 20000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        doSync();
+      }
+    };
+    window.addEventListener('focus', doSync);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      unsubUsers();
+      unsubSites();
+      unsubVisits();
+      unsubFollowups();
+      unsubSettings();
+      clearInterval(interval);
+      window.removeEventListener('focus', doSync);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []);
 
   // Save changes to storage whenever states change

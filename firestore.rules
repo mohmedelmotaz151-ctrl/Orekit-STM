@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if true; // Allow login verification and agent provisioning
+    }
+
+    // Sites collection
+    match /sites/{siteId} {
+      allow read, write: if true; // Multi-device sync for field operations
+    }
+
+    // Visits collection
+    match /visits/{visitId} {
+      allow read, write: if true;
+    }
+
+    // Followups collection
+    match /followups/{followupId} {
+      allow read, write: if true;
+    }
+
+    // Settings collection
+    match /settings/{settingsId} {
+      allow read, write: if true;
+    }
+  }
+}

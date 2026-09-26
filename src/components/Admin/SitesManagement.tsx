@@ -283,6 +283,17 @@ export const SitesManagement: React.FC<SitesManagementProps> = ({
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
+                          {site.latitude && site.longitude && (
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${site.latitude},${site.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg bg-blue-950/70 hover:bg-blue-900 text-blue-400 border border-blue-800/60"
+                              title="فتح في خرائط Google"
+                            >
+                              <MapPin className="w-3.5 h-3.5" />
+                            </a>
+                          )}
                           {site.approvalStatus === 'pending' && (
                             <button
                               onClick={() => onApproveSite(site.id, true)}

@@ -108,12 +108,28 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {site.latitude && site.longitude && (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${site.latitude},${site.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shadow-md transition"
+                title="فتح في خرائط جوجل"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                <span>فتح في خرائط جوجل</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+
+            <button
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -178,12 +194,23 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
 
               {/* Address & GPS */}
               <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center justify-between text-xs flex-wrap gap-2">
                   <span className="font-bold text-slate-300 flex items-center gap-1.5">
                     <MapPin className="w-4 h-4 text-orange-400" />
                     العنوان والموقع الجغرافي:
                   </span>
-                  <span className="font-mono text-slate-400 dir-ltr">{site.latitude}, {site.longitude}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-slate-400 dir-ltr">{site.latitude}, {site.longitude}</span>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${site.latitude},${site.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-blue-600/90 hover:bg-blue-500 text-white font-bold px-2.5 py-1 rounded-lg text-xs flex items-center gap-1 shadow transition"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>فتح في خرائط جوجل</span>
+                    </a>
+                  </div>
                 </div>
                 <p className="text-xs text-slate-300">{site.address}</p>
 

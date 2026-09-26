@@ -6,21 +6,24 @@ import {
   IncentiveSettings 
 } from '../types';
 
-const USERS_KEY = 'oriket_users_v2';
-const SITES_KEY = 'oriket_sites_v2';
-const VISITS_KEY = 'oriket_visits_v2';
-const FOLLOWUPS_KEY = 'oriket_followups_v2';
-const SETTINGS_KEY = 'oriket_settings_v2';
-const CURRENT_USER_KEY = 'oriket_current_user_v2';
+const USERS_KEY = 'oriket_users_v3';
+const SITES_KEY = 'oriket_sites_v3';
+const VISITS_KEY = 'oriket_visits_v3';
+const FOLLOWUPS_KEY = 'oriket_followups_v3';
+const SETTINGS_KEY = 'oriket_settings_v3';
+const CURRENT_USER_KEY = 'oriket_current_user_v3';
 
-// Clear legacy v1 mock data if present
+// Clear legacy v1 & v2 test/mock data from localStorage
 try {
-  localStorage.removeItem('oriket_users_v1');
-  localStorage.removeItem('oriket_sites_v1');
-  localStorage.removeItem('oriket_visits_v1');
-  localStorage.removeItem('oriket_followups_v1');
-  localStorage.removeItem('oriket_current_user_v1');
-} catch (e) {
+  ['v1', 'v2'].forEach((v) => {
+    localStorage.removeItem(`oriket_users_${v}`);
+    localStorage.removeItem(`oriket_sites_${v}`);
+    localStorage.removeItem(`oriket_visits_${v}`);
+    localStorage.removeItem(`oriket_followups_${v}`);
+    localStorage.removeItem(`oriket_current_user_${v}`);
+    localStorage.removeItem(`oriket_settings_${v}`);
+  });
+} catch {
   // ignore
 }
 

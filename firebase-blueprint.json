@@ -1,0 +1,113 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user (Admin or Field Agent)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier" },
+        "name": { "type": "string", "description": "Full name" },
+        "username": { "type": "string", "description": "Login username" },
+        "phone": { "type": "string", "description": "Mobile phone number" },
+        "password": { "type": "string", "description": "Hashed or raw PIN password" },
+        "role": { "type": "string", "enum": ["admin", "agent"], "description": "Access role" },
+        "active": { "type": "boolean", "description": "Account active status" },
+        "targetSitesMonth": { "type": "number", "description": "Monthly target" },
+        "assignedCity": { "type": "string", "description": "Assigned geographical territory" },
+        "joinedDate": { "type": "string", "description": "Date joined" }
+      },
+      "required": ["id", "name", "phone", "role", "active"]
+    },
+    "Site": {
+      "title": "Site",
+      "description": "Commercial or industrial site audited for fire safety",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique site ID" },
+        "name": { "type": "string", "description": "Site/Facility name" },
+        "type": { "type": "string", "description": "Facility classification" },
+        "managerName": { "type": "string", "description": "Manager or contact person" },
+        "phone": { "type": "string", "description": "Contact phone" },
+        "city": { "type": "string", "description": "City" },
+        "district": { "type": "string", "description": "Neighborhood/District" },
+        "address": { "type": "string", "description": "Textual address" },
+        "latitude": { "type": "number", "description": "GPS Latitude" },
+        "longitude": { "type": "number", "description": "GPS Longitude" },
+        "status": { "type": "string", "description": "Site lifecycle status" },
+        "approvalStatus": { "type": "string", "enum": ["pending", "approved", "rejected"], "description": "Admin review state" },
+        "createdByAgentId": { "type": "string", "description": "Agent UID who created site" },
+        "createdByAgentName": { "type": "string", "description": "Agent full name" },
+        "createdAt": { "type": "string", "description": "Creation date" },
+        "updatedAt": { "type": "string", "description": "Last updated date" }
+      },
+      "required": ["id", "name", "phone", "city", "latitude", "longitude", "status", "approvalStatus", "createdByAgentId"]
+    },
+    "Visit": {
+      "title": "Visit",
+      "description": "Field visit conducted by an agent",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Visit ID" },
+        "siteId": { "type": "string", "description": "Associated site ID" },
+        "siteName": { "type": "string", "description": "Site name" },
+        "agentId": { "type": "string", "description": "Agent ID" },
+        "agentName": { "type": "string", "description": "Agent name" },
+        "visitDate": { "type": "string", "description": "Visit date" },
+        "startTime": { "type": "string", "description": "Start timestamp" },
+        "endTime": { "type": "string", "description": "End timestamp" },
+        "durationMinutes": { "type": "number", "description": "Duration in minutes" }
+      },
+      "required": ["id", "siteId", "agentId", "visitDate"]
+    },
+    "FollowUpLog": {
+      "title": "FollowUpLog",
+      "description": "Log of interactions, calls, quotations, or notes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Log entry ID" },
+        "siteId": { "type": "string", "description": "Site ID" },
+        "agentId": { "type": "string", "description": "Agent ID" },
+        "agentName": { "type": "string", "description": "Agent name" },
+        "date": { "type": "string", "description": "Log date" },
+        "action": { "type": "string", "description": "Action type" },
+        "summary": { "type": "string", "description": "Text summary" }
+      },
+      "required": ["id", "siteId", "agentId", "date", "summary"]
+    },
+    "IncentiveSettings": {
+      "title": "IncentiveSettings",
+      "description": "System incentive formula parameters",
+      "type": "object",
+      "properties": {
+        "ratePerApprovedSiteSAR": { "type": "number", "description": "Base rate per site in SAR" },
+        "minTargetSites": { "type": "number", "description": "Target sites threshold" },
+        "targetBonusSAR": { "type": "number", "description": "Bonus amount in SAR" },
+        "tier2TargetSites": { "type": "number", "description": "Tier 2 target threshold" },
+        "tier2BonusSAR": { "type": "number", "description": "Tier 2 bonus in SAR" }
+      },
+      "required": ["ratePerApprovedSiteSAR", "minTargetSites", "targetBonusSAR"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of all application user profiles"
+    },
+    "/sites/{siteId}": {
+      "schema": "Site",
+      "description": "Collection of all surveyed fire-safety sites"
+    },
+    "/visits/{visitId}": {
+      "schema": "Visit",
+      "description": "Collection of all logged field visits"
+    },
+    "/followups/{followupId}": {
+      "schema": "FollowUpLog",
+      "description": "Collection of follow-up interactions"
+    },
+    "/settings/{settingsId}": {
+      "schema": "IncentiveSettings",
+      "description": "System configuration parameters"
+    }
+  }
+}

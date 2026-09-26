@@ -6,9 +6,11 @@ import {
   ArrowLeft, 
   AlertCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Loader2
 } from 'lucide-react';
 import { User } from '../types';
+import { apiLogin } from '../utils/api';
 
 interface LoginScreenProps {
   users: User[];
@@ -23,38 +25,35 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
-    const cleanInput = phoneOrUsername.trim().toLowerCase();
+    const cleanInput = phoneOrUsername.trim();
     const cleanPass = password.trim();
 
-    // Find matching user by phone or username
-    const matchedUser = users.find(
-      (u) =>
-        u.phone.trim().toLowerCase() === cleanInput ||
-        u.username.trim().toLowerCase() === cleanInput
-    );
-
-    if (!matchedUser) {
-      setErrorMsg('رقم الجوال أو اسم المستخدم غير مسجل بالنظام.');
+    if (!cleanInput || !cleanPass) {
+      setErrorMsg('الرجاء إدخال رقم الجوال/اسم المستخدم وكلمة المرور');
       return;
     }
 
-    if (!matchedUser.active) {
-      setErrorMsg('هذا الحساب تم تعطيله من قبل الإدارة.');
-      return;
-    }
+    setLoading(true);
+    try {
+      const res = await apiLogin(cleanInput, cleanPass);
+      if (!res.success || !res.user) {
+        setErrorMsg(res.error || 'فشل تسجيل الدخول. يرجى التحقق من البيانات.');
+        setLoading(false);
+        return;
+      }
 
-    // Check password
-    if (matchedUser.password && matchedUser.password !== cleanPass) {
-      setErrorMsg('كلمة المرور غير صحيحة، يرجى التأكد وإعادة المحاولة.');
-      return;
+      onLoginSuccess(res.user);
+    } catch {
+      setErrorMsg('حدث خطأ أثناء الاتصال بقاعدة البيانات المركزية.');
+    } finally {
+      setLoading(false);
     }
-
-    onLoginSuccess(matchedUser);
   };
 
   return (
@@ -151,10 +150,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold text-sm shadow-xl shadow-orange-950/60 flex items-center justify-center gap-2 transition transform active:scale-98 mt-2"
+              disabled={loading}
+              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 disabled:opacity-60 text-white font-bold text-sm shadow-xl shadow-orange-950/60 flex items-center justify-center gap-2 transition transform active:scale-98 mt-2"
             >
-              <span>دخول النظام</span>
-              <ArrowLeft className="w-4 h-4" />
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>جاري التحقق من السيرفر...</span>
+                </>
+              ) : (
+                <>
+                  <span>دخول النظام</span>
+                  <ArrowLeft className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 

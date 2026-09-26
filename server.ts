@@ -4,7 +4,7 @@ import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json({ limit: '15mb' }));
 
@@ -88,6 +88,123 @@ app.get('/api/data', (req, res) => {
     followups: db.followups || [],
     settings: db.settings || DEFAULT_DB.settings,
   });
+});
+
+// POST /api/login - Centralized authentication across any device
+app.post('/api/login', (req, res) => {
+  const { phoneOrUsername, password } = req.body || {};
+  if (!phoneOrUsername || !password) {
+    return res.status(400).json({ error: 'الرجاء إدخال اسم المستخدم/الجوال وكلمة المرور' });
+  }
+
+  const cleanInput = String(phoneOrUsername).trim().toLowerCase();
+  const cleanPass = String(password).trim();
+
+  const db = readDB();
+  const users = db.users || [];
+
+  const matchedUser = users.find(
+    (u: any) =>
+      String(u.phone).trim().toLowerCase() === cleanInput ||
+      String(u.username).trim().toLowerCase() === cleanInput
+  );
+
+  if (!matchedUser) {
+    return res.status(404).json({ error: 'رقم الجوال أو اسم المستخدم غير مسجل بالنظام.' });
+  }
+
+  if (!matchedUser.active) {
+    return res.status(403).json({ error: 'هذا الحساب تم تعطيله من قبل الإدارة.' });
+  }
+
+  if (matchedUser.password && String(matchedUser.password).trim() !== cleanPass) {
+    return res.status(401).json({ error: 'كلمة المرور غير صحيحة، يرجى التأكد وإعادة المحاولة.' });
+  }
+
+  res.json({
+    success: true,
+    user: matchedUser,
+    allUsers: users,
+  });
+});
+
+// POST /api/sync - Bidirectional synchronization between client and server
+app.post('/api/sync', (req, res) => {
+  try {
+    const clientData = req.body || {};
+    const db = readDB();
+    db.users = db.users || [];
+    db.sites = db.sites || [];
+    db.visits = db.visits || [];
+    db.followups = db.followups || [];
+
+    // Merge users (agents)
+    if (Array.isArray(clientData.users)) {
+      clientData.users.forEach((cUser: any) => {
+        if (!cUser || !cUser.phone) return;
+        const idx = db.users.findIndex((u: any) => u.id === cUser.id || u.phone === cUser.phone);
+        if (idx >= 0) {
+          db.users[idx] = { ...db.users[idx], ...cUser };
+        } else {
+          db.users.push(cUser);
+        }
+      });
+    }
+
+    // Merge sites
+    if (Array.isArray(clientData.sites)) {
+      clientData.sites.forEach((cSite: any) => {
+        if (!cSite || !cSite.id) return;
+        const idx = db.sites.findIndex((s: any) => s.id === cSite.id);
+        if (idx >= 0) {
+          db.sites[idx] = { ...db.sites[idx], ...cSite };
+        } else {
+          db.sites.unshift(cSite);
+        }
+      });
+    }
+
+    // Merge visits
+    if (Array.isArray(clientData.visits)) {
+      clientData.visits.forEach((cVisit: any) => {
+        if (!cVisit || !cVisit.id) return;
+        const exists = db.visits.some((v: any) => v.id === cVisit.id);
+        if (!exists) {
+          db.visits.unshift(cVisit);
+        }
+      });
+    }
+
+    // Merge followups
+    if (Array.isArray(clientData.followups)) {
+      clientData.followups.forEach((c言: any) => {
+        if (!c言 || !c言.id) return;
+        const exists = db.followups.some((f: any) => f.id === c言.id);
+        if (!exists) {
+          db.followups.unshift(c言);
+        }
+      });
+    }
+
+    // Settings
+    if (clientData.settings) {
+      db.settings = { ...db.settings, ...clientData.settings };
+    }
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      users: db.users,
+      sites: db.sites,
+      visits: db.visits,
+      followups: db.followups,
+      settings: db.settings,
+    });
+  } catch (err) {
+    console.error('Error during /api/sync:', err);
+    res.status(500).json({ error: 'Sync failed' });
+  }
 });
 
 // POST save / update user (Add Agent via Admin)
@@ -240,10 +357,19 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`[Oriket Server] Running on http://localhost:${PORT}`);
     console.log(`[Oriket Database] Stored at: ${DB_FILE}`);
   });
+
+  const shutdown = () => {
+    server.close(() => {
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 }
 
 startServer();

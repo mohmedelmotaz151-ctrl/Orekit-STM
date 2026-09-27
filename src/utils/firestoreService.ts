@@ -8,7 +8,17 @@ import {
   updateDoc 
 } from 'firebase/firestore';
 import { db, auth } from '../firebase';
-import { User, Site, Visit, FollowUpLog, IncentiveSettings } from '../types';
+import { 
+  User, 
+  Site, 
+  Visit, 
+  FollowUpLog, 
+  IncentiveSettings,
+  ClientIncident,
+  ClientInquiry,
+  ContractRenewalRequest,
+  CivilDefenseInspectionAlert
+} from '../types';
 import { INITIAL_USERS, INITIAL_SETTINGS, normalizeSite } from './storage';
 
 export enum OperationType {
@@ -64,6 +74,10 @@ const SITES_COL = 'sites';
 const VISITS_COL = 'visits';
 const FOLLOWUPS_COL = 'followups';
 const SETTINGS_COL = 'settings';
+const INCIDENTS_COL = 'incidents';
+const INQUIRIES_COL = 'inquiries';
+const RENEWALS_COL = 'renewals';
+const CD_ALERTS_COL = 'civil_defense_alerts';
 
 /**
  * Initialize Firestore bootstrap:

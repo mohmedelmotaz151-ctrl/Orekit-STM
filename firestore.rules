@@ -12,14 +12,14 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Users collection
+    // Users collection (Admins, Agents, and Clients)
     match /users/{userId} {
-      allow read, write: if true; // Allow login verification and agent provisioning
+      allow read, write: if true; // Allow login verification and user provisioning
     }
 
     // Sites collection
     match /sites/{siteId} {
-      allow read, write: if true; // Multi-device sync for field operations
+      allow read, write: if true; // Multi-device sync for field operations and clients
     }
 
     // Visits collection
@@ -34,6 +34,26 @@ service cloud.firestore {
 
     // Settings collection
     match /settings/{settingsId} {
+      allow read, write: if true;
+    }
+
+    // Client incidents / tickets
+    match /incidents/{incidentId} {
+      allow read, write: if true;
+    }
+
+    // Client inquiries
+    match /inquiries/{inquiryId} {
+      allow read, write: if true;
+    }
+
+    // Contract renewal requests
+    match /renewals/{renewalId} {
+      allow read, write: if true;
+    }
+
+    // Civil Defense inspection alerts & records
+    match /civil_defense_alerts/{alertId} {
       allow read, write: if true;
     }
   }

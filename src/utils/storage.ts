@@ -3,7 +3,11 @@ import {
   Site, 
   Visit, 
   FollowUpLog, 
-  IncentiveSettings 
+  IncentiveSettings,
+  ClientIncident,
+  ClientInquiry,
+  ContractRenewalRequest,
+  CivilDefenseInspectionAlert
 } from '../types';
 
 const USERS_KEY = 'oriket_users_v3';
@@ -12,6 +16,10 @@ const VISITS_KEY = 'oriket_visits_v3';
 const FOLLOWUPS_KEY = 'oriket_followups_v3';
 const SETTINGS_KEY = 'oriket_settings_v3';
 const CURRENT_USER_KEY = 'oriket_current_user_v3';
+const INCIDENTS_KEY = 'oriket_incidents_v3';
+const INQUIRIES_KEY = 'oriket_inquiries_v3';
+const RENEWALS_KEY = 'oriket_renewals_v3';
+const CD_ALERTS_KEY = 'oriket_cd_alerts_v3';
 
 // Clear legacy v1 & v2 test/mock data from localStorage
 try {
@@ -307,6 +315,75 @@ export function saveStoredCurrentUser(user: User | null): void {
     }
   } catch (e) {
     console.error('Failed to save current user', e);
+  }
+}
+
+// Client Portal Entities Storage Handlers
+export function getStoredIncidents(): ClientIncident[] {
+  try {
+    const raw = localStorage.getItem(INCIDENTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredIncidents(incidents: ClientIncident[]): void {
+  try {
+    localStorage.setItem(INCIDENTS_KEY, JSON.stringify(incidents));
+  } catch (e) {
+    console.error('Failed to save incidents', e);
+  }
+}
+
+export function getStoredInquiries(): ClientInquiry[] {
+  try {
+    const raw = localStorage.getItem(INQUIRIES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredInquiries(inquiries: ClientInquiry[]): void {
+  try {
+    localStorage.setItem(INQUIRIES_KEY, JSON.stringify(inquiries));
+  } catch (e) {
+    console.error('Failed to save inquiries', e);
+  }
+}
+
+export function getStoredRenewals(): ContractRenewalRequest[] {
+  try {
+    const raw = localStorage.getItem(RENEWALS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredRenewals(renewals: ContractRenewalRequest[]): void {
+  try {
+    localStorage.setItem(RENEWALS_KEY, JSON.stringify(renewals));
+  } catch (e) {
+    console.error('Failed to save renewals', e);
+  }
+}
+
+export function getStoredCivilDefenseAlerts(): CivilDefenseInspectionAlert[] {
+  try {
+    const raw = localStorage.getItem(CD_ALERTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredCivilDefenseAlerts(alerts: CivilDefenseInspectionAlert[]): void {
+  try {
+    localStorage.setItem(CD_ALERTS_KEY, JSON.stringify(alerts));
+  } catch (e) {
+    console.error('Failed to save civil defense alerts', e);
   }
 }
 

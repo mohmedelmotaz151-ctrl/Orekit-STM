@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'supervisor' | 'agent';
+export type UserRole = 'admin' | 'supervisor' | 'agent' | 'client';
 
 export interface User {
   id: string;
@@ -12,6 +12,8 @@ export interface User {
   targetSitesMonth: number;
   assignedCity: string;
   joinedDate: string;
+  siteId?: string;       // Linked facility / site ID for client accounts
+  facilityName?: string; // Facility name
 }
 
 export const SAUDI_CITIES = [
@@ -235,3 +237,81 @@ export interface ProximityAlert {
   existingSite: Site;
   distanceMeters: number;
 }
+
+// Client Portal: Incident / Maintenance Ticket (بلاغات الأعطال والصيانة)
+export interface ClientIncident {
+  id: string;
+  siteId: string;
+  siteName: string;
+  clientUserId: string;
+  clientName: string;
+  clientPhone: string;
+  title: string;
+  category: 'extinguisher' | 'alarm' | 'pumps' | 'sprinklers' | 'emergency_light' | 'other';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  description: string;
+  locationDetails?: string; // e.g. الطابق الأول، المطبخ الرئيسي
+  photo?: string;
+  status: 'pending' | 'in_progress' | 'resolved' | 'closed';
+  adminNotes?: string;
+  assignedTechnician?: string;
+  createdAt: string;
+  resolvedAt?: string;
+}
+
+// Client Portal: Inquiries & Consultations (الاستفسارات الفنية والاستشارات)
+export interface ClientInquiry {
+  id: string;
+  siteId: string;
+  siteName: string;
+  clientUserId: string;
+  clientName: string;
+  clientPhone: string;
+  subject: string;
+  category: 'safety_regulations' | 'civil_defense' | 'extinguishers' | 'pricing' | 'technical';
+  question: string;
+  status: 'pending' | 'answered';
+  answer?: string;
+  answeredBy?: string;
+  answeredAt?: string;
+  createdAt: string;
+}
+
+// Client Portal: Contract Renewal Request (طلب تجديد عقد الصيانة)
+export interface ContractRenewalRequest {
+  id: string;
+  siteId: string;
+  siteName: string;
+  clientUserId: string;
+  clientName: string;
+  clientPhone: string;
+  currentContractEndDate?: string;
+  requestedDurationYears: number; // 1 or 2 years
+  notes?: string;
+  status: 'pending' | 'reviewed' | 'approved' | 'quote_sent' | 'completed';
+  quotedPriceSAR?: number;
+  adminResponse?: string;
+  createdAt: string;
+}
+
+// Client Portal: Civil Defense Inspection Alert (تنبيهات ومواعيد زيارات الدفاع المدني)
+export interface CivilDefenseInspectionAlert {
+  id: string;
+  siteId: string;
+  siteName: string;
+  scheduledDate: string; // YYYY-MM-DD
+  inspectionType: 'annual' | 'license_renewal' | 'surprise_audit' | 'safety_compliance';
+  inspectorNotes?: string;
+  preInspectionVisitRequested: boolean;
+  preInspectionVisitDate?: string;
+  checklistStatus: {
+    extinguishersReady: boolean;
+    alarmSystemReady: boolean;
+    exitsAndLightingClear: boolean;
+    pumpsReady: boolean;
+    contractValid: boolean;
+  };
+  status: 'upcoming' | 'completed' | 'passed' | 'violations_found';
+  updatedAt: string;
+}
+

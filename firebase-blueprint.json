@@ -86,6 +86,62 @@
         "tier2BonusSAR": { "type": "number", "description": "Tier 2 bonus in SAR" }
       },
       "required": ["ratePerApprovedSiteSAR", "minTargetSites", "targetBonusSAR"]
+    },
+    "ClientIncident": {
+      "title": "ClientIncident",
+      "description": "Maintenance incident reported by client",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "siteId": { "type": "string" },
+        "siteName": { "type": "string" },
+        "clientUserId": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "priority": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "siteId", "title", "description", "status"]
+    },
+    "ClientInquiry": {
+      "title": "ClientInquiry",
+      "description": "Safety question or consultation from client",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "siteId": { "type": "string" },
+        "clientUserId": { "type": "string" },
+        "subject": { "type": "string" },
+        "question": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "siteId", "subject", "question"]
+    },
+    "ContractRenewalRequest": {
+      "title": "ContractRenewalRequest",
+      "description": "Annual contract renewal request",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "siteId": { "type": "string" },
+        "requestedDurationYears": { "type": "number" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "siteId", "requestedDurationYears", "status"]
+    },
+    "CivilDefenseInspectionAlert": {
+      "title": "CivilDefenseInspectionAlert",
+      "description": "Civil Defense inspection visit scheduling and readiness",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "siteId": { "type": "string" },
+        "scheduledDate": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "siteId", "scheduledDate", "status"]
     }
   },
   "firestore": {
@@ -108,6 +164,22 @@
     "/settings/{settingsId}": {
       "schema": "IncentiveSettings",
       "description": "System configuration parameters"
+    },
+    "/incidents/{incidentId}": {
+      "schema": "ClientIncident",
+      "description": "Collection of maintenance incidents reported by clients"
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": "ClientInquiry",
+      "description": "Collection of client questions and technical consultations"
+    },
+    "/renewals/{renewalId}": {
+      "schema": "ContractRenewalRequest",
+      "description": "Collection of maintenance contract renewal requests"
+    },
+    "/civil_defense_alerts/{alertId}": {
+      "schema": "CivilDefenseInspectionAlert",
+      "description": "Collection of Civil Defense inspection schedules and readiness checklists"
     }
   }
 }

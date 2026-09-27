@@ -86,6 +86,95 @@ export function saveStoredUsers(users: User[]): void {
   }
 }
 
+export function normalizeSite(raw: any): Site {
+  if (!raw || typeof raw !== 'object') {
+    return raw;
+  }
+  return {
+    ...raw,
+    id: raw.id || `site_${Date.now()}`,
+    name: raw.name || 'موقع بدون اسم',
+    type: raw.type || 'أخرى',
+    managerName: raw.managerName || 'المسؤول',
+    phone: raw.phone || '',
+    altPhone: raw.altPhone || '',
+    city: raw.city || 'الرياض',
+    district: raw.district || '',
+    address: raw.address || '',
+    latitude: typeof raw.latitude === 'number' ? raw.latitude : 24.7136,
+    longitude: typeof raw.longitude === 'number' ? raw.longitude : 46.6753,
+    sitePhoto: raw.sitePhoto || '',
+    license: {
+      hasLicense: raw.license?.hasLicense || 'unknown',
+      licenseType: raw.license?.licenseType || 'رخصة سلامة الدفاع المدني',
+      licenseNumber: raw.license?.licenseNumber || '',
+      expiryDate: raw.license?.expiryDate || '',
+      licensePhoto: raw.license?.licensePhoto || '',
+      ...(raw.license || {}),
+    },
+    contract: {
+      hasContract: raw.contract?.hasContract || 'no',
+      companyName: raw.contract?.companyName || '',
+      startDate: raw.contract?.startDate || '',
+      endDate: raw.contract?.endDate || '',
+      annualValue: raw.contract?.annualValue,
+      contractPhoto: raw.contract?.contractPhoto || '',
+      ...(raw.contract || {}),
+    },
+    equipment: {
+      extinguishers: {
+        totalCount: Number(raw.equipment?.extinguishers?.totalCount) || 0,
+        types: Array.isArray(raw.equipment?.extinguishers?.types) ? raw.equipment.extinguishers.types : ['powder'],
+        needsMaintenance: Boolean(raw.equipment?.extinguishers?.needsMaintenance),
+        needsReplacement: Boolean(raw.equipment?.extinguishers?.needsReplacement),
+        needsNewInstall: Boolean(raw.equipment?.extinguishers?.needsNewInstall),
+        notes: raw.equipment?.extinguishers?.notes || '',
+      },
+      alarmSystem: {
+        exists: Boolean(raw.equipment?.alarmSystem?.exists ?? true),
+        working: Boolean(raw.equipment?.alarmSystem?.working ?? true),
+        needsMaintenance: Boolean(raw.equipment?.alarmSystem?.needsMaintenance),
+        needsInstall: Boolean(raw.equipment?.alarmSystem?.needsInstall),
+        detectorCount: Number(raw.equipment?.alarmSystem?.detectorCount) || 0,
+        callPointCount: Number(raw.equipment?.alarmSystem?.callPointCount) || 0,
+        panelType: raw.equipment?.alarmSystem?.panelType || 'معنون Addressable',
+      },
+      waterAndPumps: {
+        sprinklersExist: Boolean(raw.equipment?.waterAndPumps?.sprinklersExist),
+        sprinklersCount: Number(raw.equipment?.waterAndPumps?.sprinklersCount) || 0,
+        sprinklersCondition: raw.equipment?.waterAndPumps?.sprinklersCondition || 'not_working',
+        pumpsExist: Boolean(raw.equipment?.waterAndPumps?.pumpsExist),
+        pumpsType: raw.equipment?.waterAndPumps?.pumpsType || 'كهربائية',
+        pumpsWorking: Boolean(raw.equipment?.waterAndPumps?.pumpsWorking),
+        fireHoseReelsCount: Number(raw.equipment?.waterAndPumps?.fireHoseReelsCount) || 0,
+        fireCabinetsCount: Number(raw.equipment?.waterAndPumps?.fireCabinetsCount) || 0,
+        specialSuppressionSystem: raw.equipment?.waterAndPumps?.specialSuppressionSystem || 'لا يوجد',
+        specialSuppressionWorking: Boolean(raw.equipment?.waterAndPumps?.specialSuppressionWorking),
+      },
+      ...(raw.equipment || {}),
+    },
+    civilDefense: {
+      hasRecord: Boolean(raw.civilDefense?.hasRecord ?? true),
+      lastVisitDate: raw.civilDefense?.lastVisitDate || '',
+      nextVisitDate: raw.civilDefense?.nextVisitDate || '',
+      reportNumber: raw.civilDefense?.reportNumber || '',
+      inspectorName: raw.civilDefense?.inspectorName || '',
+      notes: raw.civilDefense?.notes || '',
+      reportPhoto: raw.civilDefense?.reportPhoto || '',
+      ...(raw.civilDefense || {}),
+    },
+    status: raw.status || 'new_opportunity',
+    approvalStatus: raw.approvalStatus || 'pending',
+    createdByAgentId: raw.createdByAgentId || '',
+    createdByAgentName: raw.createdByAgentName || '',
+    createdAt: raw.createdAt || new Date().toISOString().split('T')[0],
+    updatedAt: raw.updatedAt || new Date().toISOString().split('T')[0],
+    incentiveAmount: Number(raw.incentiveAmount) || 1.5,
+    incentivePaid: Boolean(raw.incentivePaid),
+    visitsCount: Number(raw.visitsCount) || 1,
+  };
+}
+
 export function getStoredSites(): Site[] {
   try {
     const raw = localStorage.getItem(SITES_KEY);
@@ -93,7 +182,11 @@ export function getStoredSites(): Site[] {
       localStorage.setItem(SITES_KEY, JSON.stringify(INITIAL_SITES));
       return INITIAL_SITES;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.map(normalizeSite);
+    }
+    return INITIAL_SITES;
   } catch {
     return INITIAL_SITES;
   }

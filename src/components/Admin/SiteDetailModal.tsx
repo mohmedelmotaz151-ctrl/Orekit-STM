@@ -57,7 +57,7 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
   const siteFollowups = followups.filter((f) => f.siteId === site.id);
   const siteVisits = visits.filter((v) => v.siteId === site.id);
   const statusInfo = SITE_STATUS_MAP[site.status] || SITE_STATUS_MAP.new_opportunity;
-  const expiryBadge = site.contract.endDate ? getContractExpiryBadge(site.contract.endDate) : null;
+  const expiryBadge = site.contract?.endDate ? getContractExpiryBadge(site.contract.endDate) : null;
 
   const canApprove = currentUser.role === 'admin' || currentUser.role === 'supervisor';
 
@@ -266,35 +266,35 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                     <h4 className="font-bold text-sm text-white">طفايات الحريق اليدوية</h4>
                   </div>
                   <span className="text-base font-black text-amber-400">
-                    {site.equipment.extinguishers.totalCount} طفاية
+                    {site.equipment?.extinguishers?.totalCount || 0} طفاية
                   </span>
                 </div>
 
                 <div className="text-xs text-slate-300 space-y-1.5">
                   <div>
                     <strong>الأنواع المتوفرة:</strong>{' '}
-                    {site.equipment.extinguishers.types.length
+                    {site.equipment?.extinguishers?.types?.length
                       ? site.equipment.extinguishers.types.map((t) => (t === 'powder' ? 'بودرة جافة' : t === 'co2' ? 'CO2' : t === 'foam' ? 'رغوة' : 'مائية/رطبة')).join('، ')
                       : 'غير محدد'}
                   </div>
                   <div className="flex gap-2 flex-wrap pt-1">
-                    {site.equipment.extinguishers.needsMaintenance && (
+                    {site.equipment?.extinguishers?.needsMaintenance && (
                       <span className="bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded text-[11px]">
                         ⚠️ بحاجة صيانة وتعبئة
                       </span>
                     )}
-                    {site.equipment.extinguishers.needsReplacement && (
+                    {site.equipment?.extinguishers?.needsReplacement && (
                       <span className="bg-red-950 text-red-300 border border-red-800 px-2 py-0.5 rounded text-[11px]">
                         🔴 بحاجة استبدال تالف
                       </span>
                     )}
-                    {site.equipment.extinguishers.needsNewInstall && (
+                    {site.equipment?.extinguishers?.needsNewInstall && (
                       <span className="bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded text-[11px]">
                         🟢 فرصة تركيب جديد
                       </span>
                     )}
                   </div>
-                  {site.equipment.extinguishers.notes && (
+                  {site.equipment?.extinguishers?.notes && (
                     <p className="text-[11px] text-slate-400 pt-1">
                       ملاحظة: {site.equipment.extinguishers.notes}
                     </p>
@@ -310,31 +310,31 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                     <h4 className="font-bold text-sm text-white">نظام الإنذار المبكر</h4>
                   </div>
                   <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
-                    site.equipment.alarmSystem.exists && site.equipment.alarmSystem.working
+                    site.equipment?.alarmSystem?.exists && site.equipment?.alarmSystem?.working
                       ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                      : site.equipment.alarmSystem.exists
+                      : site.equipment?.alarmSystem?.exists
                       ? 'bg-red-950 text-red-300 border-red-800'
                       : 'bg-slate-800 text-slate-400 border-slate-700'
                   }`}>
-                    {site.equipment.alarmSystem.exists
-                      ? site.equipment.alarmSystem.working ? 'يعمل بسلاسة' : '⚠️ معطل بحاجة إصلاح'
+                    {site.equipment?.alarmSystem?.exists
+                      ? site.equipment?.alarmSystem?.working ? 'يعمل بسلاسة' : '⚠️ معطل بحاجة إصلاح'
                       : 'غير متوفر (فرصة توريد)'}
                   </span>
                 </div>
 
-                {site.equipment.alarmSystem.exists && (
+                {site.equipment?.alarmSystem?.exists && (
                   <div className="grid grid-cols-3 gap-2 text-center text-xs">
                     <div className="bg-slate-900 p-2 rounded-xl">
                       <span className="text-[10px] text-slate-400 block">نوع اللوحة</span>
-                      <strong className="text-white text-xs">{site.equipment.alarmSystem.panelType}</strong>
+                      <strong className="text-white text-xs">{site.equipment.alarmSystem.panelType || 'معنون Addressable'}</strong>
                     </div>
                     <div className="bg-slate-900 p-2 rounded-xl">
                       <span className="text-[10px] text-slate-400 block">عدد الكواشف</span>
-                      <strong className="text-amber-400 text-sm">{site.equipment.alarmSystem.detectorCount}</strong>
+                      <strong className="text-amber-400 text-sm">{site.equipment.alarmSystem.detectorCount || 0}</strong>
                     </div>
                     <div className="bg-slate-900 p-2 rounded-xl">
                       <span className="text-[10px] text-slate-400 block">كواسر الإنذار</span>
-                      <strong className="text-amber-400 text-sm">{site.equipment.alarmSystem.callPointCount}</strong>
+                      <strong className="text-amber-400 text-sm">{site.equipment.alarmSystem.callPointCount || 0}</strong>
                     </div>
                   </div>
                 )}
@@ -351,8 +351,8 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                   <div className="bg-slate-900 p-3 rounded-xl space-y-1">
                     <span className="text-[11px] text-slate-400 block">شبكة الرشاشات (Sprinklers):</span>
                     <strong className="text-white block">
-                      {site.equipment.waterAndPumps.sprinklersExist
-                        ? `متوفرة (${site.equipment.waterAndPumps.sprinklersCount} رأس رشاش)`
+                      {site.equipment?.waterAndPumps?.sprinklersExist
+                        ? `متوفرة (${site.equipment.waterAndPumps.sprinklersCount || 0} رأس رشاش)`
                         : 'غير متوفرة'}
                     </strong>
                   </div>
@@ -360,8 +360,8 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                   <div className="bg-slate-900 p-3 rounded-xl space-y-1">
                     <span className="text-[11px] text-slate-400 block">محطة مضخات الحريق:</span>
                     <strong className="text-white block">
-                      {site.equipment.waterAndPumps.pumpsExist
-                        ? site.equipment.waterAndPumps.pumpsType
+                      {site.equipment?.waterAndPumps?.pumpsExist
+                        ? site.equipment.waterAndPumps.pumpsType || 'متوفرة'
                         : 'لا توجد مضخات'}
                     </strong>
                   </div>
@@ -369,7 +369,7 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                   <div className="sm:col-span-2 bg-slate-900 p-3 rounded-xl space-y-1">
                     <span className="text-[11px] text-slate-400 block">أنظمة الإخماد الخاصة (كيتشن هود / FM200):</span>
                     <strong className="text-amber-300 block">
-                      {site.equipment.waterAndPumps.specialSuppressionSystem || 'لا يوجد'}
+                      {site.equipment?.waterAndPumps?.specialSuppressionSystem || 'لا يوجد'}
                     </strong>
                   </div>
                 </div>
@@ -400,26 +400,26 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                   <div>
                     <span className="text-slate-400 block">هل يوجد عقد صيانة حالي؟</span>
                     <strong className="text-white">
-                      {site.contract.hasContract === 'yes' ? 'نعم مرتبط بعقد' : site.contract.hasContract === 'no' ? 'لا يوجد عقد حالي' : 'غير معروف'}
+                      {site.contract?.hasContract === 'yes' ? 'نعم مرتبط بعقد' : site.contract?.hasContract === 'no' ? 'لا يوجد عقد حالي' : 'غير معروف'}
                     </strong>
                   </div>
 
                   <div>
                     <span className="text-slate-400 block">اسم شركة الصيانة:</span>
-                    <strong className="text-amber-300">{site.contract.companyName || 'لا يوجد'}</strong>
+                    <strong className="text-amber-300">{site.contract?.companyName || 'لا يوجد'}</strong>
                   </div>
 
                   <div>
                     <span className="text-slate-400 block">تاريخ بداية العقد:</span>
-                    <strong className="text-white">{site.contract.startDate || 'غير مسجل'}</strong>
+                    <strong className="text-white">{site.contract?.startDate || 'غير مسجل'}</strong>
                   </div>
 
                   <div>
                     <span className="text-slate-400 block">تاريخ انتهاء العقد:</span>
-                    <strong className="text-rose-400 font-bold">{site.contract.endDate || 'غير مسجل'}</strong>
+                    <strong className="text-rose-400 font-bold">{site.contract?.endDate || 'غير مسجل'}</strong>
                   </div>
 
-                  {site.contract.annualValue && (
+                  {site.contract?.annualValue && (
                     <div>
                       <span className="text-slate-400 block">قيمة العقد التقريبية:</span>
                       <strong className="text-emerald-400 font-bold">{site.contract.annualValue} ر.س / سنوياً</strong>
@@ -435,12 +435,12 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                   <span>سجل الدفاع المدني ومنصة سلامة</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-1">
-                  <div>آخر زيارة: {site.civilDefense.lastVisitDate || 'غير مسجلة'}</div>
-                  <div>الزيارة القادمة: <strong className="text-amber-400">{site.civilDefense.nextVisitDate || 'غير محددة'}</strong></div>
-                  <div>رقم المحضر: {site.civilDefense.reportNumber || 'لا يوجد'}</div>
-                  <div>المفتش: {site.civilDefense.inspectorName || 'غير مسجل'}</div>
+                  <div>آخر زيارة: {site.civilDefense?.lastVisitDate || 'غير مسجلة'}</div>
+                  <div>الزيارة القادمة: <strong className="text-amber-400">{site.civilDefense?.nextVisitDate || 'غير محددة'}</strong></div>
+                  <div>رقم المحضر: {site.civilDefense?.reportNumber || 'لا يوجد'}</div>
+                  <div>المفتش: {site.civilDefense?.inspectorName || 'غير مسجل'}</div>
                 </div>
-                {site.civilDefense.notes && (
+                {site.civilDefense?.notes && (
                   <div className="p-2.5 rounded-xl bg-slate-900 text-amber-200 mt-2">
                     توصيات الدفاع المدني: {site.civilDefense.notes}
                   </div>
@@ -454,10 +454,10 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                   <span>بيانات التراخيص الحكومية</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-1">
-                  <div>حالة الترخيص: {site.license.hasLicense === 'yes' ? 'مرخص سارٍ' : 'غير مرخص'}</div>
-                  <div>نوع الترخيص: {site.license.licenseType}</div>
-                  <div>رقم الترخيص: {site.license.licenseNumber}</div>
-                  <div>تاريخ الانتهاء: {site.license.expiryDate || 'غير محدد'}</div>
+                  <div>حالة الترخيص: {site.license?.hasLicense === 'yes' ? 'مرخص سارٍ' : 'غير مرخص'}</div>
+                  <div>نوع الترخيص: {site.license?.licenseType || 'غير محدد'}</div>
+                  <div>رقم الترخيص: {site.license?.licenseNumber || 'غير محدد'}</div>
+                  <div>تاريخ الانتهاء: {site.license?.expiryDate || 'غير محدد'}</div>
                 </div>
               </div>
 

@@ -28,29 +28,29 @@ export const AgentAlerts: React.FC<AgentAlertsProps> = ({
 }) => {
   // 1. Group contracts by countdown tier
   const contractsExpiring7Days = sites
-    .filter((s) => s.contract.hasContract === 'yes' && s.contract.endDate)
-    .map((s) => ({ site: s, days: getDaysRemaining(s.contract.endDate) || 999 }))
+    .filter((s) => s.contract?.hasContract === 'yes' && s.contract?.endDate)
+    .map((s) => ({ site: s, days: getDaysRemaining(s.contract?.endDate || '') || 999 }))
     .filter((item) => item.days <= 7);
 
   const contractsExpiring30Days = sites
-    .filter((s) => s.contract.hasContract === 'yes' && s.contract.endDate)
-    .map((s) => ({ site: s, days: getDaysRemaining(s.contract.endDate) || 999 }))
+    .filter((s) => s.contract?.hasContract === 'yes' && s.contract?.endDate)
+    .map((s) => ({ site: s, days: getDaysRemaining(s.contract?.endDate || '') || 999 }))
     .filter((item) => item.days > 7 && item.days <= 30);
 
   const contractsExpiring60Days = sites
-    .filter((s) => s.contract.hasContract === 'yes' && s.contract.endDate)
-    .map((s) => ({ site: s, days: getDaysRemaining(s.contract.endDate) || 999 }))
+    .filter((s) => s.contract?.hasContract === 'yes' && s.contract?.endDate)
+    .map((s) => ({ site: s, days: getDaysRemaining(s.contract?.endDate || '') || 999 }))
     .filter((item) => item.days > 30 && item.days <= 60);
 
   const contractsExpiring90Days = sites
-    .filter((s) => s.contract.hasContract === 'yes' && s.contract.endDate)
-    .map((s) => ({ site: s, days: getDaysRemaining(s.contract.endDate) || 999 }))
+    .filter((s) => s.contract?.hasContract === 'yes' && s.contract?.endDate)
+    .map((s) => ({ site: s, days: getDaysRemaining(s.contract?.endDate || '') || 999 }))
     .filter((item) => item.days > 60 && item.days <= 90);
 
   // 2. Civil defense visits within 30 days
   const upcomingCivilDefense = sites
-    .filter((s) => s.civilDefense.hasRecord && s.civilDefense.nextVisitDate)
-    .map((s) => ({ site: s, days: getDaysRemaining(s.civilDefense.nextVisitDate) || 999 }))
+    .filter((s) => s.civilDefense?.hasRecord && s.civilDefense?.nextVisitDate)
+    .map((s) => ({ site: s, days: getDaysRemaining(s.civilDefense?.nextVisitDate || '') || 999 }))
     .filter((item) => item.days >= 0 && item.days <= 45)
     .sort((a, b) => a.days - b.days);
 
@@ -108,8 +108,8 @@ export const AgentAlerts: React.FC<AgentAlertsProps> = ({
               </div>
 
               <div className="text-xs text-slate-300">
-                شركة الصيانة الحالية: <strong className="text-white">{site.contract.companyName || 'منافس'}</strong>
-                <span className="block text-[11px] text-slate-400">تاريخ الانتهاء: {site.contract.endDate} • المسؤول: {site.managerName}</span>
+                شركة الصيانة الحالية: <strong className="text-white">{site.contract?.companyName || 'منافس'}</strong>
+                <span className="block text-[11px] text-slate-400">تاريخ الانتهاء: {site.contract?.endDate || 'غير محدد'} • المسؤول: {site.managerName}</span>
               </div>
 
               <div className="pt-2 border-t border-red-800/60 flex items-center justify-between">
@@ -161,7 +161,7 @@ export const AgentAlerts: React.FC<AgentAlertsProps> = ({
               </div>
 
               <div className="text-xs text-slate-300">
-                الشركة: {site.contract.companyName || 'شركة أخرى'} • {site.city} - {site.district}
+                الشركة: {site.contract?.companyName || 'شركة أخرى'} • {site.city} - {site.district}
               </div>
 
               <div className="pt-2 border-t border-amber-800/40 flex items-center justify-between">
@@ -206,10 +206,10 @@ export const AgentAlerts: React.FC<AgentAlertsProps> = ({
               </div>
 
               <p className="text-xs text-slate-400">
-                تاريخ الزيارة المقررة: {formatDateArabic(site.civilDefense.nextVisitDate)} • تقرير: {site.civilDefense.reportNumber || 'غير مسجل'}
+                تاريخ الزيارة المقررة: {formatDateArabic(site.civilDefense?.nextVisitDate || '')} • تقرير: {site.civilDefense?.reportNumber || 'غير مسجل'}
               </p>
 
-              {site.civilDefense.notes && (
+              {site.civilDefense?.notes && (
                 <div className="p-2 rounded-lg bg-slate-950 text-[11px] text-amber-300">
                   {site.civilDefense.notes}
                 </div>
@@ -243,7 +243,7 @@ export const AgentAlerts: React.FC<AgentAlertsProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                الإنذار: {site.equipment.alarmSystem.working ? 'يعمل' : 'معطل بحاجة إصلاح'} • الطفايات: {site.equipment.extinguishers.totalCount} طفاية
+                الإنذار: {site.equipment?.alarmSystem?.working ? 'يعمل' : 'معطل بحاجة إصلاح'} • الطفايات: {site.equipment?.extinguishers?.totalCount || 0} طفاية
               </p>
             </div>
           ))}

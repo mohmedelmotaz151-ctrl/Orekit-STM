@@ -39,21 +39,21 @@ export const ReportsManagement: React.FC<ReportsManagementProps> = ({
 
   // 1. Expiring contracts data
   const expiringContractsData = sites
-    .filter((s) => s.contract.hasContract === 'yes' && s.contract.endDate)
+    .filter((s) => s.contract?.hasContract === 'yes' && s.contract?.endDate)
     .map((s) => ({
       site: s,
-      days: getDaysRemaining(s.contract.endDate) || 999,
-      badge: getContractExpiryBadge(s.contract.endDate),
+      days: getDaysRemaining(s.contract?.endDate || '') || 999,
+      badge: getContractExpiryBadge(s.contract?.endDate || ''),
     }))
     .sort((a, b) => a.days - b.days);
 
   // 2. Safety equipment needs
   const safetyEquipmentNeedsData = sites.filter(
     (s) =>
-      s.equipment.extinguishers.needsMaintenance ||
-      s.equipment.extinguishers.needsReplacement ||
-      s.equipment.extinguishers.needsNewInstall ||
-      !s.equipment.alarmSystem.working ||
+      s.equipment?.extinguishers?.needsMaintenance ||
+      s.equipment?.extinguishers?.needsReplacement ||
+      s.equipment?.extinguishers?.needsNewInstall ||
+      !s.equipment?.alarmSystem?.working ||
       s.status === 'urgent_maintenance'
   );
 
@@ -68,8 +68,8 @@ export const ReportsManagement: React.FC<ReportsManagementProps> = ({
         'المدينة': site.city,
         'اسم المسؤول': site.managerName,
         'الهاتف': site.phone,
-        'شركة الصيانة الحالية': site.contract.companyName || 'منافس',
-        'تاريخ انتهاء العقد': site.contract.endDate,
+        'شركة الصيانة الحالية': site.contract?.companyName || 'منافس',
+        'تاريخ انتهاء العقد': site.contract?.endDate || '',
         'الأيام المتبقية': days,
         'حالة التنبيه': days <= 7 ? 'عاجل جداً (7 أيام)' : days <= 30 ? 'ينتهي خلال شهر' : days <= 60 ? 'خلال 60 يوم' : 'خلال 90 يوم',
         'المندوب المسؤول': site.createdByAgentName,
@@ -105,14 +105,14 @@ export const ReportsManagement: React.FC<ReportsManagementProps> = ({
         'المدينة': s.city,
         'المسؤول': s.managerName,
         'الهاتف': s.phone,
-        'عدد الطفايات': s.equipment.extinguishers.totalCount,
-        'صيانة طفايات': s.equipment.extinguishers.needsMaintenance ? 'نعم' : 'لا',
-        'استبدال طفايات': s.equipment.extinguishers.needsReplacement ? 'نعم' : 'لا',
-        'تركيب جديد': s.equipment.extinguishers.needsNewInstall ? 'نعم' : 'لا',
-        'حالة الإنذار': s.equipment.alarmSystem.exists ? (s.equipment.alarmSystem.working ? 'يعمل' : 'معطل بحاجة إصلاح') : 'لا يوجد',
-        'نوع لوحة الإنذار': s.equipment.alarmSystem.panelType,
-        'مضخات الحريق': s.equipment.waterAndPumps.pumpsExist ? s.equipment.waterAndPumps.pumpsType : 'لا يوجد',
-        'نظام خاص': s.equipment.waterAndPumps.specialSuppressionSystem,
+        'عدد الطفايات': s.equipment?.extinguishers?.totalCount || 0,
+        'صيانة طفايات': s.equipment?.extinguishers?.needsMaintenance ? 'نعم' : 'لا',
+        'استبدال طفايات': s.equipment?.extinguishers?.needsReplacement ? 'نعم' : 'لا',
+        'تركيب جديد': s.equipment?.extinguishers?.needsNewInstall ? 'نعم' : 'لا',
+        'حالة الإنذار': s.equipment?.alarmSystem?.exists ? (s.equipment?.alarmSystem?.working ? 'يعمل' : 'معطل بحاجة إصلاح') : 'لا يوجد',
+        'نوع لوحة الإنذار': s.equipment?.alarmSystem?.panelType || '',
+        'مضخات الحريق': s.equipment?.waterAndPumps?.pumpsExist ? s.equipment?.waterAndPumps?.pumpsType : 'لا يوجد',
+        'نظام خاص': s.equipment?.waterAndPumps?.specialSuppressionSystem || 'لا يوجد',
         'المندوب': s.createdByAgentName,
       }));
       exportToCSV(`تقرير_احتياجات_أجهزة_السلامة_${today}`, rows);
@@ -247,8 +247,8 @@ export const ReportsManagement: React.FC<ReportsManagementProps> = ({
                   <tr key={site.id} className="hover:bg-slate-800/50">
                     <td className="p-3 font-bold text-white">{site.name}</td>
                     <td className="p-3">{site.city} - {site.district}</td>
-                    <td className="p-3 font-medium text-amber-300">{site.contract.companyName || 'شركة أخرى'}</td>
-                    <td className="p-3 font-mono">{site.contract.endDate}</td>
+                    <td className="p-3 font-medium text-amber-300">{site.contract?.companyName || 'شركة أخرى'}</td>
+                    <td className="p-3 font-mono">{site.contract?.endDate || '-'}</td>
                     <td className="p-3">
                       <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${badge?.badgeClass}`}>
                         {badge?.text}
@@ -327,22 +327,22 @@ export const ReportsManagement: React.FC<ReportsManagementProps> = ({
                   <tr key={s.id} className="hover:bg-slate-800/50">
                     <td className="p-3 font-bold text-white">{s.name}</td>
                     <td className="p-3">{s.type}</td>
-                    <td className="p-3 font-mono">{s.equipment.extinguishers.totalCount} طفاية</td>
+                    <td className="p-3 font-mono">{s.equipment?.extinguishers?.totalCount || 0} طفاية</td>
                     <td className="p-3 text-[11px]">
-                      {s.equipment.extinguishers.needsMaintenance && <span className="text-amber-400 block">• تحتاج صيانة</span>}
-                      {s.equipment.extinguishers.needsReplacement && <span className="text-red-400 block">• تحتاج استبدال</span>}
-                      {s.equipment.extinguishers.needsNewInstall && <span className="text-emerald-400 block">• تركيب جديد</span>}
+                      {s.equipment?.extinguishers?.needsMaintenance && <span className="text-amber-400 block">• تحتاج صيانة</span>}
+                      {s.equipment?.extinguishers?.needsReplacement && <span className="text-red-400 block">• تحتاج استبدال</span>}
+                      {s.equipment?.extinguishers?.needsNewInstall && <span className="text-emerald-400 block">• تركيب جديد</span>}
                     </td>
                     <td className="p-3">
-                      {s.equipment.alarmSystem.exists ? (
-                        <span className={s.equipment.alarmSystem.working ? 'text-emerald-400' : 'text-red-400 font-bold'}>
-                          {s.equipment.alarmSystem.working ? 'يعمل' : '⚠️ معطل بحاجة إصلاح'}
+                      {s.equipment?.alarmSystem?.exists ? (
+                        <span className={s.equipment?.alarmSystem?.working ? 'text-emerald-400' : 'text-red-400 font-bold'}>
+                          {s.equipment?.alarmSystem?.working ? 'يعمل' : '⚠️ معطل بحاجة إصلاح'}
                         </span>
                       ) : (
                         <span className="text-slate-500">لا يوجد (فرصة)</span>
                       )}
                     </td>
-                    <td className="p-3">{s.equipment.waterAndPumps.specialSuppressionSystem || 'غير متوفر'}</td>
+                    <td className="p-3">{s.equipment?.waterAndPumps?.specialSuppressionSystem || 'غير متوفر'}</td>
                     <td className="p-3">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${SITE_STATUS_MAP[s.status]?.bgClass}`}>
                         {SITE_STATUS_MAP[s.status]?.label}

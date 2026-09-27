@@ -15,7 +15,8 @@ import {
   getStoredFollowups, 
   saveStoredFollowups, 
   getStoredSettings, 
-  saveStoredSettings 
+  saveStoredSettings,
+  normalizeSite
 } from './storage';
 import {
   fsSaveUser,
@@ -62,15 +63,16 @@ export async function syncDatabaseData(): Promise<{
     if (res.ok) {
       const merged = await res.json();
       if (merged && Array.isArray(merged.users)) {
+        const normalizedSites = Array.isArray(merged.sites) ? merged.sites.map(normalizeSite) : [];
         saveStoredUsers(merged.users);
-        saveStoredSites(merged.sites || []);
+        saveStoredSites(normalizedSites);
         saveStoredVisits(merged.visits || []);
         saveStoredFollowups(merged.followups || []);
         if (merged.settings) saveStoredSettings(merged.settings);
 
         return {
           users: merged.users,
-          sites: merged.sites || [],
+          sites: normalizedSites,
           visits: merged.visits || [],
           followups: merged.followups || [],
           settings: merged.settings || localSettings,

@@ -57,21 +57,21 @@ export const AgentHome: React.FC<AgentHomeProps> = ({
 
   // Sites with expiring contracts
   const expiringSites = agentSites
-    .filter((s) => s.contract.hasContract === 'yes' && s.contract.endDate)
+    .filter((s) => s.contract?.hasContract === 'yes' && s.contract?.endDate)
     .map((s) => ({
       site: s,
-      badge: getContractExpiryBadge(s.contract.endDate),
-      days: getDaysRemaining(s.contract.endDate) || 999,
+      badge: getContractExpiryBadge(s.contract?.endDate || ''),
+      days: getDaysRemaining(s.contract?.endDate || '') || 999,
     }))
     .filter((item) => item.days <= 90)
     .sort((a, b) => a.days - b.days);
 
   // Civil defense inspections within 30 days
   const civilDefenseSites = agentSites
-    .filter((s) => s.civilDefense.hasRecord && s.civilDefense.nextVisitDate)
+    .filter((s) => s.civilDefense?.hasRecord && s.civilDefense?.nextVisitDate)
     .map((s) => ({
       site: s,
-      days: getDaysRemaining(s.civilDefense.nextVisitDate) || 999,
+      days: getDaysRemaining(s.civilDefense?.nextVisitDate || '') || 999,
     }))
     .filter((item) => item.days >= 0 && item.days <= 30)
     .sort((a, b) => a.days - b.days);
@@ -212,14 +212,14 @@ export const AgentHome: React.FC<AgentHomeProps> = ({
                   </span>
                   <span className="text-[11px] text-slate-400 flex items-center gap-1">
                     <Clock className="w-3 h-3 text-slate-400" />
-                    ينتهي: {site.contract.endDate}
+                    ينتهي: {site.contract?.endDate || 'غير محدد'}
                   </span>
                 </div>
 
                 <div>
                   <h4 className="font-bold text-sm text-white">{site.name}</h4>
                   <p className="text-xs text-slate-400">
-                    شركة الصيانة الحالية: {site.contract.companyName || 'منافس'} • المسؤول: {site.managerName}
+                    شركة الصيانة الحالية: {site.contract?.companyName || 'منافس'} • المسؤول: {site.managerName}
                   </p>
                 </div>
 

@@ -201,7 +201,7 @@ export const AgentSitesList: React.FC<AgentSitesListProps> = ({
           ) : (
             filteredSites.map((site) => {
               const statusInfo = SITE_STATUS_MAP[site.status] || SITE_STATUS_MAP.new_opportunity;
-              const expiryBadge = site.contract.endDate ? getContractExpiryBadge(site.contract.endDate) : null;
+              const expiryBadge = site.contract?.endDate ? getContractExpiryBadge(site.contract.endDate) : null;
 
               return (
                 <div

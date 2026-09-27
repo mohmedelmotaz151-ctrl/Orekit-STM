@@ -11,7 +11,8 @@ import {
   getStoredSettings, 
   saveStoredSettings, 
   getStoredCurrentUser, 
-  saveStoredCurrentUser 
+  saveStoredCurrentUser,
+  normalizeSite 
 } from './utils/storage';
 import { 
   User, 
@@ -106,8 +107,9 @@ export default function App() {
     });
 
     const unsubSites = subscribeToSites((cloudSites) => {
-      setSites(cloudSites);
-      saveStoredSites(cloudSites);
+      const normalized = cloudSites.map(normalizeSite);
+      setSites(normalized);
+      saveStoredSites(normalized);
     });
 
     const unsubVisits = subscribeToVisits((cloudVisits) => {
@@ -130,7 +132,7 @@ export default function App() {
       fetchDatabaseData().then((dbData) => {
         if (dbData) {
           if (dbData.users && dbData.users.length > 0) setUsers(dbData.users);
-          if (dbData.sites) setSites(dbData.sites);
+          if (dbData.sites) setSites(dbData.sites.map(normalizeSite));
           if (dbData.visits) setVisits(dbData.visits);
           if (dbData.followups) setFollowups(dbData.followups);
           if (dbData.settings) setSettings(dbData.settings);
@@ -188,10 +190,10 @@ export default function App() {
 
   // Counts for alerts
   const totalExpiringContracts = sites.filter(
-    (s) => s.contract.hasContract === 'yes' && s.contract.endDate && (getDaysRemaining(s.contract.endDate) || 999) <= 60
+    (s) => s?.contract?.hasContract === 'yes' && s?.contract?.endDate && (getDaysRemaining(s.contract.endDate) || 999) <= 60
   ).length;
 
-  const totalUrgentSites = sites.filter((s) => s.status === 'urgent_maintenance').length;
+  const totalUrgentSites = sites.filter((s) => s?.status === 'urgent_maintenance').length;
   const totalAlertsCount = totalExpiringContracts + totalUrgentSites;
 
   // Handlers for authentication
@@ -218,21 +220,22 @@ export default function App() {
 
   const handleSaveSiteAndVisit = (newSite: Site, newVisit: Visit) => {
     if (!currentUser) return;
+    const cleanSite = normalizeSite(newSite);
     setSites((prev) => {
-      const existsIndex = prev.findIndex((s) => s.id === newSite.id);
+      const existsIndex = prev.findIndex((s) => s.id === cleanSite.id);
       if (existsIndex >= 0) {
         const copy = [...prev];
-        copy[existsIndex] = newSite;
+        copy[existsIndex] = cleanSite;
         return copy;
       }
-      return [newSite, ...prev];
+      return [cleanSite, ...prev];
     });
 
     setVisits((prev) => [newVisit, ...prev]);
 
     const newFol: FollowUpLog = {
       id: `fol_${Date.now()}`,
-      siteId: newSite.id,
+      siteId: cleanSite.id,
       agentId: currentUser.id,
       agentName: currentUser.name,
       date: new Date().toISOString().split('T')[0],
@@ -242,7 +245,7 @@ export default function App() {
     setFollowups((prev) => [newFol, ...prev]);
 
     // Persist to central database
-    apiSaveSite(newSite);
+    apiSaveSite(cleanSite);
     apiSaveVisit(newVisit);
     apiSaveFollowUp(newFol);
   };

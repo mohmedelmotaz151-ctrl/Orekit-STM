@@ -70,10 +70,10 @@ export const SitesManagement: React.FC<SitesManagementProps> = ({
       'حالة العميل': SITE_STATUS_MAP[s.status]?.label || s.status,
       'حالة الاعتماد': s.approvalStatus === 'approved' ? 'معتمد' : s.approvalStatus === 'pending' ? 'قيد المراجعة' : 'مرفوض',
       'الحافز (ر.س)': s.incentiveAmount || 1.50,
-      'شركة الصيانة الحالية': s.contract.companyName || 'لا يوجد',
-      'تاريخ انتهاء العقد': s.contract.endDate || 'غير محدد',
-      'عدد الطفايات': s.equipment.extinguishers.totalCount,
-      'نظام الإنذار': s.equipment.alarmSystem.exists ? (s.equipment.alarmSystem.working ? 'يعمل' : 'معطل') : 'لا يوجد',
+      'شركة الصيانة الحالية': s.contract?.companyName || 'لا يوجد',
+      'تاريخ انتهاء العقد': s.contract?.endDate || 'غير محدد',
+      'عدد الطفايات': s.equipment?.extinguishers?.totalCount || 0,
+      'نظام الإنذار': s.equipment?.alarmSystem?.exists ? (s.equipment?.alarmSystem?.working ? 'يعمل' : 'معطل') : 'لا يوجد',
       'تاريخ التسجيل': s.createdAt,
     }));
 
@@ -202,7 +202,7 @@ export const SitesManagement: React.FC<SitesManagementProps> = ({
               ) : (
                 filteredSites.map((site) => {
                   const statusInfo = SITE_STATUS_MAP[site.status] || SITE_STATUS_MAP.new_opportunity;
-                  const expiryBadge = site.contract.endDate ? getContractExpiryBadge(site.contract.endDate) : null;
+                  const expiryBadge = site.contract?.endDate ? getContractExpiryBadge(site.contract.endDate) : null;
 
                   return (
                     <tr
@@ -237,14 +237,14 @@ export const SitesManagement: React.FC<SitesManagementProps> = ({
                       </td>
 
                       <td className="p-3.5">
-                        <div>{site.equipment.extinguishers.totalCount} طفاية</div>
+                        <div>{site.equipment?.extinguishers?.totalCount || 0} طفاية</div>
                         <div className="text-[10px] text-slate-400">
-                          إنذار: {site.equipment.alarmSystem.exists ? (site.equipment.alarmSystem.working ? 'يعمل' : 'معطل') : 'لا يوجد'}
+                          إنذار: {site.equipment?.alarmSystem?.exists ? (site.equipment?.alarmSystem?.working ? 'يعمل' : 'معطل') : 'لا يوجد'}
                         </div>
                       </td>
 
                       <td className="p-3.5">
-                        <div className="text-white">{site.contract.companyName || 'لا يوجد'}</div>
+                        <div className="text-white">{site.contract?.companyName || 'لا يوجد'}</div>
                         {expiryBadge && (
                           <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${expiryBadge.badgeClass}`}>
                             {expiryBadge.days <= 0 ? 'منتهي' : `خلال ${expiryBadge.days} يوم`}

@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { User, Site, Visit, FollowUpLog, IncentiveSettings } from '../types';
-import { INITIAL_USERS, INITIAL_SETTINGS } from './storage';
+import { INITIAL_USERS, INITIAL_SETTINGS, normalizeSite } from './storage';
 
 export enum OperationType {
   CREATE = 'create',
@@ -116,7 +116,7 @@ export function subscribeToSites(callback: (sites: Site[]) => void): () => void 
     (snapshot) => {
       const sites: Site[] = [];
       snapshot.forEach((d) => {
-        sites.push(d.data() as Site);
+        sites.push(normalizeSite(d.data()));
       });
       // Sort newest first
       sites.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));

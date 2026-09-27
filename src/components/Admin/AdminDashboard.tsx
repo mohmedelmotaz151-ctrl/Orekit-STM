@@ -62,10 +62,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const newSitesTodayCount = sites.filter((s) => s.createdAt === todayStr).length;
   const visitsTodayCount = visits.filter((v) => v.visitDate === todayStr).length;
   const expiringContractsCount = sites.filter(
-    (s) => s.contract.hasContract === 'yes' && s.contract.endDate && (getDaysRemaining(s.contract.endDate) || 999) <= 90
+    (s) => s.contract?.hasContract === 'yes' && s.contract?.endDate && (getDaysRemaining(s.contract.endDate) || 999) <= 90
   ).length;
   const maintenanceNeededCount = sites.filter(
-    (s) => s.status === 'urgent_maintenance' || s.equipment.extinguishers.needsMaintenance
+    (s) => s.status === 'urgent_maintenance' || s.equipment?.extinguishers?.needsMaintenance
   ).length;
   const newOpportunitiesCount = sites.filter((s) => s.status === 'new_opportunity').length;
   const activeAgentsCount = agents.filter((a) => a.role === 'agent' && a.active).length;

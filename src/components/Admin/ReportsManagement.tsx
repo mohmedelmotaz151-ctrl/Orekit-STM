@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { User, Site, Visit, IncentiveSettings } from '../../types';
 import { exportToCSV } from '../../utils/storage';
-import { getDaysRemaining, getContractExpiryBadge, formatDateArabic, SITE_STATUS_MAP } from '../../utils/date';
+import { getDaysRemaining, getContractExpiryBadge, getExtinguisherExpiryBadge, formatDateArabic, SITE_STATUS_MAP } from '../../utils/date';
 
 interface ReportsManagementProps {
   currentUser: User;
@@ -34,7 +34,7 @@ export const ReportsManagement: React.FC<ReportsManagementProps> = ({
   settings,
 }) => {
   const [activeReportType, setActiveReportType] = useState<
-    'expiring_contracts' | 'agents_performance' | 'safety_equipment' | 'civil_defense' | 'all_sites' | 'visits_log'
+    'expiring_contracts' | 'extinguishers_maintenance' | 'agents_performance' | 'safety_equipment' | 'civil_defense' | 'all_sites' | 'visits_log'
   >('expiring_contracts');
 
   // 1. Expiring contracts data
@@ -47,7 +47,17 @@ export const ReportsManagement: React.FC<ReportsManagementProps> = ({
     }))
     .sort((a, b) => a.days - b.days);
 
-  // 2. Safety equipment needs
+  // 2. Approved sites extinguisher maintenance data
+  const approvedExtinguishersData = sites
+    .filter((s) => s.approvalStatus === 'approved')
+    .map((s) => ({
+      site: s,
+      days: s.extinguisherMaintenance?.expiryDate ? getDaysRemaining(s.extinguisherMaintenance.expiryDate) : null,
+      badge: getExtinguisherExpiryBadge(s.extinguisherMaintenance?.expiryDate),
+    }))
+    .sort((a, b) => (a.days ?? 999) - (b.days ?? 999));
+
+  // 3. Safety equipment needs
   const safetyEquipmentNeedsData = sites.filter(
     (s) =>
       s.equipment?.extinguishers?.needsMaintenance ||
@@ -75,6 +85,31 @@ export const ReportsManagement: React.FC<ReportsManagementProps> = ({
         'المندوب المسؤول': site.createdByAgentName,
       }));
       exportToCSV(`تقرير_العقود_المنتهية_أوريكيت_${today}`, rows);
+    } else if (activeReportType === 'extinguishers_maintenance') {
+      const rows = approvedExtinguishersData.map(({ site, days, badge }) => {
+        const ext = site.extinguisherMaintenance;
+        return {
+          'اسم المنشأة': site.name,
+          'النشاط': site.type,
+          'المدينة': site.city,
+          'الحي': site.district,
+          'اسم المسؤول': site.managerName,
+          'الهاتف': site.phone,
+          'إجمالي الطفايات': (ext?.powderCount || 0) + (ext?.co2Count || 0) + (ext?.foamCount || 0) + (ext?.waterCount || 0) || site.equipment?.extinguishers?.totalCount || 0,
+          'بودرة 6كجم': ext?.powderCount ?? site.equipment?.extinguishers?.totalCount ?? 0,
+          'CO2': ext?.co2Count || 0,
+          'رغوة': ext?.foamCount || 0,
+          'ماء/رطب': ext?.waterCount || 0,
+          'تاريخ آخر صيانة': ext?.lastMaintenanceDate || 'غير مسجل',
+          'تاريخ انتهاء الصلاحية': ext?.expiryDate || 'غير محدد',
+          'الأيام المتبقية': days !== null ? days : 'غير محدد',
+          'حالة الصلاحية': badge?.text || 'غير محدد',
+          'رقم ملصق الصيانة': ext?.certificateOrTagNumber || '-',
+          'شركة وفني الصيانة': `${ext?.maintenanceCompany || 'أوريكيت للسلامة'} (${ext?.technicianName || '-'})`,
+          'المندوب': site.createdByAgentName,
+        };
+      });
+      exportToCSV(`تقرير_صيانة_وصلاحية_طفايات_الحريق_${today}`, rows);
     } else if (activeReportType === 'agents_performance') {
       const rows = agents
         .filter((a) => a.role === 'agent')
@@ -172,11 +207,12 @@ export const ReportsManagement: React.FC<ReportsManagementProps> = ({
       </div>
 
       {/* Report Selection Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 no-print text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 no-print text-xs">
         {[
           { id: 'expiring_contracts', label: 'العقود التي ستنتهي (30-90 يوم)', icon: AlertTriangle, count: expiringContractsData.length },
+          { id: 'extinguishers_maintenance', label: 'صيانة وصلاحية طفايات الحريق (معتمد)', icon: Flame, count: approvedExtinguishersData.length },
           { id: 'agents_performance', label: 'تقرير أداء وحوافز المندوبين', icon: Award, count: agents.filter(a => a.role === 'agent').length },
-          { id: 'safety_equipment', label: 'تقرير أجهزة السلامة واحتياج الصيانة', icon: Flame, count: safetyEquipmentNeedsData.length },
+          { id: 'safety_equipment', label: 'تقرير أجهزة السلامة واحتياج الصيانة', icon: ShieldAlert, count: safetyEquipmentNeedsData.length },
           { id: 'visits_log', label: 'سجل الزيارات الميدانية الموثقة', icon: Clock, count: visits.length },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -258,6 +294,66 @@ export const ReportsManagement: React.FC<ReportsManagementProps> = ({
                     <td className="p-3 text-slate-400">{site.createdByAgentName}</td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* 1.2 APPROVED SITES FIRE EXTINGUISHERS REPORT TABLE */}
+        {activeReportType === 'extinguishers_maintenance' && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-right text-xs">
+              <thead className="bg-slate-950 text-slate-400 border-b border-slate-800 font-bold">
+                <tr>
+                  <th className="p-3">اسم المنشأة المعتمدة</th>
+                  <th className="p-3">المدينة والحي</th>
+                  <th className="p-3">إجمالي الطفايات</th>
+                  <th className="p-3">توزيع الأنواع</th>
+                  <th className="p-3">تاريخ آخر صيانة</th>
+                  <th className="p-3">تاريخ انتهاء الصلاحية</th>
+                  <th className="p-3">حالة الصلاحية</th>
+                  <th className="p-3">رقم ملصق الصيانة</th>
+                  <th className="p-3">المسؤول والهاتف</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80 text-slate-300">
+                {approvedExtinguishersData.map(({ site, days, badge }) => {
+                  const ext = site.extinguisherMaintenance;
+                  const total =
+                    (ext?.powderCount || 0) +
+                    (ext?.co2Count || 0) +
+                    (ext?.foamCount || 0) +
+                    (ext?.waterCount || 0) || site.equipment?.extinguishers?.totalCount || 0;
+
+                  return (
+                    <tr key={site.id} className="hover:bg-slate-800/50">
+                      <td className="p-3 font-bold text-white">
+                        {site.name}
+                        <span className="block text-[10px] text-emerald-400 font-normal">معتمد رسمياً • {site.type}</span>
+                      </td>
+                      <td className="p-3">{site.city} - {site.district}</td>
+                      <td className="p-3 font-mono font-black text-amber-400">{total} طفاية</td>
+                      <td className="p-3 text-[11px] text-slate-400">
+                        بودرة: {ext?.powderCount ?? site.equipment?.extinguishers?.totalCount ?? 0}
+                        {ext?.co2Count ? ` • CO2: ${ext.co2Count}` : ''}
+                        {ext?.foamCount ? ` • رغوة: ${ext.foamCount}` : ''}
+                      </td>
+                      <td className="p-3 font-mono">{ext?.lastMaintenanceDate || 'غير مسجل'}</td>
+                      <td className="p-3 font-mono font-bold text-rose-300">{ext?.expiryDate || 'غير محدد'}</td>
+                      <td className="p-3">
+                        {badge ? (
+                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${badge.badgeClass}`}>
+                            {badge.text}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">غير محدد</span>
+                        )}
+                      </td>
+                      <td className="p-3 font-mono text-amber-300">{ext?.certificateOrTagNumber || '-'}</td>
+                      <td className="p-3 font-mono">{site.managerName} ({site.phone})</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

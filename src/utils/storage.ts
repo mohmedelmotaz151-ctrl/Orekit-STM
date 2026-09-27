@@ -163,6 +163,31 @@ export function normalizeSite(raw: any): Site {
       reportPhoto: raw.civilDefense?.reportPhoto || '',
       ...(raw.civilDefense || {}),
     },
+    extinguisherMaintenance: {
+      hasMaintenancePlan: Boolean(raw.extinguisherMaintenance?.hasMaintenancePlan ?? (raw.approvalStatus === 'approved')),
+      lastMaintenanceDate: raw.extinguisherMaintenance?.lastMaintenanceDate || (raw.approvedAt ? raw.approvedAt.split('T')[0] : (raw.createdAt || new Date().toISOString().split('T')[0])),
+      expiryDate: raw.extinguisherMaintenance?.expiryDate || (raw.approvalStatus === 'approved' ? (() => {
+        const base = new Date(raw.approvedAt ? raw.approvedAt.split('T')[0] : (raw.createdAt || new Date().toISOString().split('T')[0]));
+        if (!isNaN(base.getTime())) {
+          base.setFullYear(base.getFullYear() + 1);
+          return base.toISOString().split('T')[0];
+        }
+        return '';
+      })() : ''),
+      maintenanceCompany: raw.extinguisherMaintenance?.maintenanceCompany || 'شركة أوريكيت للسلامة والوقاية من الحريق',
+      technicianName: raw.extinguisherMaintenance?.technicianName || 'فني صيانة أوريكيت',
+      certificateOrTagNumber: raw.extinguisherMaintenance?.certificateOrTagNumber || (raw.id ? `EXT-${raw.id.slice(-6).toUpperCase()}` : 'EXT-ORIKET'),
+      cylinderPressureChecked: Boolean(raw.extinguisherMaintenance?.cylinderPressureChecked ?? true),
+      hydrostaticTestDate: raw.extinguisherMaintenance?.hydrostaticTestDate || '',
+      status: raw.extinguisherMaintenance?.status || 'valid',
+      powderCount: Number(raw.extinguisherMaintenance?.powderCount ?? (raw.equipment?.extinguishers?.totalCount || 0)),
+      co2Count: Number(raw.extinguisherMaintenance?.co2Count ?? 0),
+      foamCount: Number(raw.extinguisherMaintenance?.foamCount ?? 0),
+      waterCount: Number(raw.extinguisherMaintenance?.waterCount ?? 0),
+      notes: raw.extinguisherMaintenance?.notes || '',
+      logs: Array.isArray(raw.extinguisherMaintenance?.logs) ? raw.extinguisherMaintenance.logs : [],
+      ...(raw.extinguisherMaintenance || {}),
+    },
     status: raw.status || 'new_opportunity',
     approvalStatus: raw.approvalStatus || 'pending',
     createdByAgentId: raw.createdByAgentId || '',

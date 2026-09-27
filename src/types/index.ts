@@ -113,6 +113,39 @@ export interface ContractInfo {
   contractPhoto?: string;
 }
 
+export interface ExtinguisherMaintenanceLog {
+  id: string;
+  maintenanceDate: string; // YYYY-MM-DD
+  expiryDate: string;      // YYYY-MM-DD
+  technicianName?: string;
+  companyName?: string;
+  certificateOrTagNumber?: string;
+  servicedCount: number;
+  typesServiced: string[];
+  status: 'completed' | 'scheduled' | 'refilled' | 'tested';
+  costSAR?: number;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface ExtinguisherMaintenanceInfo {
+  hasMaintenancePlan: boolean;
+  lastMaintenanceDate?: string;    // تاريخ آخر صيانة / تعبئة
+  expiryDate?: string;             // تاريخ انتهاء الصلاحية / موعد الفحص القادم
+  maintenanceCompany?: string;     // شركة الصيانة المسؤولة
+  technicianName?: string;         // الفني المعتمد
+  certificateOrTagNumber?: string; // رقم ملصق / كارت الصيانة
+  cylinderPressureChecked?: boolean; // فحص مقياس الضغط
+  hydrostaticTestDate?: string;    // تاريخ الفحص الهيدروستاتيكي للاسطوانات
+  status: 'valid' | 'expiring_soon' | 'expired' | 'needs_refill';
+  powderCount?: number;            // عدد طفايات البودرة 6 كجم
+  co2Count?: number;               // عدد طفايات CO2
+  foamCount?: number;              // عدد طفايات الرغوة
+  waterCount?: number;             // عدد طفايات الماء / مواد رطبة
+  notes?: string;
+  logs?: ExtinguisherMaintenanceLog[]; // سجل دورات الصيانة السابقة
+}
+
 export interface CivilDefenseInfo {
   hasRecord: boolean;
   lastVisitDate?: string;
@@ -140,6 +173,7 @@ export interface Site {
   contract: ContractInfo;
   equipment: SafetyEquipment;
   civilDefense: CivilDefenseInfo;
+  extinguisherMaintenance?: ExtinguisherMaintenanceInfo;
   status: SiteStatus;
   approvalStatus: SiteApprovalStatus;
   rejectionReason?: string;

@@ -19,9 +19,10 @@ import {
   ExternalLink,
   ChevronRight
 } from 'lucide-react';
-import { Site, Visit, FollowUpLog, User, SiteStatus, SiteApprovalStatus } from '../../types';
+import { Site, Visit, FollowUpLog, User, SiteStatus, SiteApprovalStatus, ExtinguisherMaintenanceInfo } from '../../types';
 import { LeafletMap } from '../Common/LeafletMap';
-import { SITE_STATUS_MAP, getContractExpiryBadge, formatDateArabic } from '../../utils/date';
+import { SITE_STATUS_MAP, getContractExpiryBadge, getExtinguisherExpiryBadge, formatDateArabic } from '../../utils/date';
+import { ExtinguisherMaintenanceTab } from './ExtinguisherMaintenanceTab';
 
 interface SiteDetailModalProps {
   site: Site | null;
@@ -31,6 +32,7 @@ interface SiteDetailModalProps {
   onApproveSite: (siteId: string, approved: boolean, reason?: string) => void;
   onAddFollowUp: (siteId: string, note: string, action: 'call' | 'visit' | 'quotation_sent' | 'contract_signed' | 'note') => void;
   onOpenNewVisitForSite: (site: Site) => void;
+  onUpdateMaintenance?: (siteId: string, maintenance: ExtinguisherMaintenanceInfo) => void;
   followups: FollowUpLog[];
   visits: Visit[];
 }
@@ -43,10 +45,13 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
   onApproveSite,
   onAddFollowUp,
   onOpenNewVisitForSite,
+  onUpdateMaintenance,
   followups,
   visits,
 }) => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'equipment' | 'contract' | 'visits' | 'followup'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'extinguishers_maintenance' | 'equipment' | 'contract' | 'visits' | 'followup'>(
+    site?.approvalStatus === 'approved' ? 'extinguishers_maintenance' : 'profile'
+  );
   const [newNoteText, setNewNoteText] = useState('');
   const [newNoteAction, setNewNoteAction] = useState<'call' | 'visit' | 'quotation_sent' | 'contract_signed' | 'note'>('call');
   const [rejectionReason, setRejectionReason] = useState('');
@@ -58,6 +63,7 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
   const siteVisits = visits.filter((v) => v.siteId === site.id);
   const statusInfo = SITE_STATUS_MAP[site.status] || SITE_STATUS_MAP.new_opportunity;
   const expiryBadge = site.contract?.endDate ? getContractExpiryBadge(site.contract.endDate) : null;
+  const extExpiryBadge = site.extinguisherMaintenance?.expiryDate ? getExtinguisherExpiryBadge(site.extinguisherMaintenance.expiryDate) : null;
 
   const canApprove = currentUser.role === 'admin' || currentUser.role === 'supervisor';
 
@@ -97,6 +103,11 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                 }`}>
                   {site.approvalStatus === 'approved' ? '✓ معتمد بالحافز (+1.50 ر.س)' : site.approvalStatus === 'pending' ? '⏳ قيد المراجعة الإدارية' : 'مرفوض'}
                 </span>
+                {site.extinguisherMaintenance?.expiryDate && (
+                  <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${extExpiryBadge?.badgeClass || 'bg-slate-800 text-slate-300'}`}>
+                    🧯 صلاحية الطفايات: {site.extinguisherMaintenance.expiryDate}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
                 <span>📍 {site.city} - {site.district}</span>
@@ -136,6 +147,13 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
         <div className="px-4 sm:px-6 bg-slate-950/70 border-b border-slate-800 flex gap-2 text-xs overflow-x-auto">
           {[
             { id: 'profile', label: 'ملف المنشأة والمسؤول' },
+            { 
+              id: 'extinguishers_maintenance', 
+              label: site.approvalStatus === 'approved' 
+                ? '🧯 صيانة الطفايات وتاريخ الانتهاء (معتمد)' 
+                : '🧯 صيانة الطفايات وتاريخ الانتهاء',
+              isSpecial: true,
+            },
             { id: 'equipment', label: 'حصر أجهزة السلامة' },
             { id: 'contract', label: 'العقد والتراخيص' },
             { id: 'visits', label: `سجل الزيارات (${siteVisits.length})` },
@@ -144,9 +162,11 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as any)}
-              className={`py-3 px-3 border-b-2 font-bold whitespace-nowrap transition ${
+              className={`py-3 px-3 border-b-2 font-bold whitespace-nowrap transition flex items-center gap-1.5 ${
                 activeTab === t.id
                   ? 'border-orange-500 text-orange-400'
+                  : t.isSpecial && site.approvalStatus === 'approved'
+                  ? 'border-transparent text-emerald-400 hover:text-emerald-300'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -157,6 +177,20 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
 
         {/* Tab Body */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-5">
+
+          {/* TAB: FIRE EXTINGUISHERS MAINTENANCE & EXPIRY */}
+          {activeTab === 'extinguishers_maintenance' && (
+            <ExtinguisherMaintenanceTab
+              site={site}
+              currentUser={currentUser}
+              onUpdateMaintenance={(newMaint) => {
+                if (onUpdateMaintenance) {
+                  onUpdateMaintenance(site.id, newMaint);
+                }
+              }}
+              onOpenNewVisit={onOpenNewVisitForSite}
+            />
+          )}
           
           {/* TAB 1: PROFILE & CONTACT */}
           {activeTab === 'profile' && (

@@ -15,7 +15,7 @@ import {
   List as ListIcon
 } from 'lucide-react';
 import { User, Site, SiteType, SiteStatus } from '../../types';
-import { SITE_STATUS_MAP, formatDateArabic, getContractExpiryBadge } from '../../utils/date';
+import { SITE_STATUS_MAP, formatDateArabic, getContractExpiryBadge, getExtinguisherExpiryBadge } from '../../utils/date';
 import { LeafletMap } from '../Common/LeafletMap';
 
 interface AgentSitesListProps {
@@ -202,6 +202,7 @@ export const AgentSitesList: React.FC<AgentSitesListProps> = ({
             filteredSites.map((site) => {
               const statusInfo = SITE_STATUS_MAP[site.status] || SITE_STATUS_MAP.new_opportunity;
               const expiryBadge = site.contract?.endDate ? getContractExpiryBadge(site.contract.endDate) : null;
+              const extBadge = site.extinguisherMaintenance?.expiryDate ? getExtinguisherExpiryBadge(site.extinguisherMaintenance.expiryDate) : null;
 
               return (
                 <div
@@ -234,11 +235,22 @@ export const AgentSitesList: React.FC<AgentSitesListProps> = ({
                     </span>
                   </div>
 
-                  {/* Expiry badge if applicable */}
+                  {/* Contract Expiry badge if applicable */}
                   {expiryBadge && (
                     <div className={`p-1.5 px-2.5 rounded-xl text-xs flex items-center justify-between ${expiryBadge.badgeClass}`}>
                       <span>عقد الصيانة:</span>
                       <span className="font-bold">{expiryBadge.text}</span>
+                    </div>
+                  )}
+
+                  {/* Fire Extinguisher Expiry Badge for Approved Sites */}
+                  {site.approvalStatus === 'approved' && site.extinguisherMaintenance?.expiryDate && (
+                    <div className={`p-1.5 px-2.5 rounded-xl text-xs flex items-center justify-between ${extBadge?.badgeClass || 'bg-slate-950 text-slate-300 border border-slate-800'}`}>
+                      <span className="flex items-center gap-1 font-medium">
+                        <span>🧯</span>
+                        <span>صلاحية طفايات الحريق:</span>
+                      </span>
+                      <span className="font-bold font-mono">{site.extinguisherMaintenance.expiryDate}</span>
                     </div>
                   )}
 

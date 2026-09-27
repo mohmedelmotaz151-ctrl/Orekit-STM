@@ -4,6 +4,40 @@ import { Site } from '../../types';
 import { getCurrentPosition } from '../../utils/geo';
 import { MapPin, Navigation, ExternalLink, X, Phone, Building2, ShieldAlert } from 'lucide-react';
 
+// Defensive monkey-patch for Leaflet DomUtil to prevent "Cannot read properties of undefined (reading '_leaflet_pos')"
+// This happens in Leaflet 1.9.4 if getPosition is called on an unmounted/detached element or map pane during transitions.
+if (typeof window !== 'undefined' && L && L.DomUtil) {
+  const originalGetPosition = L.DomUtil.getPosition;
+  L.DomUtil.getPosition = function (el: HTMLElement | null | undefined): L.Point {
+    if (!el || typeof el !== 'object') {
+      return new L.Point(0, 0);
+    }
+    try {
+      if (originalGetPosition) {
+        const p = originalGetPosition.call(L.DomUtil, el);
+        return p || new L.Point(0, 0);
+      }
+      return (el as any)._leaflet_pos || new L.Point(0, 0);
+    } catch {
+      return (el as any)?._leaflet_pos || new L.Point(0, 0);
+    }
+  };
+
+  const originalSetPosition = L.DomUtil.setPosition;
+  L.DomUtil.setPosition = function (el: HTMLElement | null | undefined, point: L.Point): void {
+    if (!el || typeof el !== 'object') return;
+    try {
+      if (originalSetPosition) {
+        originalSetPosition.call(L.DomUtil, el, point);
+      } else {
+        (el as any)._leaflet_pos = point;
+      }
+    } catch {
+      // safe fallback
+    }
+  };
+}
+
 interface LeafletMapProps {
   sites?: Site[];
   selectedSiteId?: string;
@@ -35,6 +69,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   const markersMapRef = useRef<Map<string, L.Marker>>(new Map());
   const pickerMarkerRef = useRef<L.Marker | null>(null);
   const circleLayerRef = useRef<L.Circle | null>(null);
+  const popupTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Track selected site for the on-map quick action card
   const [activeSite, setActiveSite] = useState<Site | null>(null);
@@ -43,12 +78,17 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   useEffect(() => {
     if (selectedSiteId) {
       const found = sites.find((s) => s.id === selectedSiteId);
-      if (found) {
+      if (found && typeof found.latitude === 'number' && typeof found.longitude === 'number') {
         setActiveSite(found);
         const marker = markersMapRef.current.get(selectedSiteId);
-        if (marker && mapInstanceRef.current) {
-          mapInstanceRef.current.setView([found.latitude, found.longitude], 15, { animate: true });
-          marker.openPopup();
+        const map = mapInstanceRef.current;
+        if (map && (map as any)._mapPane) {
+          try {
+            map.setView([found.latitude, found.longitude], 15, { animate: false });
+            if (marker && (marker as any)._map) {
+              marker.openPopup();
+            }
+          } catch {}
         }
       }
     }
@@ -56,88 +96,153 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
 
   // Initialize Map
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    const container = mapContainerRef.current;
+    if (!container) return;
 
-    if (!mapInstanceRef.current) {
-      const map = L.map(mapContainerRef.current, {
-        center: center,
-        zoom: zoom,
-        zoomControl: true,
-      });
-
-      // CartoDB Voyager tiles with CARTO API Key
-      const cartoKey =
-        (import.meta as any)?.env?.VITE_CARTO_API_KEY ||
-        'cb1_3yo7_1_13ca9026653fe92c79527253';
-      const cartoTileUrl = `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${cartoKey}`;
-
-
-      L.tileLayer(cartoTileUrl, {
-        attribution:
-          '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-        maxZoom: 19,
-      }).addTo(map);
-
-      const markersGroup = L.layerGroup().addTo(map);
-      markersLayerRef.current = markersGroup;
-      mapInstanceRef.current = map;
-
-      // Handle map resizing reliably
-      const resizeTimer = setTimeout(() => {
-        map.invalidateSize();
-      }, 150);
-
-      const resizeTimer2 = setTimeout(() => {
-        map.invalidateSize();
-      }, 500);
-
-      // Interactive location picking
-      if (interactivePicker && onLocationPicked) {
-        map.on('click', (e: L.LeafletMouseEvent) => {
-          onLocationPicked(Number(e.latlng.lat.toFixed(6)), Number(e.latlng.lng.toFixed(6)));
-        });
-      }
-
-      return () => {
-        clearTimeout(resizeTimer);
-        clearTimeout(resizeTimer2);
-      };
+    // Reset container _leaflet_id if no instance is active
+    if ((container as any)._leaflet_id && !mapInstanceRef.current) {
+      delete (container as any)._leaflet_id;
     }
 
+    if (!mapInstanceRef.current) {
+      try {
+        const map = L.map(container, {
+          center: center,
+          zoom: zoom,
+          zoomControl: true,
+        });
+
+        // CartoDB Voyager tiles with CARTO API Key
+        const cartoKey =
+          (import.meta as any)?.env?.VITE_CARTO_API_KEY ||
+          'cb1_3yo7_1_13ca9026653fe92c79527253';
+        const cartoTileUrl = `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${cartoKey}`;
+
+        L.tileLayer(cartoTileUrl, {
+          attribution:
+            '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+          maxZoom: 19,
+        }).addTo(map);
+
+        const markersGroup = L.layerGroup().addTo(map);
+        markersLayerRef.current = markersGroup;
+        mapInstanceRef.current = map;
+      } catch (err) {
+        console.warn('Leaflet map creation caught error:', err);
+      }
+    }
+
+    // Handle map resizing reliably
+    const resizeTimer = setTimeout(() => {
+      const map = mapInstanceRef.current;
+      if (map && (map as any)._mapPane) {
+        try {
+          map.invalidateSize();
+        } catch {}
+      }
+    }, 150);
+
+    const resizeTimer2 = setTimeout(() => {
+      const map = mapInstanceRef.current;
+      if (map && (map as any)._mapPane) {
+        try {
+          map.invalidateSize();
+        } catch {}
+      }
+    }, 500);
+
     return () => {
+      clearTimeout(resizeTimer);
+      clearTimeout(resizeTimer2);
+      if (popupTimerRef.current) {
+        clearTimeout(popupTimerRef.current);
+        popupTimerRef.current = null;
+      }
+
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
+        const map = mapInstanceRef.current;
+        try {
+          map.stop();
+          map.eachLayer((layer) => {
+            try {
+              layer.remove();
+            } catch {}
+          });
+          map.remove();
+        } catch (err) {
+          console.warn('Leaflet map removal caught error:', err);
+        }
         mapInstanceRef.current = null;
+        markersLayerRef.current = null;
+        markersMapRef.current.clear();
+        pickerMarkerRef.current = null;
+        circleLayerRef.current = null;
       }
     };
   }, []);
 
   // ResizeObserver to ensure map always fills container without grey tiles
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    const container = mapContainerRef.current;
+    if (!container) return;
+
     const observer = new ResizeObserver(() => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.invalidateSize();
+      const map = mapInstanceRef.current;
+      if (map && (map as any)._mapPane) {
+        try {
+          map.invalidateSize();
+        } catch {}
       }
     });
-    observer.observe(mapContainerRef.current);
-    return () => observer.disconnect();
+
+    observer.observe(container);
+    return () => {
+      observer.disconnect();
+    };
   }, []);
+
+  // Handle map click for picker mode
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    const handleClick = (e: L.LeafletMouseEvent) => {
+      if (interactivePicker && onLocationPicked && e.latlng) {
+        onLocationPicked(Number(e.latlng.lat.toFixed(6)), Number(e.latlng.lng.toFixed(6)));
+      }
+    };
+
+    map.on('click', handleClick);
+    return () => {
+      try {
+        map.off('click', handleClick);
+      } catch {}
+    };
+  }, [interactivePicker, onLocationPicked]);
 
   // Update center when center or zoom changes externally
   useEffect(() => {
-    if (mapInstanceRef.current && center && !selectedSiteId && !pickedLocation && !activeSite) {
-      mapInstanceRef.current.setView(center, zoom);
-      mapInstanceRef.current.invalidateSize();
+    const map = mapInstanceRef.current;
+    if (map && (map as any)._mapPane && center && !selectedSiteId && !pickedLocation && !activeSite) {
+      try {
+        map.setView(center, zoom, { animate: false });
+        map.invalidateSize();
+      } catch {}
     }
   }, [center[0], center[1], zoom]);
 
   // Update picked marker and proximity circle
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map) return;
+    if (!map || !(map as any)._mapPane) return;
 
-    if (pickedLocation) {
+    if (
+      pickedLocation &&
+      typeof pickedLocation.lat === 'number' &&
+      typeof pickedLocation.lon === 'number' &&
+      !isNaN(pickedLocation.lat) &&
+      !isNaN(pickedLocation.lon)
+    ) {
       const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${pickedLocation.lat},${pickedLocation.lon}`;
       const pickerPopup = `
         <div class="text-right p-2 font-['Cairo',sans-serif] min-w-[210px] space-y-2">
@@ -164,63 +269,91 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         </div>
       `;
 
-      if (pickerMarkerRef.current) {
-        pickerMarkerRef.current.setLatLng([pickedLocation.lat, pickedLocation.lon]);
-        pickerMarkerRef.current.setPopupContent(pickerPopup);
+      if (pickerMarkerRef.current && (pickerMarkerRef.current as any)._map) {
+        try {
+          pickerMarkerRef.current.setLatLng([pickedLocation.lat, pickedLocation.lon]);
+          pickerMarkerRef.current.setPopupContent(pickerPopup);
+        } catch {}
       } else {
-        const pickerIcon = L.divIcon({
-          className: 'custom-picker-pin',
-          html: `
-            <div style="transform: translate(-50%, -100%); cursor: pointer;" class="flex flex-col items-center">
-              <span class="bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded text-xs shadow-lg whitespace-nowrap border border-white">
-                📍 الموقع المحدد
-              </span>
-              <div class="w-4 h-4 bg-amber-500 border-2 border-white rounded-full mt-0.5 shadow-md animate-bounce"></div>
-            </div>
-          `,
-          iconSize: [30, 42],
-          iconAnchor: [15, 42],
-        });
-
-        pickerMarkerRef.current = L.marker([pickedLocation.lat, pickedLocation.lon], {
-          icon: pickerIcon,
-          draggable: interactivePicker,
-        }).addTo(map);
-
-        pickerMarkerRef.current.bindPopup(pickerPopup, {
-          offset: [0, -32],
-          autoPanPadding: [20, 20],
-        });
-
-        if (interactivePicker && onLocationPicked) {
-          pickerMarkerRef.current.on('dragend', (e) => {
-            const latlng = e.target.getLatLng();
-            onLocationPicked(Number(latlng.lat.toFixed(6)), Number(latlng.lng.toFixed(6)));
+        try {
+          const pickerIcon = L.divIcon({
+            className: 'custom-picker-pin',
+            html: `
+              <div style="transform: translate(-50%, -100%); cursor: pointer;" class="flex flex-col items-center">
+                <span class="bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded text-xs shadow-lg whitespace-nowrap border border-white">
+                  📍 الموقع المحدد
+                </span>
+                <div class="w-4 h-4 bg-amber-500 border-2 border-white rounded-full mt-0.5 shadow-md animate-bounce"></div>
+              </div>
+            `,
+            iconSize: [30, 42],
+            iconAnchor: [15, 42],
           });
-        }
+
+          const newMarker = L.marker([pickedLocation.lat, pickedLocation.lon], {
+            icon: pickerIcon,
+            draggable: interactivePicker,
+          }).addTo(map);
+
+          newMarker.bindPopup(pickerPopup, {
+            offset: [0, -32],
+            autoPanPadding: [20, 20],
+          });
+
+          if (interactivePicker && onLocationPicked) {
+            newMarker.on('dragend', (e) => {
+              try {
+                const latlng = e.target.getLatLng();
+                if (latlng) {
+                  onLocationPicked(Number(latlng.lat.toFixed(6)), Number(latlng.lng.toFixed(6)));
+                }
+              } catch {}
+            });
+          }
+
+          pickerMarkerRef.current = newMarker;
+        } catch {}
       }
     } else if (pickerMarkerRef.current) {
-      map.removeLayer(pickerMarkerRef.current);
+      try {
+        if (map && (pickerMarkerRef.current as any)._map) {
+          map.removeLayer(pickerMarkerRef.current);
+        }
+      } catch {}
       pickerMarkerRef.current = null;
     }
 
-    // 50m Proximity radius circle
-    if (highlightProximityRadius) {
-      if (circleLayerRef.current) {
-        circleLayerRef.current.setLatLng([highlightProximityRadius.lat, highlightProximityRadius.lon]);
-        circleLayerRef.current.setRadius(highlightProximityRadius.meters);
+    // Proximity radius circle
+    if (
+      highlightProximityRadius &&
+      typeof highlightProximityRadius.lat === 'number' &&
+      typeof highlightProximityRadius.lon === 'number' &&
+      !isNaN(highlightProximityRadius.lat) &&
+      !isNaN(highlightProximityRadius.lon)
+    ) {
+      if (circleLayerRef.current && (circleLayerRef.current as any)._map) {
+        try {
+          circleLayerRef.current.setLatLng([highlightProximityRadius.lat, highlightProximityRadius.lon]);
+          circleLayerRef.current.setRadius(highlightProximityRadius.meters || 50);
+        } catch {}
       } else {
-        circleLayerRef.current = L.circle([highlightProximityRadius.lat, highlightProximityRadius.lon], {
-          radius: highlightProximityRadius.meters,
-          color: '#f97316',
-          fillColor: '#ea580c',
-          fillOpacity: 0.18,
-          weight: 2,
-          dashArray: '4, 4',
-        }).addTo(map);
+        try {
+          circleLayerRef.current = L.circle([highlightProximityRadius.lat, highlightProximityRadius.lon], {
+            radius: highlightProximityRadius.meters || 50,
+            color: '#f97316',
+            fillColor: '#ea580c',
+            fillOpacity: 0.18,
+            weight: 2,
+            dashArray: '4, 4',
+          }).addTo(map);
+        } catch {}
       }
     } else if (circleLayerRef.current) {
-      map.removeLayer(circleLayerRef.current);
+      try {
+        if (map && (circleLayerRef.current as any)._map) {
+          map.removeLayer(circleLayerRef.current);
+        }
+      } catch {}
       circleLayerRef.current = null;
     }
   }, [pickedLocation, highlightProximityRadius, interactivePicker]);
@@ -245,15 +378,17 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   useEffect(() => {
     const markersGroup = markersLayerRef.current;
     const map = mapInstanceRef.current;
-    if (!markersGroup || !map) return;
+    if (!markersGroup || !map || !(map as any)._mapPane) return;
 
-    markersGroup.clearLayers();
+    try {
+      markersGroup.clearLayers();
+    } catch {}
     markersMapRef.current.clear();
 
     const validSites = sites.filter(
       (s) =>
-        typeof s.latitude === 'number' &&
-        typeof s.longitude === 'number' &&
+        typeof s?.latitude === 'number' &&
+        typeof s?.longitude === 'number' &&
         !isNaN(s.latitude) &&
         !isNaN(s.longitude) &&
         s.latitude !== 0
@@ -272,7 +407,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
                 ? 'bg-amber-400 text-slate-950 border-2 border-white scale-110 z-50 ring-2 ring-amber-500'
                 : 'bg-slate-900/95 text-white border border-slate-700'
             }">
-              ${site.name.slice(0, 18)}${site.name.length > 18 ? '...' : ''}
+              ${(site.name || '').slice(0, 18)}${(site.name || '').length > 18 ? '...' : ''}
             </div>
             <div style="background-color: ${statusInfo.bg}; border-color: ${isSelected ? '#ffffff' : statusInfo.border};" 
                  class="w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-xl border-2 text-white font-bold transition-transform group-hover:scale-125">
@@ -300,27 +435,27 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
                 ${statusInfo.label}
               </span>
               <span class="text-[10px] text-slate-400 font-mono" dir="ltr">
-                ${site.city}
+                ${site.city || ''}
               </span>
             </div>
-            <h4 class="font-black text-sm text-white leading-snug">${site.name}</h4>
-            <p class="text-xs text-orange-400 mt-0.5">📍 ${site.city} - ${site.district || 'الحي غير محدد'}</p>
+            <h4 class="font-black text-sm text-white leading-snug">${site.name || ''}</h4>
+            <p class="text-xs text-orange-400 mt-0.5">📍 ${site.city || ''} - ${site.district || 'الحي غير محدد'}</p>
           </div>
 
           <!-- Quick Info -->
           <div class="text-xs text-slate-300 space-y-1.5 pb-2.5">
             <div class="flex items-center justify-between">
               <span class="text-slate-400 text-[11px]">النشاط:</span>
-              <span class="font-bold text-white text-[11px]">${site.type}</span>
+              <span class="font-bold text-white text-[11px]">${site.type || ''}</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-400 text-[11px]">المسؤول:</span>
-              <span class="font-medium text-slate-200 text-[11px]">${site.managerName}</span>
+              <span class="font-medium text-slate-200 text-[11px]">${site.managerName || ''}</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-400 text-[11px]">رقم الهاتف:</span>
               <a href="tel:${site.phone}" class="text-sky-400 font-mono font-bold hover:underline text-[11px]" dir="ltr">
-                📞 ${site.phone}
+                📞 ${site.phone || ''}
               </a>
             </div>
             <div class="flex items-center justify-between">
@@ -379,7 +514,9 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
 
       marker.on('click', () => {
         setActiveSite(site);
-        marker.openPopup();
+        try {
+          marker.openPopup();
+        } catch {}
         if (onSelectSite) {
           onSelectSite(site);
         }
@@ -388,59 +525,77 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
       markersGroup.addLayer(marker);
       markersMapRef.current.set(site.id, marker);
 
-      // If this site is currently selected, open popup
+      // If this site is currently selected, open popup safely
       if (isSelected) {
-        setTimeout(() => {
-          marker.openPopup();
-        }, 100);
+        if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
+        popupTimerRef.current = setTimeout(() => {
+          if (
+            marker &&
+            (marker as any)._map &&
+            mapInstanceRef.current &&
+            (mapInstanceRef.current as any)._mapPane
+          ) {
+            try {
+              marker.openPopup();
+            } catch {}
+          }
+        }, 120);
       }
     });
 
     // Auto-fit bounds on added sites so the user always sees their added sites!
     if (!interactivePicker && !pickedLocation) {
-      if (selectedSiteId || activeSite) {
-        const targetId = selectedSiteId || activeSite?.id;
-        const selected = validSites.find((s) => s.id === targetId);
-        if (selected) {
-          map.setView([selected.latitude, selected.longitude], 15, { animate: true });
+      try {
+        if (selectedSiteId || activeSite) {
+          const targetId = selectedSiteId || activeSite?.id;
+          const selected = validSites.find((s) => s.id === targetId);
+          if (selected) {
+            map.setView([selected.latitude, selected.longitude], 15, { animate: false });
+          }
+        } else if (validSites.length === 1) {
+          map.setView([validSites[0].latitude, validSites[0].longitude], 14, { animate: false });
+        } else if (validSites.length > 1) {
+          const bounds = L.latLngBounds(validSites.map((s) => [s.latitude, s.longitude]));
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: false });
         }
-      } else if (validSites.length === 1) {
-        map.setView([validSites[0].latitude, validSites[0].longitude], 14, { animate: true });
-      } else if (validSites.length > 1) {
-        const bounds = L.latLngBounds(validSites.map((s) => [s.latitude, s.longitude]));
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: true });
-      }
+      } catch {}
     }
   }, [sites, selectedSiteId, interactivePicker, pickedLocation]);
 
   // Fit all sites manually button
   const handleFitAllSites = () => {
     const map = mapInstanceRef.current;
-    if (!map) return;
-    const validSites = sites.filter(
-      (s) => typeof s.latitude === 'number' && typeof s.longitude === 'number' && s.latitude !== 0
-    );
-    if (validSites.length === 1) {
-      map.setView([validSites[0].latitude, validSites[0].longitude], 14);
-    } else if (validSites.length > 1) {
-      const bounds = L.latLngBounds(validSites.map((s) => [s.latitude, s.longitude]));
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-    } else {
-      map.setView(center, zoom);
-    }
-    map.invalidateSize();
+    if (!map || !(map as any)._mapPane) return;
+    try {
+      const validSites = sites.filter(
+        (s) => typeof s.latitude === 'number' && typeof s.longitude === 'number' && s.latitude !== 0
+      );
+      if (validSites.length === 1) {
+        map.setView([validSites[0].latitude, validSites[0].longitude], 14, { animate: false });
+      } else if (validSites.length > 1) {
+        const bounds = L.latLngBounds(validSites.map((s) => [s.latitude, s.longitude]));
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: false });
+      } else {
+        map.setView(center, zoom, { animate: false });
+      }
+      map.invalidateSize();
+    } catch {}
   };
 
   // Locate me button
   const handleLocateMe = async () => {
     const map = mapInstanceRef.current;
-    if (!map) return;
-    const pos = await getCurrentPosition();
-    map.setView([pos.latitude, pos.longitude], 15, { animate: true });
-    map.invalidateSize();
+    if (!map || !(map as any)._mapPane) return;
+    try {
+      const pos = await getCurrentPosition();
+      if (map && (map as any)._mapPane) {
+        map.setView([pos.latitude, pos.longitude], 15, { animate: false });
+        map.invalidateSize();
+      }
+    } catch {}
   };
 
-  const validSitesCount = sites.filter((s) => s.latitude && s.longitude).length;
+  const validSitesCount = sites.filter((s) => s?.latitude && s?.longitude).length;
 
   return (
     <div className={`relative ${className}`}>
@@ -541,3 +696,4 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     </div>
   );
 };
+

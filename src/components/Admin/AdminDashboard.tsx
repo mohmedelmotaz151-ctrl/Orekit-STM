@@ -28,7 +28,7 @@ interface AdminDashboardProps {
   settings: IncentiveSettings;
   onSelectSite: (site: Site) => void;
   onOpenNewVisit: (site?: Site) => void;
-  onNavigateTab: (tab: 'dashboard' | 'sites' | 'agents' | 'incentives' | 'reports') => void;
+  onNavigateTab: (tab: 'dashboard' | 'sites' | 'extinguishers' | 'agents' | 'incentives' | 'reports') => void;
   onApproveSite: (siteId: string, approved: boolean, reason?: string) => void;
 }
 
@@ -69,6 +69,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   ).length;
   const newOpportunitiesCount = sites.filter((s) => s.status === 'new_opportunity').length;
   const activeAgentsCount = agents.filter((a) => a.role === 'agent' && a.active).length;
+  const approvedSitesCount = sites.filter((s) => s.approvalStatus === 'approved').length;
+  const extinguishersDueCount = sites.filter((s) => {
+    if (s.approvalStatus !== 'approved') return false;
+    const days = s.extinguisherMaintenance?.expiryDate ? getDaysRemaining(s.extinguisherMaintenance.expiryDate) : null;
+    return days !== null && days <= 30;
+  }).length;
 
   return (
     <div className="space-y-6">
@@ -90,7 +96,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => onNavigateTab('extinguishers')}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-orange-950/40 transition"
+          >
+            <Flame className="w-4 h-4" />
+            <span>صيانة طفايات المواقع المعتمدة ({approvedSitesCount})</span>
+            {extinguishersDueCount > 0 && (
+              <span className="bg-rose-950 text-rose-200 border border-rose-500 px-1.5 py-0.2 rounded-full text-[10px]">
+                {extinguishersDueCount} تنبيه
+              </span>
+            )}
+          </button>
           <button
             onClick={() => onNavigateTab('reports')}
             className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition"
@@ -100,10 +118,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
           <button
             onClick={() => onNavigateTab('incentives')}
-            className="px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-orange-950/50 transition"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition"
           >
-            <Award className="w-4 h-4" />
-            <span>إدارة الحوافز ({settings.ratePerApprovedSiteSAR} ر.س)</span>
+            <Award className="w-4 h-4 text-orange-400" />
+            <span>الحوافز ({settings.ratePerApprovedSiteSAR} ر.س)</span>
           </button>
         </div>
       </div>

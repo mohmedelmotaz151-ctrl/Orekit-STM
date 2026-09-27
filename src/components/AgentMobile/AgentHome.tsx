@@ -13,11 +13,12 @@ import {
   TrendingUp,
   Award,
   CheckCircle2,
-  PhoneCall
+  PhoneCall,
+  Flame
 } from 'lucide-react';
 import { User, Site, Visit, IncentiveSettings } from '../../types';
 import { calculateAgentIncentives } from '../../utils/storage';
-import { getContractExpiryBadge, getDaysRemaining } from '../../utils/date';
+import { getContractExpiryBadge, getExtinguisherExpiryBadge, getDaysRemaining } from '../../utils/date';
 
 interface AgentHomeProps {
   currentUser: User;
@@ -74,6 +75,17 @@ export const AgentHome: React.FC<AgentHomeProps> = ({
       days: getDaysRemaining(s.civilDefense?.nextVisitDate || '') || 999,
     }))
     .filter((item) => item.days >= 0 && item.days <= 30)
+    .sort((a, b) => a.days - b.days);
+
+  // Approved sites with extinguisher maintenance expiring soon
+  const expiringExtinguishers = agentSites
+    .filter((s) => s.approvalStatus === 'approved' && s.extinguisherMaintenance?.expiryDate)
+    .map((s) => ({
+      site: s,
+      days: getDaysRemaining(s.extinguisherMaintenance?.expiryDate || '') || 999,
+      badge: getExtinguisherExpiryBadge(s.extinguisherMaintenance?.expiryDate),
+    }))
+    .filter((item) => item.days <= 45)
     .sort((a, b) => a.days - b.days);
 
   return (
@@ -280,6 +292,43 @@ export const AgentHome: React.FC<AgentHomeProps> = ({
             <p className="text-[11px] text-slate-400">
               العميل بحاجة لتجهيز عقد صيانة معتمد وتجديد الطفايات قبل التفتيش
             </p>
+          </div>
+        )}
+
+        {/* Priority Card 4: Approved Sites with Expiring Extinguisher Maintenance */}
+        {expiringExtinguishers.length > 0 && (
+          <div className="bg-red-950/20 border border-red-500/30 p-3.5 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-rose-300 flex items-center gap-1.5">
+                <Flame className="w-4 h-4 text-red-500 animate-pulse" />
+                انتهاء صيانة طفايات مواقع معتمدة ({expiringExtinguishers.length})
+              </span>
+              <button
+                onClick={() => onNavigateTab('alerts')}
+                className="text-[11px] text-red-400 hover:text-red-300 underline font-medium"
+              >
+                متابعة التجديد
+              </button>
+            </div>
+            <div className="space-y-1.5">
+              {expiringExtinguishers.slice(0, 2).map(({ site, badge }) => (
+                <div
+                  key={site.id}
+                  onClick={() => onSelectSite(site)}
+                  className="p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 flex items-center justify-between cursor-pointer transition text-xs"
+                >
+                  <div className="truncate max-w-[200px]">
+                    <span className="font-bold text-white block truncate">{site.name}</span>
+                    <span className="text-[10px] text-slate-400">
+                      ملصق: {site.extinguisherMaintenance?.certificateOrTagNumber || 'معتمد'}
+                    </span>
+                  </div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${badge?.badgeClass || 'bg-red-900 text-red-200'}`}>
+                    {badge?.text || site.extinguisherMaintenance?.expiryDate}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

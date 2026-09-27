@@ -11,7 +11,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { Site, User } from '../../types';
-import { getDaysRemaining, getContractExpiryBadge, formatDateArabic } from '../../utils/date';
+import { getDaysRemaining, getContractExpiryBadge, getExtinguisherExpiryBadge, formatDateArabic } from '../../utils/date';
 
 interface AgentAlertsProps {
   currentUser: User;
@@ -57,13 +57,25 @@ export const AgentAlerts: React.FC<AgentAlertsProps> = ({
   // 3. Urgent maintenance needed
   const urgentMaintenance = sites.filter((s) => s.status === 'urgent_maintenance');
 
+  // 4. Approved sites extinguisher expiry alert (within 30 days or expired)
+  const approvedExtinguishersAlerts = sites
+    .filter((s) => s.approvalStatus === 'approved' && s.extinguisherMaintenance?.expiryDate)
+    .map((s) => ({
+      site: s,
+      days: getDaysRemaining(s.extinguisherMaintenance?.expiryDate || '') || 999,
+      badge: getExtinguisherExpiryBadge(s.extinguisherMaintenance?.expiryDate),
+    }))
+    .filter((item) => item.days <= 45)
+    .sort((a, b) => a.days - b.days);
+
   const totalAlerts = 
     contractsExpiring7Days.length + 
     contractsExpiring30Days.length + 
     contractsExpiring60Days.length + 
     contractsExpiring90Days.length + 
     upcomingCivilDefense.length + 
-    urgentMaintenance.length;
+    urgentMaintenance.length +
+    approvedExtinguishersAlerts.length;
 
   return (
     <div className="space-y-5 max-w-md mx-auto pb-6">
@@ -245,6 +257,64 @@ export const AgentAlerts: React.FC<AgentAlertsProps> = ({
               <p className="text-xs text-slate-400">
                 الإنذار: {site.equipment?.alarmSystem?.working ? 'يعمل' : 'معطل بحاجة إصلاح'} • الطفايات: {site.equipment?.extinguishers?.totalCount || 0} طفاية
               </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 5. Approved Sites Fire Extinguisher Expiry Alerts */}
+      {approvedExtinguishersAlerts.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-orange-400 flex items-center gap-1.5">
+              <span>🧯</span>
+              صلاحية طفايات المواقع المعتمدة (تعبئة وتجديد)
+            </span>
+            <span className="text-xs font-bold text-orange-400">{approvedExtinguishersAlerts.length}</span>
+          </div>
+
+          {approvedExtinguishersAlerts.map(({ site, days, badge }) => (
+            <div
+              key={site.id}
+              onClick={() => onSelectSite(site)}
+              className="bg-orange-950/20 border border-orange-600/50 p-3.5 rounded-2xl cursor-pointer hover:bg-orange-950/30 transition space-y-2"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-sm text-white">{site.name}</h4>
+                  <span className="text-[10px] text-emerald-400 font-bold">✓ موقع معتمد</span>
+                </div>
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${badge?.badgeClass}`}>
+                  {days < 0 ? 'منتهية الصلاحية!' : `تنتهي خلال ${days} يوم`}
+                </span>
+              </div>
+
+              <div className="text-xs text-slate-300">
+                الطفايات: <strong className="text-white">{(site.extinguisherMaintenance?.powderCount || 0) + (site.extinguisherMaintenance?.co2Count || 0) + (site.extinguisherMaintenance?.foamCount || 0) + (site.extinguisherMaintenance?.waterCount || 0) || site.equipment?.extinguishers?.totalCount || 0} طفاية</strong>
+                <span className="block text-[11px] text-slate-400 mt-0.5">
+                  تاريخ الانتهاء: <strong className="text-rose-400 font-mono">{site.extinguisherMaintenance?.expiryDate}</strong> • ملصق رقم: {site.extinguisherMaintenance?.certificateOrTagNumber || 'غير مسجل'}
+                </span>
+              </div>
+
+              <div className="pt-2 border-t border-orange-800/40 flex items-center justify-between">
+                <a
+                  href={`tel:${site.phone}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="px-2.5 py-1 rounded-lg bg-slate-900 text-emerald-400 text-xs font-bold flex items-center gap-1"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>اتصال بالعميل</span>
+                </a>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenNewVisit(site);
+                  }}
+                  className="px-3 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold"
+                >
+                  زيارة تعبئة وصيانة
+                </button>
+              </div>
             </div>
           ))}
         </div>

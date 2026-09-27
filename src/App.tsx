@@ -20,7 +20,8 @@ import {
   Visit, 
   FollowUpLog, 
   IncentiveSettings, 
-  SiteStatus 
+  SiteStatus,
+  ExtinguisherMaintenanceInfo 
 } from './types';
 import { Header } from './components/Header';
 import { LoginScreen } from './components/LoginScreen';
@@ -31,6 +32,7 @@ import { AgentIncentives } from './components/AgentMobile/AgentIncentives';
 import { NewVisitModal } from './components/AgentMobile/NewVisitModal';
 import { AdminDashboard } from './components/Admin/AdminDashboard';
 import { SitesManagement } from './components/Admin/SitesManagement';
+import { ExtinguishersManagement } from './components/Admin/ExtinguishersManagement';
 import { AgentsManagement } from './components/Admin/AgentsManagement';
 import { IncentivesManagement } from './components/Admin/IncentivesManagement';
 import { ReportsManagement } from './components/Admin/ReportsManagement';
@@ -65,7 +67,8 @@ import {
   Building2, 
   LayoutDashboard, 
   Users, 
-  FileSpreadsheet
+  FileSpreadsheet,
+  Flame
 } from 'lucide-react';
 
 export default function App() {
@@ -86,7 +89,7 @@ export default function App() {
   const [mobileTab, setMobileTab] = useState<'home' | 'sites' | 'map' | 'alerts' | 'profile'>('home');
 
   // Admin dashboard navigation tabs
-  const [adminTab, setAdminTab] = useState<'dashboard' | 'sites' | 'agents' | 'incentives' | 'reports'>('dashboard');
+  const [adminTab, setAdminTab] = useState<'dashboard' | 'sites' | 'extinguishers' | 'agents' | 'incentives' | 'reports'>('dashboard');
 
   // Modals
   const [isNewVisitModalOpen, setIsNewVisitModalOpen] = useState(false);
@@ -251,16 +254,60 @@ export default function App() {
   };
 
   const handleApproveSite = (siteId: string, approved: boolean, reason?: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const nextYear = new Date();
+    nextYear.setFullYear(nextYear.getFullYear() + 1);
+    const nextYearStr = nextYear.toISOString().split('T')[0];
+
     setSites((prev) =>
       prev.map((s) => {
         if (s.id === siteId) {
+          const defaultExtMaint: ExtinguisherMaintenanceInfo = s.extinguisherMaintenance || {
+            hasMaintenancePlan: true,
+            lastMaintenanceDate: today,
+            expiryDate: nextYearStr,
+            maintenanceCompany: 'شركة أوريكيت للسلامة والوقاية من الحريق',
+            technicianName: currentUser?.name || 'فني صيانة أوريكيت',
+            certificateOrTagNumber: `EXT-${s.id.slice(-6).toUpperCase()}`,
+            cylinderPressureChecked: true,
+            status: 'valid',
+            powderCount: s.equipment?.extinguishers?.totalCount || 0,
+            co2Count: 0,
+            foamCount: 0,
+            waterCount: 0,
+            notes: 'تم اعتماد الموقع وتفعيل خطة صيانة الطفايات وتحديد تاريخ الانتهاء',
+            logs: [
+              {
+                id: `log_init_${Date.now()}`,
+                maintenanceDate: today,
+                expiryDate: nextYearStr,
+                companyName: 'شركة أوريكيت للسلامة والوقاية من الحريق',
+                technicianName: currentUser?.name || 'فني أوريكيت',
+                certificateOrTagNumber: `EXT-${s.id.slice(-6).toUpperCase()}`,
+                servicedCount: s.equipment?.extinguishers?.totalCount || 0,
+                typesServiced: s.equipment?.extinguishers?.types || ['powder'],
+                status: 'completed',
+                notes: 'اعتماد أولي وتفعيل جدول الصيانة السنوي',
+                createdAt: today,
+              },
+            ],
+          };
+
+          const updatedExtMaint: ExtinguisherMaintenanceInfo = {
+            ...defaultExtMaint,
+            hasMaintenancePlan: approved ? true : defaultExtMaint.hasMaintenancePlan,
+            expiryDate: defaultExtMaint.expiryDate || nextYearStr,
+            lastMaintenanceDate: defaultExtMaint.lastMaintenanceDate || today,
+          };
+
           return {
             ...s,
             approvalStatus: approved ? 'approved' : 'rejected',
             rejectionReason: approved ? undefined : reason,
-            approvedAt: approved ? new Date().toISOString().split('T')[0] : undefined,
+            approvedAt: approved ? today : undefined,
             approvedBy: approved ? currentUser?.name : undefined,
             incentivePaid: approved,
+            extinguisherMaintenance: updatedExtMaint,
           };
         }
         return s;
@@ -268,15 +315,40 @@ export default function App() {
     );
 
     if (selectedSiteForDetail && selectedSiteForDetail.id === siteId) {
-      setSelectedSiteForDetail((prev) =>
-        prev
-          ? {
-              ...prev,
-              approvalStatus: approved ? 'approved' : 'rejected',
-              rejectionReason: approved ? undefined : reason,
-            }
-          : null
-      );
+      setSelectedSiteForDetail((prev) => {
+        if (!prev) return null;
+        const defaultExtMaint: ExtinguisherMaintenanceInfo = prev.extinguisherMaintenance || {
+          hasMaintenancePlan: true,
+          lastMaintenanceDate: today,
+          expiryDate: nextYearStr,
+          maintenanceCompany: 'شركة أوريكيت للسلامة والوقاية من الحريق',
+          technicianName: currentUser?.name || 'فني صيانة أوريكيت',
+          certificateOrTagNumber: `EXT-${prev.id.slice(-6).toUpperCase()}`,
+          cylinderPressureChecked: true,
+          status: 'valid',
+          powderCount: prev.equipment?.extinguishers?.totalCount || 0,
+          co2Count: 0,
+          foamCount: 0,
+          waterCount: 0,
+          notes: 'تم اعتماد الموقع وتفعيل خطة صيانة الطفايات وتحديد تاريخ الانتهاء',
+          logs: [],
+        };
+
+        return {
+          ...prev,
+          approvalStatus: approved ? 'approved' : 'rejected',
+          rejectionReason: approved ? undefined : reason,
+          approvedAt: approved ? today : undefined,
+          approvedBy: approved ? currentUser?.name : undefined,
+          incentivePaid: approved,
+          extinguisherMaintenance: {
+            ...defaultExtMaint,
+            hasMaintenancePlan: approved ? true : defaultExtMaint.hasMaintenancePlan,
+            expiryDate: defaultExtMaint.expiryDate || nextYearStr,
+            lastMaintenanceDate: defaultExtMaint.lastMaintenanceDate || today,
+          },
+        };
+      });
     }
 
     // Persist approval to central database
@@ -293,6 +365,51 @@ export default function App() {
 
     // Persist status change to central database
     apiUpdateSiteStatus(siteId, newStatus);
+  };
+
+  const handleUpdateSiteExtinguisherMaintenance = (
+    siteId: string,
+    maintenance: ExtinguisherMaintenanceInfo
+  ) => {
+    setSites((prev) =>
+      prev.map((s) => {
+        if (s.id === siteId) {
+          const updated: Site = {
+            ...s,
+            extinguisherMaintenance: maintenance,
+            updatedAt: new Date().toISOString().split('T')[0],
+          };
+          apiSaveSite(updated);
+          return updated;
+        }
+        return s;
+      })
+    );
+
+    if (selectedSiteForDetail && selectedSiteForDetail.id === siteId) {
+      setSelectedSiteForDetail((prev) => {
+        if (prev && prev.id === siteId) {
+          return {
+            ...prev,
+            extinguisherMaintenance: maintenance,
+            updatedAt: new Date().toISOString().split('T')[0],
+          };
+        }
+        return prev;
+      });
+    }
+
+    const newFol: FollowUpLog = {
+      id: `fol_${Date.now()}`,
+      siteId,
+      agentId: currentUser?.id || 'admin',
+      agentName: currentUser?.name || 'الإدارة',
+      date: new Date().toISOString().split('T')[0],
+      action: 'note',
+      summary: `تم تحديث صيانة طفايات الحريق - تاريخ الانتهاء المعتمد: ${maintenance.expiryDate} (ملصق رقم: ${maintenance.certificateOrTagNumber})`,
+    };
+    setFollowups((prev) => [newFol, ...prev]);
+    apiSaveFollowUp(newFol);
   };
 
   const handleAddFollowUp = (
@@ -500,6 +617,7 @@ export default function App() {
             {[
               { id: 'dashboard', label: 'لوحة المؤشرات والخريطة', icon: LayoutDashboard },
               { id: 'sites', label: `سجل المواقع المركزي CRM (${sites.length})`, icon: Building2 },
+              { id: 'extinguishers', label: `صيانة طفايات المواقع المعتمدة (${sites.filter(s => s.approvalStatus === 'approved').length})`, icon: Flame },
               { id: 'agents', label: `فريق المبيعات والمندوبين (${users.filter(u => u.role === 'agent').length})`, icon: Users },
               { id: 'incentives', label: `نظام الحوافز والاعتمادات (${settings.ratePerApprovedSiteSAR} ر.س)`, icon: Award },
               { id: 'reports', label: 'التقارير المتقدمة وتصدير Excel', icon: FileSpreadsheet },
@@ -545,6 +663,16 @@ export default function App() {
               onSelectSite={(site) => setSelectedSiteForDetail(site)}
               onOpenNewVisit={handleOpenNewVisit}
               onApproveSite={handleApproveSite}
+            />
+          )}
+
+          {adminTab === 'extinguishers' && (
+            <ExtinguishersManagement
+              currentUser={currentUser}
+              sites={sites}
+              onSelectSite={(site) => setSelectedSiteForDetail(site)}
+              onUpdateSiteMaintenance={handleUpdateSiteExtinguisherMaintenance}
+              onOpenNewVisit={handleOpenNewVisit}
             />
           )}
 
@@ -616,6 +744,7 @@ export default function App() {
           onApproveSite={handleApproveSite}
           onAddFollowUp={handleAddFollowUp}
           onOpenNewVisitForSite={(site) => handleOpenNewVisit(site)}
+          onUpdateMaintenance={handleUpdateSiteExtinguisherMaintenance}
           followups={followups}
           visits={visits}
         />

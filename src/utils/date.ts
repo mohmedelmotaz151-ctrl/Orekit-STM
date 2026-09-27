@@ -95,6 +95,54 @@ export function getContractExpiryBadge(endDateStr?: string): ExpiryAlertBadge | 
 }
 
 /**
+ * Categorizes fire extinguisher maintenance & inspection expiry alert level
+ */
+export function getExtinguisherExpiryBadge(expiryDateStr?: string): ExpiryAlertBadge | null {
+  const days = getDaysRemaining(expiryDateStr);
+  if (days === null) return null;
+
+  if (days < 0) {
+    return {
+      level: 'expired',
+      text: `منتهية الصلاحية منذ ${Math.abs(days)} يوم (خطر مخالفة)`,
+      badgeClass: 'bg-rose-950/90 text-rose-200 border border-rose-700 animate-pulse',
+      days,
+    };
+  }
+  if (days <= 15) {
+    return {
+      level: 'critical_7',
+      text: `تنتهي خلال ${days} يوم (إعادة تعبئة فورية)`,
+      badgeClass: 'bg-red-950/90 text-red-200 border border-red-700 font-bold',
+      days,
+    };
+  }
+  if (days <= 30) {
+    return {
+      level: 'urgent_30',
+      text: `تنتهي خلال ${days} يوم (بحاجة صيانة وتعبئة)`,
+      badgeClass: 'bg-amber-950/80 text-amber-200 border border-amber-700',
+      days,
+    };
+  }
+  if (days <= 60) {
+    return {
+      level: 'warning_60',
+      text: `تنتهي خلال ${days} يوم`,
+      badgeClass: 'bg-yellow-950/70 text-yellow-300 border border-yellow-800',
+      days,
+    };
+  }
+
+  return {
+    level: 'valid',
+    text: `صالحة وسارية (${days} يوم متبقٍ)`,
+    badgeClass: 'bg-emerald-950/70 text-emerald-300 border border-emerald-800',
+    days,
+  };
+}
+
+/**
  * Metadata for Site Status
  */
 export const SITE_STATUS_MAP: Record<

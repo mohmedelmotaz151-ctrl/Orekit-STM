@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { Site } from '../../types';
 import { getCurrentPosition } from '../../utils/geo';
-import { MapPin, Navigation, ExternalLink, X, Phone, Building2, ShieldAlert } from 'lucide-react';
+import { MapPin, Navigation, ExternalLink, X, Phone, Building2, ShieldAlert, MessageCircle } from 'lucide-react';
+import { createWhatsAppUrl, generateSiteWhatsAppMessage } from '../../utils/whatsapp';
+import { WhatsAppContactModal } from './WhatsAppContactModal';
 
 // Defensive monkey-patch for Leaflet DomUtil to prevent "Cannot read properties of undefined (reading '_leaflet_pos')"
 // This happens in Leaflet 1.9.4 if getPosition is called on an unmounted/detached element or map pane during transitions.
@@ -73,6 +75,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   
   // Track selected site for the on-map quick action card
   const [activeSite, setActiveSite] = useState<Site | null>(null);
+  const [whatsAppSite, setWhatsAppSite] = useState<Site | null>(null);
 
   // Sync external selectedSiteId
   useEffect(() => {
@@ -422,9 +425,10 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
 
       const marker = L.marker([site.latitude, site.longitude], { icon: customIcon });
 
-      // Construct rich Arabic Popup with prominent 'فتح في خرائط جوجل'
+      // Construct rich Arabic Popup with prominent 'فتح في خرائط جوجل' and WhatsApp
       const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${site.latitude},${site.longitude}`;
       const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${site.latitude},${site.longitude}`;
+      const siteWhatsAppUrl = createWhatsAppUrl(site.phone, generateSiteWhatsAppMessage(site, 'general'));
 
       const popupContent = `
         <div class="oriket-map-popup text-right font-['Cairo',sans-serif] min-w-[240px] max-w-[280px]">
@@ -479,22 +483,36 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
             </div>
           </div>
 
-          <!-- Action 1: Direct Google Maps Launch Button -->
+          <!-- Action 1: Direct WhatsApp Chat -->
+          <a
+            href="${siteWhatsAppUrl}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="oriket-whatsapp-btn"
+            style="display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; background: linear-gradient(135deg, #059669, #10b981); color: #ffffff; text-decoration: none; font-weight: 800; font-size: 12px; padding: 9px 12px; border-radius: 12px; margin-top: 4px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); border: 1px solid rgba(255, 255, 255, 0.25); transition: all 0.2s;"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"></path>
+            </svg>
+            <span>تواصل عبر واتساب (${site.phone})</span>
+          </a>
+
+          <!-- Action 2: Direct Google Maps Launch Button -->
           <a
             href="${googleMapsUrl}"
             target="_blank"
             rel="noopener noreferrer"
             class="oriket-gmaps-btn"
-            style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: linear-gradient(135deg, #1d4ed8, #2563eb); color: #ffffff; text-decoration: none; font-weight: 800; font-size: 13px; padding: 10px 14px; border-radius: 12px; margin-top: 4px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.2s;"
+            style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: linear-gradient(135deg, #1d4ed8, #2563eb); color: #ffffff; text-decoration: none; font-weight: 800; font-size: 12px; padding: 8px 12px; border-radius: 12px; margin-top: 6px; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35); border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.2s;"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
             <span>فتح في خرائط جوجل</span>
           </a>
 
-          <!-- Action 2: Direct GPS Turn-by-Turn Directions -->
+          <!-- Action 3: Direct GPS Turn-by-Turn Directions -->
           <a
             href="${directionsUrl}"
             target="_blank"
@@ -670,29 +688,47 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${activeSite.latitude},${activeSite.longitude}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="py-2 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition active:scale-98"
+          <div className="space-y-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setWhatsAppSite(activeSite)}
+              className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-950/40 border border-emerald-400/30 transition active:scale-98"
             >
-              <MapPin className="w-3.5 h-3.5" />
-              <span>فتح في خرائط جوجل</span>
-            </a>
+              <MessageCircle className="w-3.5 h-3.5 fill-current" />
+              <span>تواصل عبر واتساب (الموقع + الشركة)</span>
+            </button>
 
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${activeSite.latitude},${activeSite.longitude}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-400 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-700 transition active:scale-98"
-            >
-              <Navigation className="w-3.5 h-3.5" />
-              <span>بدء التوجيه (GPS)</span>
-            </a>
+            <div className="grid grid-cols-2 gap-2">
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${activeSite.latitude},${activeSite.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-2 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition active:scale-98"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                <span>خرائط جوجل</span>
+              </a>
+
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${activeSite.latitude},${activeSite.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-400 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-700 transition active:scale-98"
+              >
+                <Navigation className="w-3.5 h-3.5" />
+                <span>توجيه GPS</span>
+              </a>
+            </div>
           </div>
         </div>
       )}
+
+      {/* WHATSAPP CONTACT MODAL */}
+      <WhatsAppContactModal
+        site={whatsAppSite}
+        isOpen={Boolean(whatsAppSite)}
+        onClose={() => setWhatsAppSite(null)}
+      />
     </div>
   );
 };

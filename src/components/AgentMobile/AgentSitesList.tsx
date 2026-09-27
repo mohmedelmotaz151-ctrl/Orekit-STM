@@ -12,11 +12,13 @@ import {
   Calendar,
   CheckCircle2,
   Map as MapIcon,
-  List as ListIcon
+  List as ListIcon,
+  MessageCircle
 } from 'lucide-react';
 import { User, Site, SiteType, SiteStatus } from '../../types';
 import { SITE_STATUS_MAP, formatDateArabic, getContractExpiryBadge, getExtinguisherExpiryBadge } from '../../utils/date';
 import { LeafletMap } from '../Common/LeafletMap';
+import { WhatsAppContactModal } from '../Common/WhatsAppContactModal';
 
 interface AgentSitesListProps {
   currentUser: User;
@@ -37,6 +39,7 @@ export const AgentSitesList: React.FC<AgentSitesListProps> = ({
   const [showOnlyMine, setShowOnlyMine] = useState<boolean>(true);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [activeMapSiteId, setActiveMapSiteId] = useState<string | undefined>(undefined);
+  const [selectedWhatsAppSite, setSelectedWhatsAppSite] = useState<Site | null>(null);
 
   const filteredSites = sites.filter((site) => {
     const isMine = site.createdByAgentId === currentUser.id || 
@@ -255,16 +258,29 @@ export const AgentSitesList: React.FC<AgentSitesListProps> = ({
                   )}
 
                   {/* Bottom stats and action buttons */}
-                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                    <div className="flex items-center gap-2">
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400 gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedWhatsAppSite(site);
+                        }}
+                        className="p-1.5 px-2.5 rounded-lg bg-emerald-950/70 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-700/60 flex items-center gap-1 text-[11px] font-bold transition shadow-sm"
+                        title="تواصل عبر واتساب (مسؤول الموقع + إدارة الشركة)"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 fill-current" />
+                        <span>تواصل عبر واتساب</span>
+                      </button>
+
                       <a
                         href={`tel:${site.phone}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="p-1.5 rounded-lg bg-slate-800 text-emerald-400 hover:bg-slate-700 flex items-center gap-1 transition"
+                        className="p-1.5 px-2 rounded-lg bg-slate-800 text-emerald-400 hover:bg-slate-700 flex items-center gap-1 transition text-[11px]"
                         title="اتصال هاتفي"
                       >
                         <Phone className="w-3.5 h-3.5" />
-                        <span>{site.phone}</span>
+                        <span className="font-mono">{site.phone}</span>
                       </a>
 
                       {site.latitude && site.longitude && (
@@ -273,11 +289,11 @@ export const AgentSitesList: React.FC<AgentSitesListProps> = ({
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="p-1.5 px-2.5 rounded-lg bg-blue-950/70 text-blue-300 hover:bg-blue-900 border border-blue-800/60 flex items-center gap-1 text-[11px] font-bold transition shadow-sm"
+                          className="p-1.5 px-2 rounded-lg bg-blue-950/70 text-blue-300 hover:bg-blue-900 border border-blue-800/60 flex items-center gap-1 text-[11px] font-bold transition shadow-sm"
                           title="فتح في خرائط جوجل"
                         >
                           <MapPin className="w-3.5 h-3.5 text-blue-400" />
-                          <span>فتح في خرائط جوجل</span>
+                          <span>خرائط</span>
                         </a>
                       )}
                     </div>
@@ -301,6 +317,14 @@ export const AgentSitesList: React.FC<AgentSitesListProps> = ({
           )}
         </div>
       )}
+
+      {/* WHATSAPP CONTACT MODAL */}
+      <WhatsAppContactModal
+        site={selectedWhatsAppSite}
+        isOpen={Boolean(selectedWhatsAppSite)}
+        onClose={() => setSelectedWhatsAppSite(null)}
+        currentUserName={currentUser.name}
+      />
 
     </div>
   );

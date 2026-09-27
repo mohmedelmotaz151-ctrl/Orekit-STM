@@ -15,8 +15,10 @@ import {
   Check, 
   X, 
   Building2, 
-  Phone
+  Phone,
+  MessageCircle
 } from 'lucide-react';
+import { WhatsAppContactModal } from '../Common/WhatsAppContactModal';
 
 interface ExtinguisherMaintenanceTabProps {
   site: Site;
@@ -32,6 +34,7 @@ export const ExtinguisherMaintenanceTab: React.FC<ExtinguisherMaintenanceTabProp
   onOpenNewVisit,
 }) => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
 
   const maintenance = site.extinguisherMaintenance || {
     hasMaintenancePlan: site.approvalStatus === 'approved',
@@ -179,7 +182,17 @@ export const ExtinguisherMaintenanceTab: React.FC<ExtinguisherMaintenanceTabProp
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsWhatsAppOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-950/50 transition border border-emerald-400/30"
+              title="تواصل عبر واتساب (مسؤول الموقع + إدارة أوريكيت)"
+            >
+              <MessageCircle className="w-4 h-4 fill-current" />
+              <span>تواصل عبر واتساب</span>
+            </button>
+
             <button
               onClick={() => setIsUpdateModalOpen(true)}
               className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-orange-950/50 transition"
@@ -689,6 +702,14 @@ export const ExtinguisherMaintenanceTab: React.FC<ExtinguisherMaintenanceTabProp
           </div>
         </div>
       )}
+
+      {/* WHATSAPP CONTACT MODAL */}
+      <WhatsAppContactModal
+        site={site}
+        isOpen={isWhatsAppOpen}
+        onClose={() => setIsWhatsAppOpen(false)}
+        currentUserName={currentUser.name}
+      />
 
     </div>
   );

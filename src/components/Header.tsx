@@ -3,9 +3,11 @@ import {
   Flame, 
   Bell, 
   LogOut,
-  User as UserIcon
+  User as UserIcon,
+  MessageCircle
 } from 'lucide-react';
 import { User, UserRole } from '../types';
+import { ORIKET_COMPANY_PHONE, createWhatsAppUrl } from '../utils/whatsapp';
 
 interface HeaderProps {
   currentUser: User;
@@ -58,7 +60,22 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right side: Alerts & User Profile & Logout */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Quick WhatsApp to Oriket Administration */}
+          <a
+            href={createWhatsAppUrl(
+              ORIKET_COMPANY_PHONE,
+              `السلام عليكم ورحمة الله وبركاته،\nمعكم ${currentUser.name} (${currentUser.role === 'admin' ? 'الإدارة' : 'مندوب ميداني'})\nتحية طيبة لإدارة شركة أوريكيت للسلامة.`
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-emerald-950/70 hover:bg-emerald-900 text-emerald-400 border border-emerald-700/60 transition flex items-center gap-1.5 text-xs font-bold shadow-sm"
+            title={`واتساب إدارة شركة أوريكيت (${ORIKET_COMPANY_PHONE})`}
+          >
+            <MessageCircle className="w-4 h-4 fill-current shrink-0" />
+            <span className="hidden md:inline">واتساب الإدارة</span>
+          </a>
+
           {/* Alerts notification icon */}
           {onOpenAlerts && (
             <button

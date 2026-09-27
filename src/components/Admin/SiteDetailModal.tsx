@@ -17,12 +17,15 @@ import {
   Send,
   Calendar,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  MessageCircle
 } from 'lucide-react';
 import { Site, Visit, FollowUpLog, User, SiteStatus, SiteApprovalStatus, ExtinguisherMaintenanceInfo } from '../../types';
 import { LeafletMap } from '../Common/LeafletMap';
 import { SITE_STATUS_MAP, getContractExpiryBadge, getExtinguisherExpiryBadge, formatDateArabic } from '../../utils/date';
 import { ExtinguisherMaintenanceTab } from './ExtinguisherMaintenanceTab';
+import { WhatsAppContactModal } from '../Common/WhatsAppContactModal';
+import { ORIKET_COMPANY_PHONE } from '../../utils/whatsapp';
 
 interface SiteDetailModalProps {
   site: Site | null;
@@ -56,6 +59,7 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
   const [newNoteAction, setNewNoteAction] = useState<'call' | 'visit' | 'quotation_sent' | 'contract_signed' | 'note'>('call');
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectBox, setShowRejectBox] = useState(false);
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
 
   if (!site) return null;
 
@@ -119,7 +123,17 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsWhatsAppOpen(true)}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-emerald-950/50 transition border border-emerald-400/30"
+              title="تواصل عبر واتساب (مسؤول الموقع + إدارة الشركة)"
+            >
+              <MessageCircle className="w-3.5 h-3.5 fill-current" />
+              <span>تواصل عبر واتساب</span>
+            </button>
+
             {site.latitude && site.longitude && (
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${site.latitude},${site.longitude}`}
@@ -129,7 +143,7 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                 title="فتح في خرائط جوجل"
               >
                 <MapPin className="w-3.5 h-3.5" />
-                <span>فتح في خرائط جوجل</span>
+                <span>خرائط جوجل</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             )}
@@ -223,6 +237,32 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                   <span className="text-sm text-slate-200 font-mono" dir="ltr">
                     {site.altPhone || 'غير مسجل'}
                   </span>
+                </div>
+              </div>
+
+              {/* Ready WhatsApp Contact Action Row */}
+              <div className="p-3.5 bg-gradient-to-r from-emerald-950/60 to-slate-950/90 rounded-2xl border border-emerald-800/50 flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 shrink-0">
+                    <MessageCircle className="w-4 h-4 fill-current" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">تواصل فوري عبر WhatsApp</h4>
+                    <p className="text-[11px] text-slate-400">
+                      محادثة جاهزة مع <span className="text-emerald-400 font-medium">رقم الموقع ({site.phone})</span> أو إرسال التقرير لـ <span className="text-amber-400 font-medium">إدارة أوريكيت ({ORIKET_COMPANY_PHONE})</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsWhatsAppOpen(true)}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 fill-current" />
+                    <span>فتح نماذج المراسلة والتقرير</span>
+                  </button>
                 </div>
               </div>
 
@@ -675,6 +715,14 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
         </div>
 
       </div>
+
+      {/* WHATSAPP CONTACT MODAL */}
+      <WhatsAppContactModal
+        site={site}
+        isOpen={isWhatsAppOpen}
+        onClose={() => setIsWhatsAppOpen(false)}
+        currentUserName={currentUser.name}
+      />
     </div>
   );
 };

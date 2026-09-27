@@ -13,11 +13,13 @@ import {
   AlertTriangle,
   Clock,
   Flame,
-  ChevronLeft
+  ChevronLeft,
+  MessageCircle
 } from 'lucide-react';
 import { Site, User, SiteStatus, SiteApprovalStatus, SiteType, SAUDI_CITIES } from '../../types';
 import { exportToCSV } from '../../utils/storage';
 import { SITE_STATUS_MAP, formatDateArabic, getContractExpiryBadge } from '../../utils/date';
+import { WhatsAppContactModal } from '../Common/WhatsAppContactModal';
 
 interface SitesManagementProps {
   currentUser: User;
@@ -39,6 +41,7 @@ export const SitesManagement: React.FC<SitesManagementProps> = ({
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterApproval, setFilterApproval] = useState('all');
+  const [selectedWhatsAppSite, setSelectedWhatsAppSite] = useState<Site | null>(null);
 
   const filteredSites = sites.filter((site) => {
     if (filterCity !== 'all' && site.city !== filterCity) return false;
@@ -277,6 +280,14 @@ export const SitesManagement: React.FC<SitesManagementProps> = ({
                       <td className="p-3.5 text-center">
                         <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                           <button
+                            type="button"
+                            onClick={() => setSelectedWhatsAppSite(site)}
+                            className="p-1.5 rounded-lg bg-emerald-950/70 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-700/60 transition shadow-sm"
+                            title="تواصل عبر واتساب (رقم الموقع + رقم الشركة)"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5 fill-current" />
+                          </button>
+                          <button
                             onClick={() => onSelectSite(site)}
                             className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"
                             title="عرض ملف CRM"
@@ -313,6 +324,14 @@ export const SitesManagement: React.FC<SitesManagementProps> = ({
           </table>
         </div>
       </div>
+
+      {/* WHATSAPP CONTACT MODAL */}
+      <WhatsAppContactModal
+        site={selectedWhatsAppSite}
+        isOpen={Boolean(selectedWhatsAppSite)}
+        onClose={() => setSelectedWhatsAppSite(null)}
+        currentUserName={currentUser.name}
+      />
 
     </div>
   );

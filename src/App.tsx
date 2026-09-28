@@ -52,6 +52,8 @@ import { ReportsManagement } from './components/Admin/ReportsManagement';
 import { SiteDetailModal } from './components/Admin/SiteDetailModal';
 import { ClientPortal } from './components/ClientPortal/ClientPortal';
 import { LeafletMap } from './components/Common/LeafletMap';
+import { EmergencyAlarmBar } from './components/Common/EmergencyAlarmBar';
+import { soundNotifier } from './utils/soundNotifications';
 import { getDaysRemaining } from './utils/date';
 import { 
   fetchDatabaseData,
@@ -534,6 +536,15 @@ export default function App() {
   const handleSaveIncident = (incident: ClientIncident) => {
     setIncidents((prev) => [incident, ...prev.filter((i) => i.id !== incident.id)]);
     apiSaveIncident(incident);
+
+    // Trigger emergency audible siren and outside notification
+    const isUrgent = incident.priority === 'urgent' || incident.priority === 'high';
+    soundNotifier.sendEmergencyNotification({
+      title: `${isUrgent ? '🚨 إنذار طوارئ عاجل' : '🔔 بلاغ صيانة جديد'}: ${incident.siteName}`,
+      body: `${incident.title} - ${incident.description.slice(0, 100)}...`,
+      urgent: isUrgent,
+      tag: `incident_${incident.id}`,
+    });
   };
 
   const handleUpdateIncident = (incidentId: string, updates: Partial<ClientIncident>) => {
@@ -541,11 +552,17 @@ export default function App() {
       prev.map((i) => (i.id === incidentId ? { ...i, ...updates } : i))
     );
     apiUpdateIncident(incidentId, updates);
+    soundNotifier.playChime();
   };
 
   const handleSaveInquiry = (inquiry: ClientInquiry) => {
     setInquiries((prev) => [inquiry, ...prev.filter((i) => i.id !== inquiry.id)]);
     apiSaveInquiry(inquiry);
+    soundNotifier.sendEmergencyNotification({
+      title: `❓ استفسار فني جديد: ${inquiry.siteName}`,
+      body: inquiry.subject,
+      urgent: false,
+    });
   };
 
   const handleAnswerInquiry = (inquiryId: string, answer: string, answeredBy: string) => {
@@ -563,11 +580,17 @@ export default function App() {
       )
     );
     apiAnswerInquiry(inquiryId, answer, answeredBy);
+    soundNotifier.playChime();
   };
 
   const handleSaveRenewal = (renewal: ContractRenewalRequest) => {
     setRenewals((prev) => [renewal, ...prev.filter((r) => r.id !== renewal.id)]);
     apiSaveRenewal(renewal);
+    soundNotifier.sendEmergencyNotification({
+      title: `📄 طلب تجديد عقد صيانة: ${renewal.siteName}`,
+      body: `طلب تجديد لمدة ${renewal.requestedDurationYears} سنوات لمنشأة ${renewal.siteName}`,
+      urgent: true,
+    });
   };
 
   const handleUpdateRenewal = (
@@ -601,6 +624,18 @@ export default function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
         alertsCount={totalAlertsCount}
+        onOpenAlerts={() => {
+          if (currentUser.role === 'admin') {
+            setAdminTab('dashboard');
+          } else {
+            setMobileTab('alerts');
+          }
+        }}
+      />
+
+      {/* Emergency Alarm & Outside Notification Strip */}
+      <EmergencyAlarmBar
+        urgentAlertsCount={totalAlertsCount}
         onOpenAlerts={() => {
           if (currentUser.role === 'admin') {
             setAdminTab('dashboard');

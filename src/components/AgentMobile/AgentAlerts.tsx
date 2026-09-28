@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Bell, 
   AlertTriangle, 
@@ -8,10 +8,14 @@ import {
   Phone, 
   Calendar, 
   ChevronLeft,
-  CheckCircle2
+  CheckCircle2,
+  Volume2,
+  VolumeX,
+  Radio
 } from 'lucide-react';
 import { Site, User } from '../../types';
 import { getDaysRemaining, getContractExpiryBadge, getExtinguisherExpiryBadge, formatDateArabic } from '../../utils/date';
+import { soundNotifier } from '../../utils/soundNotifications';
 
 interface AgentAlertsProps {
   currentUser: User;
@@ -77,21 +81,73 @@ export const AgentAlerts: React.FC<AgentAlertsProps> = ({
     urgentMaintenance.length +
     approvedExtinguishersAlerts.length;
 
+  const [isPlayingSiren, setIsPlayingSiren] = useState(false);
+
+  const handleTriggerEmergencyAlarm = () => {
+    soundNotifier.initAudio();
+    setIsPlayingSiren(true);
+    soundNotifier.sendEmergencyNotification({
+      title: '🚨 إنذار طوارئ فوري: عقود وتراخيص تتطلب تدخل سريع!',
+      body: `يوجد ${totalAlerts} تنبيه ميداني نشط (${contractsExpiring7Days.length} عقود تنتهي خلال أيام، و${upcomingCivilDefense.length} كشف دفاع مدني قادم).`,
+      urgent: true,
+    });
+    setTimeout(() => {
+      setIsPlayingSiren(false);
+    }, 4500);
+  };
+
   return (
     <div className="space-y-5 max-w-md mx-auto pb-6">
       
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-red-950/40 via-slate-900 to-amber-950/40 p-4 rounded-3xl border border-red-500/30">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center shrink-0">
-            <Bell className="w-6 h-6 text-red-400 animate-pulse" />
+      {/* Top Banner with Emergency Siren Button */}
+      <div className="bg-gradient-to-r from-red-950/60 via-slate-900 to-amber-950/50 p-4 rounded-3xl border border-red-500/40 shadow-xl space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-red-600/30 text-red-400 border border-red-500/40 flex items-center justify-center shrink-0">
+              <Bell className="w-6 h-6 text-red-400 animate-pulse" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-white">مركز التذكيرات الذكية والمتابعات</h2>
+              <p className="text-xs text-slate-300">
+                إجمالي التنبيهات الميدانية النشطة: <strong className="text-amber-400">{totalAlerts} تنبيه</strong>
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-black text-white">مركز التذكيرات الذكية والمتابعات</h2>
-            <p className="text-xs text-slate-300">
-              إجمالي التنبيهات الميدانية النشطة: <strong className="text-amber-400">{totalAlerts} تنبيه</strong>
-            </p>
-          </div>
+        </div>
+
+        {/* Emergency Sound & Outside Notification Action */}
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+          <button
+            onClick={handleTriggerEmergencyAlarm}
+            disabled={isPlayingSiren}
+            className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg transition active:scale-95 ${
+              isPlayingSiren
+                ? 'bg-red-600 text-white animate-pulse'
+                : 'bg-red-600/90 hover:bg-red-500 text-white'
+            }`}
+          >
+            <Radio className="w-4 h-4 shrink-0" />
+            <span>{isPlayingSiren ? 'جاري إطلاق صفارة الإنذار...' : 'إطلاق إنذار طوارئ صوتي 🚨'}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              soundNotifier.requestNotificationPermission().then((perm) => {
+                if (perm === 'granted') {
+                  soundNotifier.sendEmergencyNotification({
+                    title: '✓ تم تفعيل إشعارات أوريكيت في النظام',
+                    body: 'ستصلك إنذارات الطوارئ خارج التطبيق على شاشة القفل وسطح المكتب فوراً.',
+                    urgent: false,
+                  });
+                }
+              });
+            }}
+            className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 flex items-center gap-1 shrink-0"
+            title="تفعيل الإشعارات خارج التطبيق"
+          >
+            <Bell className="w-3.5 h-3.5 text-amber-400" />
+            <span>إشعارات خارج التطبيق</span>
+          </button>
         </div>
       </div>
 

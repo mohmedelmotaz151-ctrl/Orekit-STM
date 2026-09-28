@@ -93,30 +93,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </p>
           </div>
 
-          {/* Role Quick Selection / Demo Helpers */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-950/80 rounded-2xl border border-slate-800 text-xs">
-            <button
-              type="button"
-              onClick={() => {
-                setPhoneOrUsername('0555335477');
-                setPassword('5520');
-              }}
-              className="py-2 px-2.5 rounded-xl text-center transition hover:bg-slate-800/80 text-orange-400 font-bold"
-            >
-              دخول الإدارة (0555335477)
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setPhoneOrUsername('0500112233');
-                setPassword('1234');
-              }}
-              className="py-2 px-2.5 rounded-xl text-center transition hover:bg-slate-800/80 text-emerald-400 font-bold"
-            >
-              دخول العميل (بوابة المنشآت)
-            </button>
-          </div>
-
           {errorMsg && (
             <div className="bg-rose-950/60 border border-rose-800/80 rounded-2xl p-3 flex items-start gap-2.5 text-xs text-rose-200">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />

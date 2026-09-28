@@ -30,6 +30,13 @@ export const Header: React.FC<HeaderProps> = ({
         return { label: 'مشرف ميداني', color: 'text-sky-400 bg-sky-950/60 border-sky-700/60' };
       case 'agent':
         return { label: 'مندوب مبيعات', color: 'text-emerald-400 bg-emerald-950/60 border-emerald-700/60' };
+      case 'client':
+        return { 
+          label: currentUser.facilityName ? `عميل: ${currentUser.facilityName}` : 'عميل المنشأة', 
+          color: 'text-orange-400 bg-orange-950/60 border-orange-700/60' 
+        };
+      default:
+        return { label: 'مستخدم', color: 'text-slate-400 bg-slate-800 border-slate-700' };
     }
   };
 

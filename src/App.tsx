@@ -12,6 +12,14 @@ import {
   saveStoredSettings, 
   getStoredCurrentUser, 
   saveStoredCurrentUser,
+  getStoredIncidents,
+  saveStoredIncidents,
+  getStoredInquiries,
+  saveStoredInquiries,
+  getStoredRenewals,
+  saveStoredRenewals,
+  getStoredCivilDefenseAlerts,
+  saveStoredCivilDefenseAlerts,
   normalizeSite 
 } from './utils/storage';
 import { 
@@ -21,7 +29,11 @@ import {
   FollowUpLog, 
   IncentiveSettings, 
   SiteStatus,
-  ExtinguisherMaintenanceInfo 
+  ExtinguisherMaintenanceInfo,
+  ClientIncident,
+  ClientInquiry,
+  ContractRenewalRequest,
+  CivilDefenseInspectionAlert
 } from './types';
 import { Header } from './components/Header';
 import { LoginScreen } from './components/LoginScreen';
@@ -34,9 +46,11 @@ import { AdminDashboard } from './components/Admin/AdminDashboard';
 import { SitesManagement } from './components/Admin/SitesManagement';
 import { ExtinguishersManagement } from './components/Admin/ExtinguishersManagement';
 import { AgentsManagement } from './components/Admin/AgentsManagement';
+import { ClientsManagement } from './components/Admin/ClientsManagement';
 import { IncentivesManagement } from './components/Admin/IncentivesManagement';
 import { ReportsManagement } from './components/Admin/ReportsManagement';
 import { SiteDetailModal } from './components/Admin/SiteDetailModal';
+import { ClientPortal } from './components/ClientPortal/ClientPortal';
 import { LeafletMap } from './components/Common/LeafletMap';
 import { getDaysRemaining } from './utils/date';
 import { 
@@ -48,7 +62,14 @@ import {
   apiUpdateSiteStatus,
   apiSaveVisit,
   apiSaveFollowUp,
-  apiSaveSettings
+  apiSaveSettings,
+  apiSaveIncident,
+  apiUpdateIncident,
+  apiSaveInquiry,
+  apiAnswerInquiry,
+  apiSaveRenewal,
+  apiUpdateRenewal,
+  apiSaveCDAlert
 } from './utils/api';
 import {
   bootstrapFirestore,
@@ -57,6 +78,10 @@ import {
   subscribeToVisits,
   subscribeToFollowups,
   subscribeToSettings,
+  subscribeToIncidents,
+  subscribeToInquiries,
+  subscribeToRenewals,
+  subscribeToCDAlerts
 } from './utils/firestoreService';
 import { 
   Home, 
@@ -79,6 +104,10 @@ export default function App() {
   const [visits, setVisits] = useState<Visit[]>(getStoredVisits);
   const [followups, setFollowups] = useState<FollowUpLog[]>(getStoredFollowups);
   const [settings, setSettings] = useState<IncentiveSettings>(getStoredSettings);
+  const [incidents, setIncidents] = useState<ClientIncident[]>(getStoredIncidents);
+  const [inquiries, setInquiries] = useState<ClientInquiry[]>(getStoredInquiries);
+  const [renewals, setRenewals] = useState<ContractRenewalRequest[]>(getStoredRenewals);
+  const [civilDefenseAlerts, setCivilDefenseAlerts] = useState<CivilDefenseInspectionAlert[]>(getStoredCivilDefenseAlerts);
 
   // View mode: 'mobile_agent' for agents, 'admin_dashboard' for admin
   const [currentViewMode, setCurrentViewMode] = useState<'mobile_agent' | 'admin_dashboard'>(
@@ -89,7 +118,7 @@ export default function App() {
   const [mobileTab, setMobileTab] = useState<'home' | 'sites' | 'map' | 'alerts' | 'profile'>('home');
 
   // Admin dashboard navigation tabs
-  const [adminTab, setAdminTab] = useState<'dashboard' | 'sites' | 'extinguishers' | 'agents' | 'incentives' | 'reports'>('dashboard');
+  const [adminTab, setAdminTab] = useState<'dashboard' | 'sites' | 'extinguishers' | 'agents' | 'clients' | 'incentives' | 'reports'>('dashboard');
 
   // Modals
   const [isNewVisitModalOpen, setIsNewVisitModalOpen] = useState(false);
@@ -130,6 +159,26 @@ export default function App() {
       saveStoredSettings(cloudSettings);
     });
 
+    const unsubIncidents = subscribeToIncidents((cloudIncidents) => {
+      setIncidents(cloudIncidents);
+      saveStoredIncidents(cloudIncidents);
+    });
+
+    const unsubInquiries = subscribeToInquiries((cloudInquiries) => {
+      setInquiries(cloudInquiries);
+      saveStoredInquiries(cloudInquiries);
+    });
+
+    const unsubRenewals = subscribeToRenewals((cloudRenewals) => {
+      setRenewals(cloudRenewals);
+      saveStoredRenewals(cloudRenewals);
+    });
+
+    const unsubCDAlerts = subscribeToCDAlerts((cloudAlerts) => {
+      setCivilDefenseAlerts(cloudAlerts);
+      saveStoredCivilDefenseAlerts(cloudAlerts);
+    });
+
     // 3. Fallback server sync
     const doSync = () => {
       fetchDatabaseData().then((dbData) => {
@@ -138,6 +187,10 @@ export default function App() {
           if (dbData.sites) setSites(dbData.sites.map(normalizeSite));
           if (dbData.visits) setVisits(dbData.visits);
           if (dbData.followups) setFollowups(dbData.followups);
+          if (dbData.incidents) setIncidents(dbData.incidents);
+          if (dbData.inquiries) setInquiries(dbData.inquiries);
+          if (dbData.renewals) setRenewals(dbData.renewals);
+          if (dbData.civilDefenseAlerts) setCivilDefenseAlerts(dbData.civilDefenseAlerts);
           if (dbData.settings) setSettings(dbData.settings);
         }
       });
@@ -160,6 +213,10 @@ export default function App() {
       unsubVisits();
       unsubFollowups();
       unsubSettings();
+      unsubIncidents();
+      unsubInquiries();
+      unsubRenewals();
+      unsubCDAlerts();
       clearInterval(interval);
       window.removeEventListener('focus', doSync);
       document.removeEventListener('visibilitychange', handleVisibility);
@@ -186,6 +243,22 @@ export default function App() {
   useEffect(() => {
     saveStoredSettings(settings);
   }, [settings]);
+
+  useEffect(() => {
+    saveStoredIncidents(incidents);
+  }, [incidents]);
+
+  useEffect(() => {
+    saveStoredInquiries(inquiries);
+  }, [inquiries]);
+
+  useEffect(() => {
+    saveStoredRenewals(renewals);
+  }, [renewals]);
+
+  useEffect(() => {
+    saveStoredCivilDefenseAlerts(civilDefenseAlerts);
+  }, [civilDefenseAlerts]);
 
   useEffect(() => {
     saveStoredCurrentUser(currentUser);
@@ -457,6 +530,64 @@ export default function App() {
     apiToggleUser(agentId);
   };
 
+  // Client Portal Handlers
+  const handleSaveIncident = (incident: ClientIncident) => {
+    setIncidents((prev) => [incident, ...prev.filter((i) => i.id !== incident.id)]);
+    apiSaveIncident(incident);
+  };
+
+  const handleUpdateIncident = (incidentId: string, updates: Partial<ClientIncident>) => {
+    setIncidents((prev) =>
+      prev.map((i) => (i.id === incidentId ? { ...i, ...updates } : i))
+    );
+    apiUpdateIncident(incidentId, updates);
+  };
+
+  const handleSaveInquiry = (inquiry: ClientInquiry) => {
+    setInquiries((prev) => [inquiry, ...prev.filter((i) => i.id !== inquiry.id)]);
+    apiSaveInquiry(inquiry);
+  };
+
+  const handleAnswerInquiry = (inquiryId: string, answer: string, answeredBy: string) => {
+    setInquiries((prev) =>
+      prev.map((i) =>
+        i.id === inquiryId
+          ? {
+              ...i,
+              status: 'answered',
+              answer,
+              answeredBy,
+              answeredAt: new Date().toISOString(),
+            }
+          : i
+      )
+    );
+    apiAnswerInquiry(inquiryId, answer, answeredBy);
+  };
+
+  const handleSaveRenewal = (renewal: ContractRenewalRequest) => {
+    setRenewals((prev) => [renewal, ...prev.filter((r) => r.id !== renewal.id)]);
+    apiSaveRenewal(renewal);
+  };
+
+  const handleUpdateRenewal = (
+    renewalId: string,
+    updates: Partial<ContractRenewalRequest>
+  ) => {
+    setRenewals((prev) =>
+      prev.map((r) => (r.id === renewalId ? { ...r, ...updates } : r))
+    );
+    apiUpdateRenewal(renewalId, updates);
+  };
+
+  const handleSaveCDAlert = (alert: CivilDefenseInspectionAlert) => {
+    setCivilDefenseAlerts((prev) => [
+      alert,
+      ...prev.filter((a) => a.id !== alert.id),
+    ]);
+    apiSaveCDAlert(alert);
+  };
+
   // If user is not logged in, show the login portal
   if (!currentUser) {
     return <LoginScreen users={users} onLoginSuccess={handleLoginSuccess} />;
@@ -608,7 +739,30 @@ export default function App() {
         </div>
       )}
 
-      {/* VIEW MODE 2: ADMIN / SUPERVISOR DASHBOARD (Exclusively for Admin) */}
+      {/* VIEW MODE 2: CLIENT PORTAL (For facility owners & clients) */}
+      {currentUser.role === 'client' && (
+        <div className="flex-1 max-w-6xl mx-auto w-full px-3 sm:px-6 py-6">
+          <ClientPortal
+            currentUser={currentUser}
+            linkedSite={sites.find(
+              (s) =>
+                s.id === currentUser.siteId ||
+                (currentUser.facilityName &&
+                  s.name.toLowerCase().includes(currentUser.facilityName.toLowerCase()))
+            )}
+            incidents={incidents}
+            inquiries={inquiries}
+            renewals={renewals}
+            civilDefenseAlerts={civilDefenseAlerts}
+            onSaveIncident={handleSaveIncident}
+            onSaveInquiry={handleSaveInquiry}
+            onSaveRenewal={handleSaveRenewal}
+            onSaveCDAlert={handleSaveCDAlert}
+          />
+        </div>
+      )}
+
+      {/* VIEW MODE 3: ADMIN / SUPERVISOR DASHBOARD (Exclusively for Admin) */}
       {(currentUser.role === 'admin' || currentUser.role === 'supervisor') && (
         <div className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 py-6 space-y-6">
           
@@ -618,6 +772,7 @@ export default function App() {
               { id: 'dashboard', label: 'لوحة المؤشرات والخريطة', icon: LayoutDashboard },
               { id: 'sites', label: `سجل المواقع المركزي CRM (${sites.length})`, icon: Building2 },
               { id: 'extinguishers', label: `صيانة طفايات المواقع المعتمدة (${sites.filter(s => s.approvalStatus === 'approved').length})`, icon: Flame },
+              { id: 'clients', label: `بوابة وطلبات العملاء (${users.filter(u => u.role === 'client').length})`, icon: Users },
               { id: 'agents', label: `فريق المبيعات والمندوبين (${users.filter(u => u.role === 'agent').length})`, icon: Users },
               { id: 'incentives', label: `نظام الحوافز والاعتمادات (${settings.ratePerApprovedSiteSAR} ر.س)`, icon: Award },
               { id: 'reports', label: 'التقارير المتقدمة وتصدير Excel', icon: FileSpreadsheet },
@@ -673,6 +828,24 @@ export default function App() {
               onSelectSite={(site) => setSelectedSiteForDetail(site)}
               onUpdateSiteMaintenance={handleUpdateSiteExtinguisherMaintenance}
               onOpenNewVisit={handleOpenNewVisit}
+            />
+          )}
+
+          {adminTab === 'clients' && (
+            <ClientsManagement
+              currentUser={currentUser}
+              clients={users.filter((u) => u.role === 'client')}
+              sites={sites}
+              incidents={incidents}
+              inquiries={inquiries}
+              renewals={renewals}
+              civilDefenseAlerts={civilDefenseAlerts}
+              onSaveClient={handleSaveAgent}
+              onToggleClientStatus={handleToggleAgentStatus}
+              onUpdateIncident={handleUpdateIncident}
+              onAnswerInquiry={handleAnswerInquiry}
+              onUpdateRenewal={handleUpdateRenewal}
+              onSaveCDAlert={handleSaveCDAlert}
             />
           )}
 

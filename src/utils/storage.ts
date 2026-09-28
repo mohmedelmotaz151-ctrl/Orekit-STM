@@ -59,6 +59,19 @@ export const INITIAL_USERS: User[] = [
     assignedCity: 'المملكة العربية السعودية',
     joinedDate: new Date().toISOString().split('T')[0],
   },
+  {
+    id: 'user_client_demo',
+    name: 'عبدالله السبيعي (مسؤول السلامة)',
+    username: '0500112233',
+    phone: '0500112233',
+    password: '1234',
+    role: 'client',
+    active: true,
+    targetSitesMonth: 0,
+    assignedCity: 'الرياض',
+    facilityName: 'مجمع أسواق السلام التجاري',
+    joinedDate: new Date().toISOString().split('T')[0],
+  },
 ];
 
 // Clean slate: 0 sites, 0 visits, 0 followups
@@ -78,6 +91,11 @@ export function getStoredUsers(): User[] {
     const hasAdmin = parsed.some((u: User) => u.phone === '0555335477' || u.username === '0555335477');
     if (!hasAdmin) {
       parsed.unshift(INITIAL_USERS[0]);
+      localStorage.setItem(USERS_KEY, JSON.stringify(parsed));
+    }
+    const hasClient = parsed.some((u: User) => u.phone === '0500112233' || u.username === '0500112233');
+    if (!hasClient && INITIAL_USERS[1]) {
+      parsed.push(INITIAL_USERS[1]);
       localStorage.setItem(USERS_KEY, JSON.stringify(parsed));
     }
     return parsed;

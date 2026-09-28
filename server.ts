@@ -31,10 +31,27 @@ const DEFAULT_DB = {
       assignedCity: 'المملكة العربية السعودية',
       joinedDate: new Date().toISOString().split('T')[0],
     },
+    {
+      id: 'user_client_demo',
+      name: 'عبدالله السبيعي (مسؤول السلامة)',
+      username: '0500112233',
+      phone: '0500112233',
+      password: '1234',
+      role: 'client',
+      active: true,
+      targetSitesMonth: 0,
+      assignedCity: 'الرياض',
+      facilityName: 'مجمع أسواق السلام التجاري',
+      joinedDate: new Date().toISOString().split('T')[0],
+    },
   ],
   sites: [],
   visits: [],
   followups: [],
+  incidents: [],
+  inquiries: [],
+  renewals: [],
+  civilDefenseAlerts: [],
   settings: {
     ratePerApprovedSiteSAR: 1.50,
     minTargetSites: 300,
@@ -59,6 +76,14 @@ function readDB() {
     if (!hasAdmin) {
       parsed.users = parsed.users || [];
       parsed.users.unshift(DEFAULT_DB.users[0]);
+      writeDB(parsed);
+    }
+    const hasClient = parsed.users && parsed.users.some(
+      (u: any) => u.phone === '0500112233' || u.username === '0500112233'
+    );
+    if (!hasClient && DEFAULT_DB.users[1]) {
+      parsed.users = parsed.users || [];
+      parsed.users.push(DEFAULT_DB.users[1]);
       writeDB(parsed);
     }
     return parsed;
@@ -86,6 +111,10 @@ app.get('/api/data', (req, res) => {
     sites: db.sites || [],
     visits: db.visits || [],
     followups: db.followups || [],
+    incidents: db.incidents || [],
+    inquiries: db.inquiries || [],
+    renewals: db.renewals || [],
+    civilDefenseAlerts: db.civilDefenseAlerts || [],
     settings: db.settings || DEFAULT_DB.settings,
   });
 });
@@ -186,6 +215,62 @@ app.post('/api/sync', (req, res) => {
       });
     }
 
+    // Merge incidents
+    db.incidents = db.incidents || [];
+    if (Array.isArray(clientData.incidents)) {
+      clientData.incidents.forEach((cInc: any) => {
+        if (!cInc || !cInc.id) return;
+        const idx = db.incidents.findIndex((i: any) => i.id === cInc.id);
+        if (idx >= 0) {
+          db.incidents[idx] = { ...db.incidents[idx], ...cInc };
+        } else {
+          db.incidents.unshift(cInc);
+        }
+      });
+    }
+
+    // Merge inquiries
+    db.inquiries = db.inquiries || [];
+    if (Array.isArray(clientData.inquiries)) {
+      clientData.inquiries.forEach((cInq: any) => {
+        if (!cInq || !cInq.id) return;
+        const idx = db.inquiries.findIndex((i: any) => i.id === cInq.id);
+        if (idx >= 0) {
+          db.inquiries[idx] = { ...db.inquiries[idx], ...cInq };
+        } else {
+          db.inquiries.unshift(cInq);
+        }
+      });
+    }
+
+    // Merge renewals
+    db.renewals = db.renewals || [];
+    if (Array.isArray(clientData.renewals)) {
+      clientData.renewals.forEach((cRen: any) => {
+        if (!cRen || !cRen.id) return;
+        const idx = db.renewals.findIndex((r: any) => r.id === cRen.id);
+        if (idx >= 0) {
+          db.renewals[idx] = { ...db.renewals[idx], ...cRen };
+        } else {
+          db.renewals.unshift(cRen);
+        }
+      });
+    }
+
+    // Merge civil defense alerts
+    db.civilDefenseAlerts = db.civilDefenseAlerts || [];
+    if (Array.isArray(clientData.civilDefenseAlerts)) {
+      clientData.civilDefenseAlerts.forEach((cAlert: any) => {
+        if (!cAlert || !cAlert.id) return;
+        const idx = db.civilDefenseAlerts.findIndex((a: any) => a.id === cAlert.id);
+        if (idx >= 0) {
+          db.civilDefenseAlerts[idx] = { ...db.civilDefenseAlerts[idx], ...cAlert };
+        } else {
+          db.civilDefenseAlerts.unshift(cAlert);
+        }
+      });
+    }
+
     // Settings
     if (clientData.settings) {
       db.settings = { ...db.settings, ...clientData.settings };
@@ -199,6 +284,10 @@ app.post('/api/sync', (req, res) => {
       sites: db.sites,
       visits: db.visits,
       followups: db.followups,
+      incidents: db.incidents,
+      inquiries: db.inquiries,
+      renewals: db.renewals,
+      civilDefenseAlerts: db.civilDefenseAlerts,
       settings: db.settings,
     });
   } catch (err) {
@@ -336,6 +425,157 @@ app.put('/api/settings', (req, res) => {
 
   writeDB(db);
   res.json({ success: true, settings: db.settings });
+});
+
+// =================== CLIENT PORTAL ENDPOINTS ===================
+
+// POST save / create incident
+app.post('/api/incidents', (req, res) => {
+  const incident = req.body;
+  if (!incident || !incident.id || !incident.title) {
+    return res.status(400).json({ error: 'Incident details are required' });
+  }
+
+  const db = readDB();
+  db.incidents = db.incidents || [];
+  const idx = db.incidents.findIndex((i: any) => i.id === incident.id);
+  if (idx >= 0) {
+    db.incidents[idx] = { ...db.incidents[idx], ...incident };
+  } else {
+    db.incidents.unshift(incident);
+  }
+
+  writeDB(db);
+  res.json({ success: true, incident, incidents: db.incidents });
+});
+
+// PUT update incident status or technician notes
+app.put('/api/incidents/:id', (req, res) => {
+  const { id } = req.params;
+  const updates = req.body || {};
+  const db = readDB();
+  db.incidents = db.incidents || [];
+
+  const idx = db.incidents.findIndex((i: any) => i.id === id);
+  if (idx >= 0) {
+    db.incidents[idx] = { ...db.incidents[idx], ...updates };
+    writeDB(db);
+    return res.json({ success: true, incident: db.incidents[idx], incidents: db.incidents });
+  }
+  res.status(404).json({ error: 'Incident not found' });
+});
+
+// POST save inquiry
+app.post('/api/inquiries', (req, res) => {
+  const inquiry = req.body;
+  if (!inquiry || !inquiry.id || !inquiry.question) {
+    return res.status(400).json({ error: 'Inquiry details are required' });
+  }
+
+  const db = readDB();
+  db.inquiries = db.inquiries || [];
+  const idx = db.inquiries.findIndex((i: any) => i.id === inquiry.id);
+  if (idx >= 0) {
+    db.inquiries[idx] = { ...db.inquiries[idx], ...inquiry };
+  } else {
+    db.inquiries.unshift(inquiry);
+  }
+
+  writeDB(db);
+  res.json({ success: true, inquiry, inquiries: db.inquiries });
+});
+
+// PUT answer inquiry
+app.put('/api/inquiries/:id/answer', (req, res) => {
+  const { id } = req.params;
+  const { answer, answeredBy } = req.body || {};
+  const db = readDB();
+  db.inquiries = db.inquiries || [];
+
+  const idx = db.inquiries.findIndex((i: any) => i.id === id);
+  if (idx >= 0) {
+    db.inquiries[idx] = {
+      ...db.inquiries[idx],
+      status: 'answered',
+      answer,
+      answeredBy: answeredBy || 'مهندس السلامة - أوريكيت',
+      answeredAt: new Date().toISOString(),
+    };
+    writeDB(db);
+    return res.json({ success: true, inquiry: db.inquiries[idx], inquiries: db.inquiries });
+  }
+  res.status(404).json({ error: 'Inquiry not found' });
+});
+
+// POST save contract renewal request
+app.post('/api/renewals', (req, res) => {
+  const renewal = req.body;
+  if (!renewal || !renewal.id) {
+    return res.status(400).json({ error: 'Renewal request details are required' });
+  }
+
+  const db = readDB();
+  db.renewals = db.renewals || [];
+  const idx = db.renewals.findIndex((r: any) => r.id === renewal.id);
+  if (idx >= 0) {
+    db.renewals[idx] = { ...db.renewals[idx], ...renewal };
+  } else {
+    db.renewals.unshift(renewal);
+  }
+
+  writeDB(db);
+  res.json({ success: true, renewal, renewals: db.renewals });
+});
+
+// PUT update contract renewal request
+app.put('/api/renewals/:id', (req, res) => {
+  const { id } = req.params;
+  const updates = req.body || {};
+  const db = readDB();
+  db.renewals = db.renewals || [];
+
+  const idx = db.renewals.findIndex((r: any) => r.id === id);
+  if (idx >= 0) {
+    db.renewals[idx] = { ...db.renewals[idx], ...updates };
+    writeDB(db);
+    return res.json({ success: true, renewal: db.renewals[idx], renewals: db.renewals });
+  }
+  res.status(404).json({ error: 'Renewal request not found' });
+});
+
+// POST / PUT civil defense alert
+app.post('/api/civil_defense_alerts', (req, res) => {
+  const alert = req.body;
+  if (!alert || !alert.id) {
+    return res.status(400).json({ error: 'Civil defense alert details required' });
+  }
+
+  const db = readDB();
+  db.civilDefenseAlerts = db.civilDefenseAlerts || [];
+  const idx = db.civilDefenseAlerts.findIndex((a: any) => a.id === alert.id);
+  if (idx >= 0) {
+    db.civilDefenseAlerts[idx] = { ...db.civilDefenseAlerts[idx], ...alert };
+  } else {
+    db.civilDefenseAlerts.unshift(alert);
+  }
+
+  writeDB(db);
+  res.json({ success: true, alert, civilDefenseAlerts: db.civilDefenseAlerts });
+});
+
+app.put('/api/civil_defense_alerts/:id', (req, res) => {
+  const { id } = req.params;
+  const updates = req.body || {};
+  const db = readDB();
+  db.civilDefenseAlerts = db.civilDefenseAlerts || [];
+
+  const idx = db.civilDefenseAlerts.findIndex((a: any) => a.id === id);
+  if (idx >= 0) {
+    db.civilDefenseAlerts[idx] = { ...db.civilDefenseAlerts[idx], ...updates };
+    writeDB(db);
+    return res.json({ success: true, alert: db.civilDefenseAlerts[idx], civilDefenseAlerts: db.civilDefenseAlerts });
+  }
+  res.status(404).json({ error: 'Civil defense alert not found' });
 });
 
 // =================== VITE & STATIC FILES ===================

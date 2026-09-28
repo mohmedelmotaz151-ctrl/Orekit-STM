@@ -301,3 +301,149 @@ export async function fsSaveSettings(settings: IncentiveSettings): Promise<void>
     handleFirestoreError(error, OperationType.WRITE, path);
   }
 }
+
+/**
+ * Client Portal Firestore Subscriptions
+ */
+export function subscribeToIncidents(callback: (incidents: ClientIncident[]) => void): () => void {
+  const colRef = collection(db, INCIDENTS_COL);
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const items: ClientIncident[] = [];
+      snapshot.forEach((d) => items.push(d.data() as ClientIncident));
+      callback(items);
+    },
+    (error) => console.warn('Firestore incidents sync notice:', error)
+  );
+}
+
+export async function fsSaveIncident(incident: ClientIncident): Promise<void> {
+  const path = `${INCIDENTS_COL}/${incident.id}`;
+  try {
+    const cleaned = cleanForFirestore(incident);
+    const docRef = doc(db, INCIDENTS_COL, incident.id);
+    await setDoc(docRef, cleaned, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function fsUpdateIncident(
+  incidentId: string,
+  updates: Partial<ClientIncident>
+): Promise<void> {
+  const path = `${INCIDENTS_COL}/${incidentId}`;
+  try {
+    const cleaned = cleanForFirestore(updates);
+    const docRef = doc(db, INCIDENTS_COL, incidentId);
+    await updateDoc(docRef, cleaned);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}
+
+export function subscribeToInquiries(callback: (inquiries: ClientInquiry[]) => void): () => void {
+  const colRef = collection(db, INQUIRIES_COL);
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const items: ClientInquiry[] = [];
+      snapshot.forEach((d) => items.push(d.data() as ClientInquiry));
+      callback(items);
+    },
+    (error) => console.warn('Firestore inquiries sync notice:', error)
+  );
+}
+
+export async function fsSaveInquiry(inquiry: ClientInquiry): Promise<void> {
+  const path = `${INQUIRIES_COL}/${inquiry.id}`;
+  try {
+    const cleaned = cleanForFirestore(inquiry);
+    const docRef = doc(db, INQUIRIES_COL, inquiry.id);
+    await setDoc(docRef, cleaned, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function fsAnswerInquiry(
+  inquiryId: string,
+  answer: string,
+  answeredBy: string
+): Promise<void> {
+  const path = `${INQUIRIES_COL}/${inquiryId}`;
+  try {
+    const docRef = doc(db, INQUIRIES_COL, inquiryId);
+    await updateDoc(docRef, cleanForFirestore({
+      status: 'answered',
+      answer,
+      answeredBy,
+      answeredAt: new Date().toISOString(),
+    }));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}
+
+export function subscribeToRenewals(callback: (renewals: ContractRenewalRequest[]) => void): () => void {
+  const colRef = collection(db, RENEWALS_COL);
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const items: ContractRenewalRequest[] = [];
+      snapshot.forEach((d) => items.push(d.data() as ContractRenewalRequest));
+      callback(items);
+    },
+    (error) => console.warn('Firestore renewals sync notice:', error)
+  );
+}
+
+export async function fsSaveRenewal(renewal: ContractRenewalRequest): Promise<void> {
+  const path = `${RENEWALS_COL}/${renewal.id}`;
+  try {
+    const cleaned = cleanForFirestore(renewal);
+    const docRef = doc(db, RENEWALS_COL, renewal.id);
+    await setDoc(docRef, cleaned, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function fsUpdateRenewal(
+  renewalId: string,
+  updates: Partial<ContractRenewalRequest>
+): Promise<void> {
+  const path = `${RENEWALS_COL}/${renewalId}`;
+  try {
+    const cleaned = cleanForFirestore(updates);
+    const docRef = doc(db, RENEWALS_COL, renewalId);
+    await updateDoc(docRef, cleaned);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}
+
+export function subscribeToCDAlerts(callback: (alerts: CivilDefenseInspectionAlert[]) => void): () => void {
+  const colRef = collection(db, CD_ALERTS_COL);
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const items: CivilDefenseInspectionAlert[] = [];
+      snapshot.forEach((d) => items.push(d.data() as CivilDefenseInspectionAlert));
+      callback(items);
+    },
+    (error) => console.warn('Firestore CD alerts sync notice:', error)
+  );
+}
+
+export async function fsSaveCDAlert(alert: CivilDefenseInspectionAlert): Promise<void> {
+  const path = `${CD_ALERTS_COL}/${alert.id}`;
+  try {
+    const cleaned = cleanForFirestore(alert);
+    const docRef = doc(db, CD_ALERTS_COL, alert.id);
+    await setDoc(docRef, cleaned, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}

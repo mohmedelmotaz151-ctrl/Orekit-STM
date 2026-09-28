@@ -3,7 +3,11 @@ import {
   Site, 
   Visit, 
   FollowUpLog, 
-  IncentiveSettings 
+  IncentiveSettings,
+  ClientIncident,
+  ClientInquiry,
+  ContractRenewalRequest,
+  CivilDefenseInspectionAlert
 } from '../types';
 import { 
   getStoredUsers, 
@@ -16,6 +20,14 @@ import {
   saveStoredFollowups, 
   getStoredSettings, 
   saveStoredSettings,
+  getStoredIncidents,
+  saveStoredIncidents,
+  getStoredInquiries,
+  saveStoredInquiries,
+  getStoredRenewals,
+  saveStoredRenewals,
+  getStoredCivilDefenseAlerts,
+  saveStoredCivilDefenseAlerts,
   normalizeSite
 } from './storage';
 import {
@@ -26,6 +38,13 @@ import {
   fsSaveVisit,
   fsSaveFollowUp,
   fsSaveSettings,
+  fsSaveIncident,
+  fsUpdateIncident,
+  fsSaveInquiry,
+  fsAnswerInquiry,
+  fsSaveRenewal,
+  fsUpdateRenewal,
+  fsSaveCDAlert
 } from './firestoreService';
 
 /**
@@ -39,12 +58,20 @@ export async function syncDatabaseData(): Promise<{
   sites: Site[];
   visits: Visit[];
   followups: FollowUpLog[];
+  incidents: ClientIncident[];
+  inquiries: ClientInquiry[];
+  renewals: ContractRenewalRequest[];
+  civilDefenseAlerts: CivilDefenseInspectionAlert[];
   settings: IncentiveSettings;
 }> {
   const localUsers = getStoredUsers();
   const localSites = getStoredSites();
   const localVisits = getStoredVisits();
   const localFollowups = getStoredFollowups();
+  const localIncidents = getStoredIncidents();
+  const localInquiries = getStoredInquiries();
+  const localRenewals = getStoredRenewals();
+  const localAlerts = getStoredCivilDefenseAlerts();
   const localSettings = getStoredSettings();
 
   try {
@@ -56,6 +83,10 @@ export async function syncDatabaseData(): Promise<{
         sites: localSites,
         visits: localVisits,
         followups: localFollowups,
+        incidents: localIncidents,
+        inquiries: localInquiries,
+        renewals: localRenewals,
+        civilDefenseAlerts: localAlerts,
         settings: localSettings,
       }),
     });
@@ -68,6 +99,10 @@ export async function syncDatabaseData(): Promise<{
         saveStoredSites(normalizedSites);
         saveStoredVisits(merged.visits || []);
         saveStoredFollowups(merged.followups || []);
+        if (merged.incidents) saveStoredIncidents(merged.incidents);
+        if (merged.inquiries) saveStoredInquiries(merged.inquiries);
+        if (merged.renewals) saveStoredRenewals(merged.renewals);
+        if (merged.civilDefenseAlerts) saveStoredCivilDefenseAlerts(merged.civilDefenseAlerts);
         if (merged.settings) saveStoredSettings(merged.settings);
 
         return {
@@ -75,6 +110,10 @@ export async function syncDatabaseData(): Promise<{
           sites: normalizedSites,
           visits: merged.visits || [],
           followups: merged.followups || [],
+          incidents: merged.incidents || localIncidents,
+          inquiries: merged.inquiries || localInquiries,
+          renewals: merged.renewals || localRenewals,
+          civilDefenseAlerts: merged.civilDefenseAlerts || localAlerts,
           settings: merged.settings || localSettings,
         };
       }
@@ -89,6 +128,10 @@ export async function syncDatabaseData(): Promise<{
     sites: localSites,
     visits: localVisits,
     followups: localFollowups,
+    incidents: localIncidents,
+    inquiries: localInquiries,
+    renewals: localRenewals,
+    civilDefenseAlerts: localAlerts,
     settings: localSettings,
   };
 }
@@ -327,5 +370,198 @@ export async function apiSaveSettings(settings: IncentiveSettings): Promise<void
     });
   } catch (e) {
     console.error('Failed to save settings to API database:', e);
+  }
+}
+
+// =================== CLIENT PORTAL API FUNCTIONS ===================
+
+export async function apiSaveIncident(incident: ClientIncident): Promise<void> {
+  const current = getStoredIncidents();
+  const idx = current.findIndex((i) => i.id === incident.id);
+  if (idx >= 0) {
+    current[idx] = incident;
+  } else {
+    current.unshift(incident);
+  }
+  saveStoredIncidents(current);
+
+  // Cloud Firestore
+  fsSaveIncident(incident).catch((e) => console.warn('Firestore incident save warning:', e));
+
+  // Server API
+  try {
+    await fetch('/api/incidents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(incident),
+    });
+  } catch (e) {
+    console.error('Failed to save incident to API database:', e);
+  }
+}
+
+export async function apiUpdateIncident(
+  incidentId: string,
+  updates: Partial<ClientIncident>
+): Promise<void> {
+  const current = getStoredIncidents();
+  const idx = current.findIndex((i) => i.id === incidentId);
+  if (idx >= 0) {
+    current[idx] = { ...current[idx], ...updates };
+    saveStoredIncidents(current);
+  }
+
+  // Cloud Firestore
+  fsUpdateIncident(incidentId, updates).catch((e) =>
+    console.warn('Firestore incident update warning:', e)
+  );
+
+  // Server API
+  try {
+    await fetch(`/api/incidents/${incidentId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+  } catch (e) {
+    console.error('Failed to update incident on API database:', e);
+  }
+}
+
+export async function apiSaveInquiry(inquiry: ClientInquiry): Promise<void> {
+  const current = getStoredInquiries();
+  const idx = current.findIndex((i) => i.id === inquiry.id);
+  if (idx >= 0) {
+    current[idx] = inquiry;
+  } else {
+    current.unshift(inquiry);
+  }
+  saveStoredInquiries(current);
+
+  // Cloud Firestore
+  fsSaveInquiry(inquiry).catch((e) => console.warn('Firestore inquiry save warning:', e));
+
+  // Server API
+  try {
+    await fetch('/api/inquiries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(inquiry),
+    });
+  } catch (e) {
+    console.error('Failed to save inquiry to API database:', e);
+  }
+}
+
+export async function apiAnswerInquiry(
+  inquiryId: string,
+  answer: string,
+  answeredBy: string
+): Promise<void> {
+  const current = getStoredInquiries();
+  const idx = current.findIndex((i) => i.id === inquiryId);
+  if (idx >= 0) {
+    current[idx] = {
+      ...current[idx],
+      status: 'answered',
+      answer,
+      answeredBy,
+      answeredAt: new Date().toISOString(),
+    };
+    saveStoredInquiries(current);
+  }
+
+  // Cloud Firestore
+  fsAnswerInquiry(inquiryId, answer, answeredBy).catch((e) =>
+    console.warn('Firestore inquiry answer warning:', e)
+  );
+
+  // Server API
+  try {
+    await fetch(`/api/inquiries/${inquiryId}/answer`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answer, answeredBy }),
+    });
+  } catch (e) {
+    console.error('Failed to answer inquiry on API database:', e);
+  }
+}
+
+export async function apiSaveRenewal(renewal: ContractRenewalRequest): Promise<void> {
+  const current = getStoredRenewals();
+  const idx = current.findIndex((r) => r.id === renewal.id);
+  if (idx >= 0) {
+    current[idx] = renewal;
+  } else {
+    current.unshift(renewal);
+  }
+  saveStoredRenewals(current);
+
+  // Cloud Firestore
+  fsSaveRenewal(renewal).catch((e) => console.warn('Firestore renewal save warning:', e));
+
+  // Server API
+  try {
+    await fetch('/api/renewals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(renewal),
+    });
+  } catch (e) {
+    console.error('Failed to save renewal to API database:', e);
+  }
+}
+
+export async function apiUpdateRenewal(
+  renewalId: string,
+  updates: Partial<ContractRenewalRequest>
+): Promise<void> {
+  const current = getStoredRenewals();
+  const idx = current.findIndex((r) => r.id === renewalId);
+  if (idx >= 0) {
+    current[idx] = { ...current[idx], ...updates };
+    saveStoredRenewals(current);
+  }
+
+  // Cloud Firestore
+  fsUpdateRenewal(renewalId, updates).catch((e) =>
+    console.warn('Firestore renewal update warning:', e)
+  );
+
+  // Server API
+  try {
+    await fetch(`/api/renewals/${renewalId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+  } catch (e) {
+    console.error('Failed to update renewal on API database:', e);
+  }
+}
+
+export async function apiSaveCDAlert(alert: CivilDefenseInspectionAlert): Promise<void> {
+  const current = getStoredCivilDefenseAlerts();
+  const idx = current.findIndex((a) => a.id === alert.id);
+  if (idx >= 0) {
+    current[idx] = alert;
+  } else {
+    current.unshift(alert);
+  }
+  saveStoredCivilDefenseAlerts(current);
+
+  // Cloud Firestore
+  fsSaveCDAlert(alert).catch((e) => console.warn('Firestore CD alert save warning:', e));
+
+  // Server API
+  try {
+    await fetch('/api/civil_defense_alerts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(alert),
+    });
+  } catch (e) {
+    console.error('Failed to save civil defense alert to API database:', e);
   }
 }

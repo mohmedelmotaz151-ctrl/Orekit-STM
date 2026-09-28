@@ -87,10 +87,34 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         {/* Login Card */}
         <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl space-y-5">
           <div className="space-y-1">
-            <h2 className="text-lg font-bold text-white">تسجيل الدخول</h2>
+            <h2 className="text-lg font-bold text-white">تسجيل الدخول للمنظومة</h2>
             <p className="text-xs text-slate-400">
               أدخل رقم الجوال أو اسم المستخدم المسجل وكلمة المرور
             </p>
+          </div>
+
+          {/* Role Quick Selection / Demo Helpers */}
+          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-950/80 rounded-2xl border border-slate-800 text-xs">
+            <button
+              type="button"
+              onClick={() => {
+                setPhoneOrUsername('0555335477');
+                setPassword('5520');
+              }}
+              className="py-2 px-2.5 rounded-xl text-center transition hover:bg-slate-800/80 text-orange-400 font-bold"
+            >
+              دخول الإدارة (0555335477)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPhoneOrUsername('0500112233');
+                setPassword('1234');
+              }}
+              className="py-2 px-2.5 rounded-xl text-center transition hover:bg-slate-800/80 text-emerald-400 font-bold"
+            >
+              دخول العميل (بوابة المنشآت)
+            </button>
           </div>
 
           {errorMsg && (

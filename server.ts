@@ -22,8 +22,8 @@ const DEFAULT_DB = {
     {
       id: 'user_admin_oriket',
       name: 'إدارة شركة أوريكيت',
-      username: '0555335477',
-      phone: '0555335477',
+      username: '0555334577',
+      phone: '0555334577',
       password: '5520',
       role: 'admin',
       active: true,
@@ -69,20 +69,26 @@ function readDB() {
     }
     const raw = fs.readFileSync(DB_FILE, 'utf-8');
     const parsed = JSON.parse(raw);
-    // Ensure admin user always exists
-    const hasAdmin = parsed.users && parsed.users.some(
-      (u: any) => u.phone === '0555335477' || u.username === '0555335477'
+    parsed.users = parsed.users || [];
+
+    // Ensure admin user with 0555334577 (or previous 0555335477) always exists and is updated
+    const adminIdx = parsed.users.findIndex(
+      (u: any) => u.phone === '0555334577' || u.username === '0555334577' || u.phone === '0555335477' || u.username === '0555335477' || u.id === 'user_admin_oriket'
     );
-    if (!hasAdmin) {
-      parsed.users = parsed.users || [];
+    if (adminIdx >= 0) {
+      if (parsed.users[adminIdx].phone !== '0555334577' || parsed.users[adminIdx].username !== '0555334577') {
+        parsed.users[adminIdx].phone = '0555334577';
+        parsed.users[adminIdx].username = '0555334577';
+        writeDB(parsed);
+      }
+    } else {
       parsed.users.unshift(DEFAULT_DB.users[0]);
       writeDB(parsed);
     }
-    const hasClient = parsed.users && parsed.users.some(
+    const hasClient = parsed.users.some(
       (u: any) => u.phone === '0500112233' || u.username === '0500112233'
     );
     if (!hasClient && DEFAULT_DB.users[1]) {
-      parsed.users = parsed.users || [];
       parsed.users.push(DEFAULT_DB.users[1]);
       writeDB(parsed);
     }

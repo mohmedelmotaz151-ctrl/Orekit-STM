@@ -3,17 +3,17 @@ import { SITE_STATUS_MAP } from './date';
 
 // Central Company Contact Info for Oriket Safety
 export const ORIKET_COMPANY_NAME = 'شركة أوريكيت للسلامة والحماية من الحريق';
-export const ORIKET_COMPANY_PHONE = '0555335477';
-export const ORIKET_COMPANY_INTERNATIONAL_PHONE = '966555335477';
+export const ORIKET_COMPANY_PHONE = '0555334577';
+export const ORIKET_COMPANY_INTERNATIONAL_PHONE = '966555334577';
 
 /**
  * Normalizes any Saudi or international phone number into a valid WhatsApp wa.me phone number format.
  * Examples:
- *   "0555335477"      -> "966555335477"
- *   "555335477"       -> "966555335477"
- *   "+966555335477"   -> "966555335477"
- *   "00966555335477"  -> "966555335477"
- *   "055 533 5477"    -> "966555335477"
+ *   "0555334577"      -> "966555334577"
+ *   "555334577"       -> "966555334577"
+ *   "+966555334577"   -> "966555334577"
+ *   "00966555334577"  -> "966555334577"
+ *   "055 533 4577"    -> "966555334577"
  */
 export function formatSaudiWhatsAppNumber(rawPhone: string): string {
   if (!rawPhone) return '';
@@ -146,7 +146,7 @@ export function generateSiteWhatsAppMessage(
 }
 
 /**
- * Generates a complete operational WhatsApp dispatch report addressed to Oriket Company Management (0555335477).
+ * Generates a complete operational WhatsApp dispatch report addressed to Oriket Company Management (0555334577).
  */
 export function generateCompanyReportWhatsAppMessage(
   site: Site,

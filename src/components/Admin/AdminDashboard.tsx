@@ -16,7 +16,16 @@ import {
   Eye,
   FileSpreadsheet
 } from 'lucide-react';
-import { User, Site, Visit, IncentiveSettings, SAUDI_CITIES } from '../../types';
+import { 
+  User, 
+  Site, 
+  Visit, 
+  IncentiveSettings, 
+  SAUDI_CITIES,
+  ClientIncident,
+  ClientInquiry,
+  ContractRenewalRequest
+} from '../../types';
 import { LeafletMap } from '../Common/LeafletMap';
 import { SITE_STATUS_MAP, getContractExpiryBadge, formatDateArabic, getDaysRemaining } from '../../utils/date';
 
@@ -26,9 +35,12 @@ interface AdminDashboardProps {
   visits: Visit[];
   agents: User[];
   settings: IncentiveSettings;
+  incidents?: ClientIncident[];
+  inquiries?: ClientInquiry[];
+  renewals?: ContractRenewalRequest[];
   onSelectSite: (site: Site) => void;
   onOpenNewVisit: (site?: Site) => void;
-  onNavigateTab: (tab: 'dashboard' | 'sites' | 'extinguishers' | 'agents' | 'incentives' | 'reports') => void;
+  onNavigateTab: (tab: 'dashboard' | 'sites' | 'extinguishers' | 'clients' | 'agents' | 'incentives' | 'reports') => void;
   onApproveSite: (siteId: string, approved: boolean, reason?: string) => void;
 }
 
@@ -38,6 +50,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   visits,
   agents,
   settings,
+  incidents = [],
+  inquiries = [],
+  renewals = [],
   onSelectSite,
   onOpenNewVisit,
   onNavigateTab,
@@ -45,6 +60,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   const [mapFilterStatus, setMapFilterStatus] = useState<string>('all');
   const [selectedCity, setSelectedCity] = useState<string>('all');
+
+  // Active client emergency requests for admin
+  const activeIncidents = incidents.filter(
+    (i) => i.status !== 'resolved' && i.status !== 'closed'
+  );
+  const urgentIncidents = activeIncidents.filter(
+    (i) => i.priority === 'urgent' || i.priority === 'high'
+  );
+  const pendingRenewals = renewals.filter((r) => r.status === 'pending');
+  const pendingInquiries = inquiries.filter((inq) => inq.status === 'pending');
 
   // Pending approval sites
   const pendingSites = sites.filter((s) => s.approvalStatus === 'pending');
@@ -235,6 +260,106 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
 
       </div>
+
+      {/* EMERGENCY CLIENT MAINTENANCE REQUESTS (Audible Alarm & Urgent Tickets for Admin) */}
+      {activeIncidents.length > 0 && (
+        <div className="bg-gradient-to-r from-red-950/70 via-rose-950/60 to-slate-900 border-2 border-red-600/80 p-5 rounded-3xl space-y-3.5 shadow-2xl shadow-red-950/50">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center font-bold text-lg shadow-lg shadow-red-950 animate-bounce">
+                🚨
+              </div>
+              <div>
+                <h3 className="font-black text-base text-white flex items-center gap-2">
+                  <span>طلبات صيانة وبلاغات طوارئ فورية من العملاء ({activeIncidents.length})</span>
+                  {urgentIncidents.length > 0 && (
+                    <span className="bg-red-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                      {urgentIncidents.length} طوارئ قصوى
+                    </span>
+                  )}
+                </h3>
+                <p className="text-xs text-red-200/90">
+                  تتطلب استجابة سريعة وتوجيه فني صيانة أو اتصال بالمندوب والعميل فوراً
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => onNavigateTab('clients')}
+              className="text-xs text-red-200 hover:text-white font-bold bg-red-900/60 hover:bg-red-800 px-3.5 py-1.5 rounded-xl border border-red-700 transition"
+            >
+              فتح بوابة إدارة طلبات العملاء ➔
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            {activeIncidents.slice(0, 3).map((incident) => {
+              const isUrgent = incident.priority === 'urgent' || incident.priority === 'high';
+              const targetSite = sites.find((s) => s.id === incident.siteId);
+
+              return (
+                <div
+                  key={incident.id}
+                  onClick={() => {
+                    if (targetSite) onSelectSite(targetSite);
+                  }}
+                  className={`p-3.5 rounded-2xl border transition cursor-pointer flex flex-col justify-between gap-2.5 ${
+                    isUrgent
+                      ? 'bg-slate-950/90 border-red-600 hover:border-red-400'
+                      : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="font-bold text-sm text-white">{incident.siteName}</h4>
+                      <span className="text-[11px] text-slate-300 block">
+                        العميل: {incident.clientName} ({incident.clientPhone})
+                      </span>
+                      {incident.assignedAgentName && (
+                        <span className="text-[10px] text-orange-400 block mt-0.5">
+                          المندوب المسؤول: <strong>{incident.assignedAgentName}</strong>
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                      isUrgent
+                        ? 'bg-red-600 text-white border-red-500'
+                        : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                    }`}>
+                      {isUrgent ? 'طوارئ عاجلة' : 'صيانة'}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-slate-300 bg-slate-900/90 p-2 rounded-xl border border-slate-850">
+                    <span className="font-bold text-red-300 block">{incident.title}</span>
+                    <p className="line-clamp-2 text-slate-400 text-[11px] mt-0.5">{incident.description}</p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-xs">
+                    <a
+                      href={`tel:${incident.clientPhone}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-emerald-400 hover:text-emerald-300 font-bold text-[11px] flex items-center gap-1"
+                    >
+                      <Phone className="w-3 h-3" />
+                      <span>اتصال هاتفي</span>
+                    </a>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onNavigateTab('clients');
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-bold text-[11px]"
+                    >
+                      توجيه فني الصيانة
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* PENDING APPROVALS QUEUE (Preventing Fraud / Anti-Tamper Verification) */}
       {pendingSites.length > 0 && (

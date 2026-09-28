@@ -266,13 +266,35 @@ export default function App() {
     saveStoredCurrentUser(currentUser);
   }, [currentUser]);
 
-  // Counts for alerts
+  // Counts for alerts (including urgent client tickets and maintenance requests)
   const totalExpiringContracts = sites.filter(
     (s) => s?.contract?.hasContract === 'yes' && s?.contract?.endDate && (getDaysRemaining(s.contract.endDate) || 999) <= 60
   ).length;
 
   const totalUrgentSites = sites.filter((s) => s?.status === 'urgent_maintenance').length;
-  const totalAlertsCount = totalExpiringContracts + totalUrgentSites;
+
+  // Client requests count tailored to role:
+  // For Admin: all active pending tickets
+  // For Agent: tickets belonging to their added/assigned sites
+  const activeClientRequestsCount = currentUser
+    ? currentUser.role === 'admin'
+      ? incidents.filter((i) => i.status !== 'resolved' && i.status !== 'closed').length +
+        renewals.filter((r) => r.status === 'pending').length
+      : incidents.filter((i) => {
+          if (i.status === 'resolved' || i.status === 'closed') return false;
+          if (i.assignedAgentId === currentUser.id || i.assignedAgentName === currentUser.name) return true;
+          const site = sites.find((s) => s.id === i.siteId);
+          return site && (site.createdByAgentId === currentUser.id || site.createdByAgentName === currentUser.name);
+        }).length +
+        renewals.filter((r) => {
+          if (r.status !== 'pending') return false;
+          if (r.assignedAgentId === currentUser.id || r.assignedAgentName === currentUser.name) return true;
+          const site = sites.find((s) => s.id === r.siteId);
+          return site && (site.createdByAgentId === currentUser.id || site.createdByAgentName === currentUser.name);
+        }).length
+    : 0;
+
+  const totalAlertsCount = totalExpiringContracts + totalUrgentSites + activeClientRequestsCount;
 
   // Handlers for authentication
   const handleLoginSuccess = (user: User) => {

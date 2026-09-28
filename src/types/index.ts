@@ -246,6 +246,8 @@ export interface ClientIncident {
   clientUserId: string;
   clientName: string;
   clientPhone: string;
+  assignedAgentId?: string;
+  assignedAgentName?: string;
   title: string;
   category: 'extinguisher' | 'alarm' | 'pumps' | 'sprinklers' | 'emergency_light' | 'other';
   priority: 'low' | 'medium' | 'high' | 'urgent';
@@ -267,6 +269,8 @@ export interface ClientInquiry {
   clientUserId: string;
   clientName: string;
   clientPhone: string;
+  assignedAgentId?: string;
+  assignedAgentName?: string;
   subject: string;
   category: 'safety_regulations' | 'civil_defense' | 'extinguishers' | 'pricing' | 'technical';
   question: string;
@@ -285,6 +289,8 @@ export interface ContractRenewalRequest {
   clientUserId: string;
   clientName: string;
   clientPhone: string;
+  assignedAgentId?: string;
+  assignedAgentName?: string;
   currentContractEndDate?: string;
   requestedDurationYears: number; // 1 or 2 years
   notes?: string;

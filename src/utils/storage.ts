@@ -44,14 +44,14 @@ export const INITIAL_SETTINGS: IncentiveSettings = {
 };
 
 // ONLY the Admin user requested by user:
-// الهاتف / اسم المستخدم: 0555335477
+// الهاتف / اسم المستخدم: 0555334577
 // كلمة المرور: 5520
 export const INITIAL_USERS: User[] = [
   {
     id: 'user_admin_oriket',
     name: 'إدارة شركة أوريكيت',
-    username: '0555335477',
-    phone: '0555335477',
+    username: '0555334577',
+    phone: '0555334577',
     password: '5520',
     role: 'admin',
     active: true,
@@ -87,9 +87,13 @@ export function getStoredUsers(): User[] {
       return INITIAL_USERS;
     }
     const parsed = JSON.parse(raw);
-    // Ensure our admin user with 0555335477 / 5520 always exists
-    const hasAdmin = parsed.some((u: User) => u.phone === '0555335477' || u.username === '0555335477');
-    if (!hasAdmin) {
+    // Ensure our admin user with 0555334577 (or previous 0555335477) / 5520 always exists and is up to date
+    const adminIdx = parsed.findIndex((u: User) => u.phone === '0555334577' || u.username === '0555334577' || u.phone === '0555335477' || u.username === '0555335477' || u.id === 'user_admin_oriket');
+    if (adminIdx >= 0) {
+      parsed[adminIdx].phone = '0555334577';
+      parsed[adminIdx].username = '0555334577';
+      localStorage.setItem(USERS_KEY, JSON.stringify(parsed));
+    } else {
       parsed.unshift(INITIAL_USERS[0]);
       localStorage.setItem(USERS_KEY, JSON.stringify(parsed));
     }

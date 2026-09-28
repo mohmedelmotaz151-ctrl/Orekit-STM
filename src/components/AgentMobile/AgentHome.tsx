@@ -16,7 +16,7 @@ import {
   PhoneCall,
   Flame
 } from 'lucide-react';
-import { User, Site, Visit, IncentiveSettings } from '../../types';
+import { User, Site, Visit, IncentiveSettings, ClientIncident } from '../../types';
 import { calculateAgentIncentives } from '../../utils/storage';
 import { getContractExpiryBadge, getExtinguisherExpiryBadge, getDaysRemaining } from '../../utils/date';
 
@@ -25,6 +25,7 @@ interface AgentHomeProps {
   sites: Site[];
   visits: Visit[];
   settings: IncentiveSettings;
+  incidents?: ClientIncident[];
   onOpenNewVisit: (siteToVisit?: Site) => void;
   onNavigateTab: (tab: 'home' | 'sites' | 'map' | 'alerts' | 'profile') => void;
   onSelectSite: (site: Site) => void;
@@ -35,6 +36,7 @@ export const AgentHome: React.FC<AgentHomeProps> = ({
   sites,
   visits,
   settings,
+  incidents = [],
   onOpenNewVisit,
   onNavigateTab,
   onSelectSite,
@@ -43,6 +45,17 @@ export const AgentHome: React.FC<AgentHomeProps> = ({
     (s) => s.createdByAgentId === currentUser.id || 
            (s.createdByAgentName && s.createdByAgentName === currentUser.name)
   );
+  const agentSiteIds = new Set(agentSites.map((s) => s.id));
+
+  // Active client emergency requests for this agent's sites
+  const agentIncidents = incidents.filter(
+    (i) => i.status !== 'resolved' && i.status !== 'closed' && (
+      i.assignedAgentId === currentUser.id ||
+      (i.assignedAgentName && i.assignedAgentName === currentUser.name) ||
+      agentSiteIds.has(i.siteId)
+    )
+  );
+
   const agentVisits = visits.filter(
     (v) => v.agentId === currentUser.id || 
            (v.agentName && v.agentName === currentUser.name)
@@ -198,10 +211,44 @@ export const AgentHome: React.FC<AgentHomeProps> = ({
             onClick={() => onNavigateTab('alerts')}
             className="text-xs text-orange-400 hover:text-orange-300 font-medium flex items-center gap-0.5"
           >
-            <span>عرض الكل ({expiringSites.length + civilDefenseSites.length + followUpSites.length})</span>
+            <span>عرض الكل ({agentIncidents.length + expiringSites.length + civilDefenseSites.length + followUpSites.length})</span>
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
         </div>
+
+        {/* Priority Card 0: Real-time Client Emergency Maintenance Requests */}
+        {agentIncidents.length > 0 && (
+          <div
+            onClick={() => onNavigateTab('alerts')}
+            className="p-4 rounded-2xl bg-gradient-to-r from-red-950 via-rose-950/80 to-slate-900 border-2 border-red-500/80 text-right cursor-pointer hover:border-red-400 transition space-y-2 shadow-xl shadow-red-950/40 animate-pulse"
+          >
+            <div className="flex items-center justify-between">
+              <span className="bg-red-600 text-white text-[11px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow">
+                <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                🚨 إنذار صيانة طوارئ من عميل
+              </span>
+              <span className="text-[11px] text-red-300 font-bold">
+                {agentIncidents.length} طلب نشط
+              </span>
+            </div>
+
+            <div>
+              <h4 className="font-black text-sm text-white">{agentIncidents[0].siteName}</h4>
+              <p className="text-xs text-red-200/90 font-medium line-clamp-1">
+                {agentIncidents[0].title}: {agentIncidents[0].description}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between pt-1 border-t border-red-800/60 text-xs">
+              <span className="text-slate-300 text-[11px]">
+                العميل: {agentIncidents[0].clientName} ({agentIncidents[0].clientPhone})
+              </span>
+              <span className="text-red-300 font-bold underline text-[11px]">
+                فتح تفاصيل البلاغ والاتصال ➔
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Priority Card 1: Critical Contract Expiry */}
         {expiringSites.length > 0 ? (

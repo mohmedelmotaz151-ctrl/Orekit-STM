@@ -276,7 +276,7 @@ export const WhatsAppContactModal: React.FC<WhatsAppContactModalProps> = ({
             </div>
           )}
 
-          {/* TAB 2: ORIKET COMPANY MANAGEMENT WHATSAPP (0555335477) */}
+          {/* TAB 2: ORIKET COMPANY MANAGEMENT WHATSAPP (0555334577) */}
           {activeTab === 'company' && (
             <div className="space-y-4">
               

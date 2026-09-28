@@ -32,7 +32,8 @@ import {
 import { 
   getCurrentPosition, 
   checkProximityAndDuplicates, 
-  formatCoordinates 
+  formatCoordinates,
+  detectClosestSaudiCity
 } from '../../utils/geo';
 import { LeafletMap } from '../Common/LeafletMap';
 import { PhotoCapture } from '../Common/PhotoCapture';
@@ -209,18 +210,49 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
       setCurrentLat(pos.latitude);
       setCurrentLon(pos.longitude);
       setGpsAccuracy(pos.accuracy);
+
+      // Automatically update city if not editing an existing site
+      if (!defaultSiteToVisit) {
+        const detected = detectClosestSaudiCity(pos.latitude, pos.longitude);
+        if (detected) {
+          setCity(detected);
+        }
+      }
     } finally {
       setIsLocating(false);
     }
   };
 
   const handleStartVisit = async () => {
-    await fetchLocation();
+    setIsLocating(true);
+    let finalLat = currentLat;
+    let finalLon = currentLon;
+    try {
+      // Force fetch the freshest live GPS coordinates of the agent right at visit start
+      const pos = await getCurrentPosition();
+      finalLat = pos.latitude;
+      finalLon = pos.longitude;
+      setCurrentLat(pos.latitude);
+      setCurrentLon(pos.longitude);
+      setGpsAccuracy(pos.accuracy);
+
+      if (!defaultSiteToVisit) {
+        const detected = detectClosestSaudiCity(pos.latitude, pos.longitude);
+        if (detected) {
+          setCity(detected);
+        }
+      }
+    } catch {
+      // Keep existing coordinates if already available
+    } finally {
+      setIsLocating(false);
+    }
+
     const d = new Date();
     setStartDateObj(d);
     setStartTimeStr(d.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }));
     setVisitStarted(true);
-    setStep(2); // move to site info
+    setStep(2); // move directly to site info with coordinates already auto-set
   };
 
   // Sample photo generator / simulator
@@ -458,13 +490,19 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
                   <div className="flex items-center justify-between text-slate-300">
                     <span className="font-bold flex items-center gap-1.5 text-slate-200">
                       <MapPin className="w-4 h-4 text-orange-400" />
-                      إحداثيات الموقع الحالي:
+                      إحداثيات الموقع (محددة تلقائياً):
                     </span>
-                    <span className="font-mono text-emerald-400 dir-ltr">{formatCoordinates(currentLat, currentLon)}</span>
+                    <span className="font-mono text-emerald-400 dir-ltr bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/80">
+                      {formatCoordinates(currentLat, currentLon)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between text-slate-400">
                     <span>دقة إشارة الأقمار الصناعية:</span>
-                    <span className="text-slate-200">± {gpsAccuracy} متر</span>
+                    <span className="text-emerald-400 font-bold">± {gpsAccuracy} متر (تلقائي مباشر)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span>المدينة المكتشفة تلقائياً:</span>
+                    <span className="text-orange-400 font-bold">{city}</span>
                   </div>
                   <div className="flex items-center justify-between text-slate-400">
                     <span>الجهاز المستخدم:</span>
@@ -635,16 +673,21 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
 
               {/* Location Picker & Fine Tuning */}
               <div className="space-y-2 pt-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-300">موقع المنشأة على الخريطة (GPS)</span>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-300">إحداثيات الموقع (تم التقاطها تلقائياً):</span>
+                    <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-lg dir-ltr">
+                      {formatCoordinates(currentLat, currentLon)}
+                    </span>
+                  </div>
                   <button
                     type="button"
                     onClick={fetchLocation}
                     disabled={isLocating}
-                    className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1"
+                    className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1 bg-slate-800/70 hover:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 transition"
                   >
-                    <Navigation className="w-3.5 h-3.5" />
-                    <span>تحديث موقعي</span>
+                    <Navigation className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
+                    <span>{isLocating ? 'جاري تحديد موقعك...' : 'تحديث إحداثيات موقعي الحالية'}</span>
                   </button>
                 </div>
                 <LeafletMap
@@ -658,6 +701,9 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
                   }}
                   className="w-full h-44 rounded-xl border border-slate-700"
                 />
+                <p className="text-[11px] text-slate-400">
+                  📍 تم ضبط الإحداثيات والمدينة تلقائياً حسب موقعك الفعلي الحالي عند بدء الزيارة، ويمكنك النقر على الخريطة لتعديل الدبوس بدقة إذا لزم الأمر.
+                </p>
               </div>
 
               {/* Site Photo Capture (Camera or Studio) */}

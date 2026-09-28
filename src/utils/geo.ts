@@ -103,6 +103,44 @@ export function getCurrentPosition(): Promise<{ latitude: number; longitude: num
 }
 
 /**
+ * Detects the closest Saudi city from given latitude and longitude coordinates
+ */
+export function detectClosestSaudiCity(lat: number, lon: number): string {
+  const cityCoordinates: { name: string; lat: number; lon: number }[] = [
+    { name: 'خميس مشيط', lat: 18.3000, lon: 42.7333 },
+    { name: 'أبها', lat: 18.2164, lon: 42.5053 },
+    { name: 'الرياض', lat: 24.7136, lon: 46.6753 },
+    { name: 'جدة', lat: 21.5433, lon: 39.1728 },
+    { name: 'مكة المكرمة', lat: 21.3891, lon: 39.8579 },
+    { name: 'المدينة المنورة', lat: 24.5247, lon: 39.5692 },
+    { name: 'الدمام', lat: 26.4207, lon: 50.0888 },
+    { name: 'الخبر', lat: 26.2172, lon: 50.1971 },
+    { name: 'القصيم / بريدة', lat: 26.3592, lon: 43.9818 },
+    { name: 'تبوك', lat: 28.3835, lon: 36.5662 },
+    { name: 'حائل', lat: 27.5114, lon: 41.7208 },
+    { name: 'نجران', lat: 17.4924, lon: 44.1277 },
+    { name: 'جازان', lat: 16.8892, lon: 42.5706 },
+  ];
+
+  let closestCity = 'الرياض';
+  let minDistance = Infinity;
+
+  for (const c of cityCoordinates) {
+    const dist = calculateDistanceMeters(lat, lon, c.lat, c.lon);
+    if (dist < minDistance) {
+      minDistance = dist;
+      closestCity = c.name;
+    }
+  }
+
+  // If closest city is within reasonable threshold (~250km), return it
+  if (minDistance < 250000) {
+    return closestCity;
+  }
+  return 'الرياض';
+}
+
+/**
  * Formats coordinates for display
  */
 export function formatCoordinates(lat: number, lon: number): string {

@@ -41,13 +41,23 @@ export const SitesManagement: React.FC<SitesManagementProps> = ({
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterApproval, setFilterApproval] = useState('all');
+  const [filterAgent, setFilterAgent] = useState('all');
   const [selectedWhatsAppSite, setSelectedWhatsAppSite] = useState<Site | null>(null);
+
+  const uniqueAgents = Array.from(
+    new Set(
+      sites
+        .map((s) => s.createdByAgentName?.trim())
+        .filter((name): name is string => Boolean(name && name.length > 0))
+    )
+  ).sort();
 
   const filteredSites = sites.filter((site) => {
     if (filterCity !== 'all' && site.city !== filterCity) return false;
     if (filterType !== 'all' && site.type !== filterType) return false;
     if (filterStatus !== 'all' && site.status !== filterStatus) return false;
     if (filterApproval !== 'all' && site.approvalStatus !== filterApproval) return false;
+    if (filterAgent !== 'all' && site.createdByAgentName !== filterAgent) return false;
 
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
@@ -116,7 +126,7 @@ export const SitesManagement: React.FC<SitesManagementProps> = ({
 
       {/* Filter and Search Bar */}
       <div className="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5 text-xs">
           
           <div className="lg:col-span-2 relative">
             <Search className="w-4 h-4 text-slate-400 absolute right-3 top-2.5" />
@@ -127,6 +137,20 @@ export const SitesManagement: React.FC<SitesManagementProps> = ({
               placeholder="بحث بالاسم، المسؤول، الهاتف، الحي، أو المندوب..."
               className="w-full bg-slate-950 border border-slate-700 rounded-xl pr-9 pl-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
             />
+          </div>
+
+          {/* Filter by Agent who added the site */}
+          <div>
+            <select
+              value={filterAgent}
+              onChange={(e) => setFilterAgent(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-orange-400 font-bold focus:outline-none focus:border-orange-500"
+            >
+              <option value="all">كل المناديب ({uniqueAgents.length})</option>
+              {uniqueAgents.map((ag) => (
+                <option key={ag} value={ag}>👤 {ag}</option>
+              ))}
+            </select>
           </div>
 
           <div>

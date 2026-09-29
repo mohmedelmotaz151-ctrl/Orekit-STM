@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   getStoredUsers, 
   saveStoredUsers, 
@@ -266,16 +266,36 @@ export default function App() {
     saveStoredCurrentUser(currentUser);
   }, [currentUser]);
 
-  // Counts for alerts (including urgent client tickets and maintenance requests)
-  const totalExpiringContracts = sites.filter(
+  // Strict visibility enforcement:
+  // - Admin (مدراء النظام): Sees all sites across the entire company.
+  // - Agent (المندوب): Sees ONLY the sites they added themselves (مواقع المناديب لا تظهر إلا للمندوب الذي أضافها أو لمدراء النظام).
+  // - Client (العميل): Sees only their linked facility site.
+  const visibleSites = useMemo(() => {
+    if (!currentUser) return [];
+    if (currentUser.role === 'admin') {
+      return sites;
+    }
+    if (currentUser.role === 'client') {
+      return sites.filter((s) => s.id === currentUser.siteId || s.phone === currentUser.phone);
+    }
+    // Field sales agent: strictly only their added sites
+    return sites.filter(
+      (s) =>
+        s.createdByAgentId === currentUser.id ||
+        (s.createdByAgentName && currentUser.name && s.createdByAgentName.trim() === currentUser.name.trim())
+    );
+  }, [sites, currentUser]);
+
+  // Counts for alerts (tailored strictly to visible sites according to role)
+  const totalExpiringContracts = visibleSites.filter(
     (s) => s?.contract?.hasContract === 'yes' && s?.contract?.endDate && (getDaysRemaining(s.contract.endDate) || 999) <= 60
   ).length;
 
-  const totalUrgentSites = sites.filter((s) => s?.status === 'urgent_maintenance').length;
+  const totalUrgentSites = visibleSites.filter((s) => s?.status === 'urgent_maintenance').length;
 
   // Client requests count tailored to role:
   // For Admin: all active pending tickets
-  // For Agent: tickets belonging to their added/assigned sites
+  // For Agent: tickets belonging strictly to their added sites
   const activeClientRequestsCount = currentUser
     ? currentUser.role === 'admin'
       ? incidents.filter((i) => i.status !== 'resolved' && i.status !== 'closed').length +
@@ -283,14 +303,14 @@ export default function App() {
       : incidents.filter((i) => {
           if (i.status === 'resolved' || i.status === 'closed') return false;
           if (i.assignedAgentId === currentUser.id || i.assignedAgentName === currentUser.name) return true;
-          const site = sites.find((s) => s.id === i.siteId);
-          return site && (site.createdByAgentId === currentUser.id || site.createdByAgentName === currentUser.name);
+          const site = visibleSites.find((s) => s.id === i.siteId);
+          return !!site;
         }).length +
         renewals.filter((r) => {
           if (r.status !== 'pending') return false;
           if (r.assignedAgentId === currentUser.id || r.assignedAgentName === currentUser.name) return true;
-          const site = sites.find((s) => s.id === r.siteId);
-          return site && (site.createdByAgentId === currentUser.id || site.createdByAgentName === currentUser.name);
+          const site = visibleSites.find((s) => s.id === r.siteId);
+          return !!site;
         }).length
     : 0;
 
@@ -686,7 +706,7 @@ export default function App() {
           {mobileTab === 'home' && (
             <AgentHome
               currentUser={currentUser}
-              sites={sites}
+              sites={visibleSites}
               visits={visits}
               settings={settings}
               onOpenNewVisit={handleOpenNewVisit}
@@ -698,7 +718,7 @@ export default function App() {
           {mobileTab === 'sites' && (
             <AgentSitesList
               currentUser={currentUser}
-              sites={sites}
+              sites={visibleSites}
               onSelectSite={(site) => setSelectedSiteForDetail(site)}
               onOpenNewVisit={handleOpenNewVisit}
             />
@@ -708,8 +728,8 @@ export default function App() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-white">الخريطة الميدانية للمواقع</h2>
-                  <p className="text-xs text-slate-400">استكشف مواقع العملاء القريبة ومسافات الأمان</p>
+                  <h2 className="text-xl font-bold text-white">الخريطة الميدانية لمواقعي</h2>
+                  <p className="text-xs text-slate-400">استكشف مواقع منشآتك المسجلة ومسافات الأمان</p>
                 </div>
                 <button
                   onClick={() => handleOpenNewVisit()}
@@ -720,7 +740,7 @@ export default function App() {
               </div>
 
               <LeafletMap
-                sites={sites}
+                sites={visibleSites}
                 onSelectSite={(site) => setSelectedSiteForDetail(site)}
                 center={[24.7136, 46.6753]}
                 zoom={13}
@@ -732,7 +752,7 @@ export default function App() {
           {mobileTab === 'alerts' && (
             <AgentAlerts
               currentUser={currentUser}
-              sites={sites}
+              sites={visibleSites}
               onSelectSite={(site) => setSelectedSiteForDetail(site)}
               onOpenNewVisit={handleOpenNewVisit}
             />
@@ -741,7 +761,7 @@ export default function App() {
           {mobileTab === 'profile' && (
             <AgentIncentives
               currentUser={currentUser}
-              sites={sites}
+              sites={visibleSites}
               settings={settings}
               onSelectSite={(site) => setSelectedSiteForDetail(site)}
             />

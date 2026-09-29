@@ -36,17 +36,17 @@ export const AgentSitesList: React.FC<AgentSitesListProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [showOnlyMine, setShowOnlyMine] = useState<boolean>(true);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [activeMapSiteId, setActiveMapSiteId] = useState<string | undefined>(undefined);
   const [selectedWhatsAppSite, setSelectedWhatsAppSite] = useState<Site | null>(null);
 
-  const filteredSites = sites.filter((site) => {
-    const isMine = site.createdByAgentId === currentUser.id || 
-                   (site.createdByAgentName && site.createdByAgentName === currentUser.name);
-    if (showOnlyMine && !isMine) {
-      return false;
-    }
+  // Strictly only show sites added by this agent
+  const agentSites = sites.filter((site) => {
+    return site.createdByAgentId === currentUser.id || 
+           (site.createdByAgentName && currentUser.name && site.createdByAgentName.trim() === currentUser.name.trim());
+  });
+
+  const filteredSites = agentSites.filter((site) => {
     if (selectedType !== 'all' && site.type !== selectedType) {
       return false;
     }
@@ -71,7 +71,7 @@ export const AgentSitesList: React.FC<AgentSitesListProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-white">سجل المواقع والمنشآت (CRM)</h2>
-          <p className="text-xs text-slate-400">إدارة ومتابعة عملاء الصيانة والسلامة</p>
+          <p className="text-xs text-slate-400">إدارة ومتابعة عملاء الصيانة والسلامة الخاصة بك</p>
         </div>
         <button
           onClick={() => onOpenNewVisit()}
@@ -84,24 +84,15 @@ export const AgentSitesList: React.FC<AgentSitesListProps> = ({
 
       {/* Scope and View Mode Row */}
       <div className="flex items-center justify-between gap-2">
-        {/* Scope toggle: My Sites vs All Company Sites */}
-        <div className="flex-1 flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-          <button
-            onClick={() => setShowOnlyMine(true)}
-            className={`flex-1 py-1.5 rounded-lg font-bold transition ${
-              showOnlyMine ? 'bg-orange-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            مواقعي ({sites.filter((s) => s.createdByAgentId === currentUser.id).length})
-          </button>
-          <button
-            onClick={() => setShowOnlyMine(false)}
-            className={`flex-1 py-1.5 rounded-lg font-bold transition ${
-              !showOnlyMine ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            الكل ({sites.length})
-          </button>
+        {/* Scope badge: Strictly My Sites */}
+        <div className="flex-1 flex items-center justify-between bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-xs">
+          <div className="flex items-center gap-1.5 text-orange-400 font-bold">
+            <Building2 className="w-3.5 h-3.5 text-orange-500" />
+            <span>مواقعي المضافة ({agentSites.length})</span>
+          </div>
+          <span className="text-[10px] text-slate-500 font-medium">
+            🔒 خاصة بحسابك فقط
+          </span>
         </div>
 
         {/* View mode toggle: List vs Map */}

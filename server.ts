@@ -112,11 +112,32 @@ function writeDB(data: any) {
 // GET all database state
 app.get('/api/data', (req, res) => {
   const db = readDB();
+  const { role, userId, agentName } = req.query as { role?: string; userId?: string; agentName?: string };
+  
+  let sites = db.sites || [];
+  let visits = db.visits || [];
+  let followups = db.followups || [];
+
+  // If requesting as an agent, strictly return only the agent's own added sites and records
+  if (role === 'agent' && (userId || agentName)) {
+    sites = sites.filter((s: any) => 
+      (userId && s.createdByAgentId === userId) ||
+      (agentName && s.createdByAgentName && s.createdByAgentName.trim() === String(agentName).trim())
+    );
+    const siteIds = new Set(sites.map((s: any) => s.id));
+    visits = visits.filter((v: any) => 
+      (userId && v.agentId === userId) || siteIds.has(v.siteId)
+    );
+    followups = followups.filter((f: any) => 
+      (userId && f.agentId === userId) || siteIds.has(f.siteId)
+    );
+  }
+
   res.json({
     users: db.users || [],
-    sites: db.sites || [],
-    visits: db.visits || [],
-    followups: db.followups || [],
+    sites,
+    visits,
+    followups,
     incidents: db.incidents || [],
     inquiries: db.inquiries || [],
     renewals: db.renewals || [],
@@ -131,10 +152,20 @@ app.get('/api/users', (req, res) => {
   res.json({ users: db.users || [] });
 });
 
-// GET sites
+// GET sites (with role-based access control)
 app.get('/api/sites', (req, res) => {
   const db = readDB();
-  res.json({ sites: db.sites || [] });
+  const { role, userId, agentName } = req.query as { role?: string; userId?: string; agentName?: string };
+  
+  let sites = db.sites || [];
+  if (role === 'agent' && (userId || agentName)) {
+    sites = sites.filter((s: any) => 
+      (userId && s.createdByAgentId === userId) ||
+      (agentName && s.createdByAgentName && s.createdByAgentName.trim() === String(agentName).trim())
+    );
+  }
+
+  res.json({ sites });
 });
 
 // POST /api/login - Centralized authentication across any device

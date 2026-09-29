@@ -63,6 +63,33 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
 
   if (!site) return null;
 
+  // Security check: Sites added by agents can only be viewed by the agent who added them or by system admins
+  if (currentUser.role === 'agent') {
+    const isMine = site.createdByAgentId === currentUser.id ||
+      (site.createdByAgentName && currentUser.name && site.createdByAgentName.trim() === currentUser.name.trim());
+    if (!isMine) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-rose-500/50 rounded-2xl p-6 max-w-sm w-full text-center space-y-3 shadow-2xl">
+            <div className="w-12 h-12 rounded-full bg-rose-950/80 text-rose-400 flex items-center justify-center mx-auto border border-rose-800">
+              <Shield className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-white">غير مصرح بعرض هذا الموقع</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              مواقع المناديب مخصصة وتظهر فقط للمندوب الذي قام بإضافتها أو لمدراء النظام.
+            </p>
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition"
+            >
+              إغلاق
+            </button>
+          </div>
+        </div>
+      );
+    }
+  }
+
   const siteFollowups = followups.filter((f) => f.siteId === site.id);
   const siteVisits = visits.filter((v) => v.siteId === site.id);
   const statusInfo = SITE_STATUS_MAP[site.status] || SITE_STATUS_MAP.new_opportunity;

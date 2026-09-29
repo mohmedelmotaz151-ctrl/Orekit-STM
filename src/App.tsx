@@ -635,7 +635,18 @@ export default function App() {
 
   // If user is not logged in, show the login portal
   if (!currentUser) {
-    return <LoginScreen users={users} onLoginSuccess={handleLoginSuccess} />;
+    return (
+      <LoginScreen
+        users={users}
+        onLoginSuccess={handleLoginSuccess}
+        onRegisterClientSuccess={(newUser, newSite) => {
+          setUsers((prev) => [newUser, ...prev.filter((u) => u.id !== newUser.id && u.phone !== newUser.phone)]);
+          if (newSite) {
+            setSites((prev) => [newSite, ...prev.filter((s) => s.id !== newSite.id)]);
+          }
+        }}
+      />
+    );
   }
 
   return (

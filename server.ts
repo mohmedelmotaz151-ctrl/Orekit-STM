@@ -125,6 +125,18 @@ app.get('/api/data', (req, res) => {
   });
 });
 
+// GET users
+app.get('/api/users', (req, res) => {
+  const db = readDB();
+  res.json({ users: db.users || [] });
+});
+
+// GET sites
+app.get('/api/sites', (req, res) => {
+  const db = readDB();
+  res.json({ sites: db.sites || [] });
+});
+
 // POST /api/login - Centralized authentication across any device
 app.post('/api/login', (req, res) => {
   const { phoneOrUsername, password } = req.body || {};
@@ -300,6 +312,241 @@ app.post('/api/sync', (req, res) => {
     console.error('Error during /api/sync:', err);
     res.status(500).json({ error: 'Sync failed' });
   }
+});
+
+// POST /api/register-client - Self-service client account creation with site and optional initial request
+app.post('/api/register-client', (req, res) => {
+  const {
+    clientName,
+    phone,
+    password,
+    facilityName,
+    siteType,
+    city,
+    district,
+    address,
+    hasLicense,
+    licenseType,
+    hasContract,
+    contractCompany,
+    contractEndDate,
+    initialRequestType,
+    initialRequestNotes,
+  } = req.body || {};
+
+  if (!clientName || !phone || !facilityName) {
+    return res.status(400).json({ error: 'اسم العميل ورقم الجوال واسم المنشأة مطلوبان.' });
+  }
+
+  const cleanPhone = String(phone).trim();
+  const db = readDB();
+  db.users = db.users || [];
+  db.sites = db.sites || [];
+  db.incidents = db.incidents || [];
+  db.renewals = db.renewals || [];
+  db.civilDefenseAlerts = db.civilDefenseAlerts || [];
+
+  // Check if client with this phone or username already exists
+  const existingUser = db.users.find(
+    (u: any) => u.phone === cleanPhone || u.username === cleanPhone
+  );
+
+  const siteId = `site_client_${Date.now()}`;
+  const userId = existingUser ? existingUser.id : `client_${Date.now()}`;
+
+  // 1. Create or link Site
+  const newSite = {
+    id: siteId,
+    name: String(facilityName).trim(),
+    type: siteType || 'مطعم',
+    managerName: String(clientName).trim(),
+    phone: cleanPhone,
+    city: city || 'الرياض',
+    district: district || '',
+    address: address || '',
+    latitude: 24.7136,
+    longitude: 46.6753,
+    license: {
+      hasLicense: hasLicense === 'yes' ? 'yes' : 'no',
+      licenseType: licenseType || 'رخصة دفاع مدني',
+      licenseNumber: '',
+      expiryDate: '',
+    },
+    contract: {
+      hasContract: hasContract === 'yes' ? 'yes' : 'no',
+      companyName: contractCompany || (hasContract === 'yes' ? 'شركة سلامة' : ''),
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: contractEndDate || '',
+    },
+    equipment: {
+      extinguishers: {
+        totalCount: 4,
+        types: ['powder', 'co2'],
+        needsMaintenance: hasContract !== 'yes',
+        needsReplacement: false,
+        needsNewInstall: false,
+      },
+      alarmSystem: {
+        exists: true,
+        working: true,
+        needsMaintenance: false,
+        needsInstall: false,
+        detectorCount: 4,
+        callPointCount: 1,
+        panelType: 'معنون (Addressable)',
+      },
+      waterAndPumps: {
+        sprinklersExist: false,
+        sprinklersCount: 0,
+        sprinklersCondition: 'good',
+        pumpsExist: false,
+        pumpsType: 'كهرباء',
+        pumpsWorking: true,
+        fireHoseReelsCount: 1,
+        fireCabinetsCount: 1,
+        specialSuppressionSystem: 'لا يوجد',
+        specialSuppressionWorking: true,
+      },
+    },
+    civilDefense: {
+      hasRecord: true,
+      nextVisitDate: initialRequestType === 'civil_defense' ? '2026-10-15' : undefined,
+    },
+    status: (hasContract !== 'yes' || initialRequestType === 'renewal' || initialRequestType === 'urgent_fault')
+      ? 'urgent_maintenance'
+      : 'needs_followup',
+    approvalStatus: 'approved',
+    approvedAt: new Date().toISOString().split('T')[0],
+    approvedBy: 'التسجيل الذاتي للعميل',
+    createdByAgentId: 'client_self_registration',
+    createdByAgentName: 'تسجيل العميل الذاتي',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    incentiveAmount: 0,
+    incentivePaid: false,
+    visitsCount: 0,
+  };
+
+  db.sites.unshift(newSite);
+
+  // 2. Create or update User
+  const newUser = {
+    id: userId,
+    name: String(clientName).trim(),
+    username: cleanPhone,
+    phone: cleanPhone,
+    password: password ? String(password).trim() : '1234',
+    role: 'client',
+    active: true,
+    siteId: siteId,
+    facilityName: String(facilityName).trim(),
+    assignedCity: city || 'الرياض',
+    targetSitesMonth: 0,
+    joinedDate: new Date().toISOString().split('T')[0],
+  };
+
+  if (existingUser) {
+    const idx = db.users.findIndex((u: any) => u.id === existingUser.id);
+    db.users[idx] = { ...db.users[idx], ...newUser };
+  } else {
+    db.users.push(newUser);
+  }
+
+  // 3. Handle initial immediate request if selected
+  if (initialRequestType === 'renewal') {
+    const newRenewal = {
+      id: `ren_${Date.now()}`,
+      siteId,
+      siteName: newSite.name,
+      clientUserId: userId,
+      clientName: newUser.name,
+      clientPhone: cleanPhone,
+      currentContractEndDate: contractEndDate || undefined,
+      requestedDurationYears: 1,
+      notes: initialRequestNotes || 'طلب تجديد عقد صيانة السلامة مقدم فور إنشاء الحساب',
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    db.renewals.unshift(newRenewal);
+  } else if (initialRequestType === 'urgent_fault') {
+    const newIncident = {
+      id: `inc_${Date.now()}`,
+      siteId,
+      siteName: newSite.name,
+      clientUserId: userId,
+      clientName: newUser.name,
+      clientPhone: cleanPhone,
+      title: 'طلب زيارة طارئة لعطل',
+      category: 'other',
+      priority: 'urgent',
+      description: initialRequestNotes || 'طلب زيارة صيانة طارئة وفحص فوري لأنظمة السلامة',
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    db.incidents.unshift(newIncident);
+  } else if (initialRequestType === 'regular_visit') {
+    const newIncident = {
+      id: `inc_visit_${Date.now()}`,
+      siteId,
+      siteName: newSite.name,
+      clientUserId: userId,
+      clientName: newUser.name,
+      clientPhone: cleanPhone,
+      title: 'طلب زيارة فحص دوري ومعاينة',
+      category: 'extinguisher',
+      priority: 'medium',
+      description: initialRequestNotes || 'طلب زيارة فحص دوري والتأكد من مطابقة طفايات وأنظمة السلامة',
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    db.incidents.unshift(newIncident);
+  } else if (initialRequestType === 'civil_defense') {
+    const cdAlert = {
+      id: `cd_${siteId}`,
+      siteId,
+      siteName: newSite.name,
+      scheduledDate: '2026-10-15',
+      inspectionType: 'safety_compliance',
+      preInspectionVisitRequested: true,
+      checklistStatus: {
+        extinguishersReady: true,
+        alarmSystemReady: true,
+        exitsAndLightingClear: true,
+        pumpsReady: true,
+        contractValid: hasContract === 'yes',
+      },
+      status: 'upcoming',
+      updatedAt: new Date().toISOString().split('T')[0],
+    };
+    db.civilDefenseAlerts.unshift(cdAlert);
+
+    // Also create urgent ticket for pre-inspection audit
+    const newIncident = {
+      id: `inc_cd_${Date.now()}`,
+      siteId,
+      siteName: newSite.name,
+      clientUserId: userId,
+      clientName: newUser.name,
+      clientPhone: cleanPhone,
+      title: 'تحديد موعد زيارة دفاع مدني - طلب كشف استباقي',
+      category: 'other',
+      priority: 'urgent',
+      description: initialRequestNotes || 'تحديد موعد تفتيش قادم للدفاع المدني، نطلب زيارة فحص استباقية للجاهزية',
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    db.incidents.unshift(newIncident);
+  }
+
+  writeDB(db);
+
+  res.json({
+    success: true,
+    user: newUser,
+    site: newSite,
+    allUsers: db.users,
+    allSites: db.sites,
+  });
 });
 
 // POST save / update user (Add Agent via Admin)

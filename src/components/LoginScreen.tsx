@@ -7,29 +7,38 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  Loader2
+  Loader2,
+  Building2,
+  PlusCircle,
+  CheckCircle2
 } from 'lucide-react';
-import { User } from '../types';
+import { User, Site } from '../types';
 import { apiLogin } from '../utils/api';
+import { ClientRegisterModal } from './ClientPortal/ClientRegisterModal';
 
 interface LoginScreenProps {
   users: User[];
   onLoginSuccess: (user: User) => void;
+  onRegisterClientSuccess?: (user: User, site?: Site) => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({
   users,
   onLoginSuccess,
+  onRegisterClientSuccess,
 }) => {
   const [phoneOrUsername, setPhoneOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [successRegistrationMsg, setSuccessRegistrationMsg] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessRegistrationMsg('');
 
     const cleanInput = phoneOrUsername.trim();
     const cleanPass = password.trim();
@@ -56,6 +65,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   };
 
+  const handleRegisterCompleted = (newUser: User, newSite?: Site) => {
+    if (onRegisterClientSuccess) {
+      onRegisterClientSuccess(newUser, newSite);
+    }
+    // Auto-login into the client portal
+    onLoginSuccess(newUser);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center px-4 py-8 font-['Cairo',sans-serif] selection:bg-orange-500 selection:text-white">
       
@@ -79,7 +96,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               شركة أوريكيت لأنظمة السلامة والوقاية من الحريق
             </p>
             <span className="inline-block mt-2 text-[11px] px-3 py-1 rounded-full bg-slate-900 text-slate-300 border border-slate-800">
-              بوابة تسجيل دخول المنظومة الميدانية
+              بوابة المنظومة الميدانية وبوابة عملاء المنشآت
             </span>
           </div>
         </div>
@@ -97,6 +114,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <div className="bg-rose-950/60 border border-rose-800/80 rounded-2xl p-3 flex items-start gap-2.5 text-xs text-rose-200">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {successRegistrationMsg && (
+            <div className="bg-emerald-950/60 border border-emerald-800/80 rounded-2xl p-3 flex items-start gap-2.5 text-xs text-emerald-200">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <span>{successRegistrationMsg}</span>
             </div>
           )}
 
@@ -167,12 +191,38 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </button>
           </form>
 
-          <div className="pt-2 border-t border-slate-800 text-center text-[11px] text-slate-500">
-            ملاحظة: يتم إنشاء وتفعيل حسابات المندوبين حصرياً من قِبل إدارة الشركة.
+          {/* New Client Account Registration Button */}
+          <div className="pt-4 border-t border-slate-800 space-y-3">
+            <div className="text-center">
+              <span className="text-[11px] text-slate-400 block">
+                هل أنت صاحب أو مسؤول منشأة وتريد طلب خدمات السلامة؟
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsRegisterOpen(true)}
+              className="w-full py-3 px-4 rounded-2xl bg-slate-950 hover:bg-slate-800 border-2 border-orange-500/60 hover:border-orange-500 text-orange-400 hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-orange-950/20 active:scale-98"
+            >
+              <Building2 className="w-4 h-4 text-orange-500" />
+              <span>إنشاء حساب عميل جديد (تسجيل المنشأة)</span>
+            </button>
+
+            <div className="text-center text-[10px] text-slate-500 leading-relaxed">
+              • حساب العميل يتيح لك: طلب تجديد عقد الصيانة، طلب زيارة فحص دوري، تحديد موعد زيارة دفاع مدني، أو بلاغ طارئ لعطل.
+            </div>
           </div>
         </div>
 
       </div>
+
+      {/* Register Client Modal */}
+      <ClientRegisterModal
+        isOpen={isRegisterOpen}
+        onClose={() => setIsRegisterOpen(false)}
+        onRegisterSuccess={handleRegisterCompleted}
+      />
     </div>
   );
 };
+

@@ -80,6 +80,9 @@ export const ClientsManagement: React.FC<ClientsManagementProps> = ({
   const [selectedSiteId, setSelectedSiteId] = useState('');
   const [facilityName, setFacilityName] = useState('');
   const [clientCity, setClientCity] = useState('الرياض');
+  const [clientSiteType, setClientSiteType] = useState<string>('مطعم');
+  const [clientHasLicense, setClientHasLicense] = useState<'yes' | 'no'>('yes');
+  const [clientHasContract, setClientHasContract] = useState<'yes' | 'no'>('no');
 
   // Response Modals
   const [answeringInquiry, setAnsweringInquiry] = useState<ClientInquiry | null>(null);
@@ -109,6 +112,9 @@ export const ClientsManagement: React.FC<ClientsManagementProps> = ({
     setSelectedSiteId('');
     setFacilityName('');
     setClientCity('الرياض');
+    setClientSiteType('مطعم');
+    setClientHasLicense('yes');
+    setClientHasContract('no');
     setIsAccountModalOpen(true);
   };
 
@@ -122,6 +128,18 @@ export const ClientsManagement: React.FC<ClientsManagementProps> = ({
     setSelectedSiteId(client.siteId || '');
     setFacilityName(client.facilityName || '');
     setClientCity(client.assignedCity || 'الرياض');
+
+    const linked = sites.find((s) => s.id === client.siteId);
+    if (linked) {
+      setClientSiteType(linked.type || 'مطعم');
+      setClientHasLicense(linked.license?.hasLicense === 'yes' ? 'yes' : 'no');
+      setClientHasContract(linked.contract?.hasContract === 'yes' ? 'yes' : 'no');
+    } else {
+      setClientSiteType('مطعم');
+      setClientHasLicense('yes');
+      setClientHasContract('no');
+    }
+
     setIsAccountModalOpen(true);
   };
 
@@ -132,6 +150,9 @@ export const ClientsManagement: React.FC<ClientsManagementProps> = ({
     if (found) {
       setFacilityName(found.name);
       setClientCity(found.city);
+      setClientSiteType(found.type || 'مطعم');
+      setClientHasLicense(found.license?.hasLicense === 'yes' ? 'yes' : 'no');
+      setClientHasContract(found.contract?.hasContract === 'yes' ? 'yes' : 'no');
       if (!clientName) setClientName(found.managerName);
       if (!clientPhone) {
         setClientPhone(found.phone);
@@ -393,8 +414,27 @@ export const ClientsManagement: React.FC<ClientsManagementProps> = ({
                             <div className="font-bold text-white text-sm">
                               {client.facilityName || linked?.name || 'منشأة عميل'}
                             </div>
-                            <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                            <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-1 flex-wrap">
                               <span>المسؤول: {client.name}</span>
+                              {linked?.type && (
+                                <span className="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]">
+                                  {linked.type}
+                                </span>
+                              )}
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                linked?.license?.hasLicense === 'yes'
+                                  ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60'
+                                  : 'bg-rose-950 text-rose-400 border border-rose-800/60'
+                              }`}>
+                                {linked?.license?.hasLicense === 'yes' ? 'مرخص' : 'بدون ترخيص'}
+                              </span>
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                linked?.contract?.hasContract === 'yes'
+                                  ? 'bg-orange-950 text-orange-400 border border-orange-800/60'
+                                  : 'bg-slate-800 text-slate-400'
+                              }`}>
+                                {linked?.contract?.hasContract === 'yes' ? 'عقد ساري' : 'بدون عقد'}
+                              </span>
                             </div>
                           </td>
 
@@ -920,6 +960,53 @@ export const ClientsManagement: React.FC<ClientsManagementProps> = ({
                     {SAUDI_CITIES.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Site Type, License, and Maintenance Contract Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-slate-800">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300 block">نوع الموقع / النشاط</label>
+                  <select
+                    value={clientSiteType}
+                    onChange={(e) => setClientSiteType(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-white focus:outline-none focus:border-orange-500 text-xs"
+                  >
+                    <option value="مطعم">مطعم</option>
+                    <option value="فندق">فندق</option>
+                    <option value="مستشفى">مستشفى</option>
+                    <option value="مستودع">مستودع</option>
+                    <option value="مصنع">مصنع</option>
+                    <option value="مجمع تجاري">مجمع تجاري</option>
+                    <option value="مكتب">مكتب</option>
+                    <option value="مدرسة">مدرسة</option>
+                    <option value="محطة وقود">محطة وقود</option>
+                    <option value="أخرى">أخرى</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300 block">ترخيص المنشأة</label>
+                  <select
+                    value={clientHasLicense}
+                    onChange={(e) => setClientHasLicense(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-white focus:outline-none focus:border-orange-500 text-xs"
+                  >
+                    <option value="yes">يوجد ترخيص ساري</option>
+                    <option value="no">لا يوجد ترخيص</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300 block">عقد صيانة السلامة</label>
+                  <select
+                    value={clientHasContract}
+                    onChange={(e) => setClientHasContract(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-white focus:outline-none focus:border-orange-500 text-xs"
+                  >
+                    <option value="yes">يوجد عقد صيانة</option>
+                    <option value="no">لا يوجد عقد صيانة</option>
                   </select>
                 </div>
               </div>

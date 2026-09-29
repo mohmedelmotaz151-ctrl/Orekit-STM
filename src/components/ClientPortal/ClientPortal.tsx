@@ -98,6 +98,27 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
 
   const [preVisitRequested, setPreVisitRequested] = useState(false);
 
+  // Quick Action Specific Modals requested by user:
+  // 1) طلب تجديد عقد صيانة (showRenewalModal)
+  // 2) طلب زيارة فحص دوري
+  const [showVisitRequestModal, setShowVisitRequestModal] = useState(false);
+  const [visitPreferredDate, setVisitPreferredDate] = useState('');
+  const [visitPurpose, setVisitPurpose] = useState('فحص دوري شامل لطفايات وأنظمة الإنذار');
+  const [visitNotes, setVisitNotes] = useState('');
+
+  // 3) تحديد موعد زيارة دفاع مدني
+  const [showCDScheduleModal, setShowCDScheduleModal] = useState(false);
+  const [cdScheduleDate, setCdScheduleDate] = useState('');
+  const [cdScheduleNotes, setCdScheduleNotes] = useState('');
+
+  // 4) زيارة طارئة لعطل
+  const [showUrgentFaultModal, setShowUrgentFaultModal] = useState(false);
+  const [faultTitle, setFaultTitle] = useState('');
+  const [faultCategory, setFaultCategory] = useState<ClientIncident['category']>('alarm');
+  const [faultLocation, setFaultLocation] = useState('');
+  const [faultDescription, setFaultDescription] = useState('');
+  const [faultPhoto, setFaultPhoto] = useState('');
+
   // Handlers
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -212,6 +233,107 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
       createdAt: new Date().toISOString(),
     };
     onSaveIncident(newTicket);
+  };
+
+  const handleSubmitVisitRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newVisitTicket: ClientIncident = {
+      id: `visit_req_${Date.now()}`,
+      siteId: linkedSite?.id || currentUser.siteId || 'client_site',
+      siteName: linkedSite?.name || currentUser.facilityName || 'منشأة العميل',
+      clientUserId: currentUser.id,
+      clientName: currentUser.name,
+      clientPhone: currentUser.phone,
+      assignedAgentId: linkedSite?.createdByAgentId,
+      assignedAgentName: linkedSite?.createdByAgentName,
+      title: `طلب زيارة فحص دوري: ${visitPurpose}`,
+      category: 'extinguisher',
+      priority: 'medium',
+      description: `طلب العميل زيارة ميدانية لفحص وتدقيق السلامة.${visitPreferredDate ? ` التاريخ المفضل: ${visitPreferredDate}.` : ''} ملاحظات: ${visitNotes || 'لا توجد'}`,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    onSaveIncident(newVisitTicket);
+    setShowVisitRequestModal(false);
+    setVisitNotes('');
+    setVisitPreferredDate('');
+  };
+
+  const handleSubmitCDSchedule = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cdScheduleDate) return;
+
+    if (onSaveCDAlert) {
+      const alert: CivilDefenseInspectionAlert = {
+        id: `cd_${linkedSite?.id || currentUser.siteId || currentUser.id}`,
+        siteId: linkedSite?.id || currentUser.siteId || 'client_site',
+        siteName: linkedSite?.name || currentUser.facilityName || 'منشأة العميل',
+        scheduledDate: cdScheduleDate,
+        inspectionType: 'safety_compliance',
+        preInspectionVisitRequested: true,
+        checklistStatus: {
+          extinguishersReady: true,
+          alarmSystemReady: true,
+          exitsAndLightingClear: true,
+          pumpsReady: true,
+          contractValid: !isContractExpired,
+        },
+        status: 'upcoming',
+        updatedAt: new Date().toISOString().split('T')[0],
+      };
+      onSaveCDAlert(alert);
+    }
+
+    // Also register urgent incident ticket so team immediately audits
+    const newTicket: ClientIncident = {
+      id: `inc_cd_sched_${Date.now()}`,
+      siteId: linkedSite?.id || currentUser.siteId || 'client_site',
+      siteName: linkedSite?.name || currentUser.facilityName || 'منشأة العميل',
+      clientUserId: currentUser.id,
+      clientName: currentUser.name,
+      clientPhone: currentUser.phone,
+      assignedAgentId: linkedSite?.createdByAgentId,
+      assignedAgentName: linkedSite?.createdByAgentName,
+      title: `تحديد موعد تفتيش دفاع مدني (${formatDateArabic(cdScheduleDate)})`,
+      category: 'other',
+      priority: 'urgent',
+      description: `قام العميل بتحديد موعد زيارة الدفاع المدني في تاريخ ${cdScheduleDate}. نطلب إرسال مهندس للفحص الاستباقي وتجهيز ملف السلامة. ${cdScheduleNotes}`,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    onSaveIncident(newTicket);
+    setShowCDScheduleModal(false);
+    setCdScheduleNotes('');
+  };
+
+  const handleSubmitUrgentFault = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!faultTitle || !faultDescription) return;
+
+    const urgentTicket: ClientIncident = {
+      id: `inc_urgent_${Date.now()}`,
+      siteId: linkedSite?.id || currentUser.siteId || 'client_site',
+      siteName: linkedSite?.name || currentUser.facilityName || 'منشأة العميل',
+      clientUserId: currentUser.id,
+      clientName: currentUser.name,
+      clientPhone: currentUser.phone,
+      assignedAgentId: linkedSite?.createdByAgentId,
+      assignedAgentName: linkedSite?.createdByAgentName,
+      title: `🚨 زيارة طارئة لعطل: ${faultTitle}`,
+      category: faultCategory,
+      priority: 'urgent',
+      locationDetails: faultLocation,
+      description: faultDescription,
+      photo: faultPhoto || undefined,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    onSaveIncident(urgentTicket);
+    setShowUrgentFaultModal(false);
+    setFaultTitle('');
+    setFaultDescription('');
+    setFaultLocation('');
+    setFaultPhoto('');
   };
 
   // Facility Contract Status
@@ -355,6 +477,95 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
             </p>
           </div>
 
+        </div>
+
+        {/* 4 Prominent Quick Action Request Buttons (الميزات المباشرة للعميل) */}
+        <div className="mt-5 pt-5 border-t border-slate-800/80 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-orange-400 flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-orange-400" />
+              <span>الخدمات والطلبات السريعة لمنشأتك:</span>
+            </span>
+            <span className="text-[11px] text-slate-400">استجابة وتنسيق فوري من فريق أوريكيت</span>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+            {/* 1. طلب تجديد عقد */}
+            <button
+              onClick={() => setShowRenewalModal(true)}
+              className="p-3.5 rounded-2xl bg-gradient-to-br from-orange-950/70 to-slate-900 border border-orange-500/50 hover:border-orange-400 text-right space-y-1.5 transition active:scale-95 group shadow-lg"
+            >
+              <div className="flex items-center justify-between">
+                <span className="p-2 rounded-xl bg-orange-600/30 text-orange-300 border border-orange-500/30 group-hover:scale-105 transition">
+                  <RefreshCw className="w-4 h-4 text-orange-400" />
+                </span>
+                <span className="text-[10px] bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full font-bold">
+                  عقد معتمد
+                </span>
+              </div>
+              <h4 className="font-bold text-xs text-white">طلب تجديد عقد الصيانة</h4>
+              <p className="text-[10px] text-slate-400 leading-snug">
+                تجديد سنوي لمنصة سلامة ورخصة البلدية
+              </p>
+            </button>
+
+            {/* 2. طلب زيارة فحص دوري */}
+            <button
+              onClick={() => setShowVisitRequestModal(true)}
+              className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-950/70 to-slate-900 border border-blue-500/50 hover:border-blue-400 text-right space-y-1.5 transition active:scale-95 group shadow-lg"
+            >
+              <div className="flex items-center justify-between">
+                <span className="p-2 rounded-xl bg-blue-600/30 text-blue-300 border border-blue-500/30 group-hover:scale-105 transition">
+                  <FileText className="w-4 h-4 text-blue-400" />
+                </span>
+                <span className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full font-bold">
+                  معاينة هندسية
+                </span>
+              </div>
+              <h4 className="font-bold text-xs text-white">طلب زيارة فحص دوري</h4>
+              <p className="text-[10px] text-slate-400 leading-snug">
+                إرسال فني متخصص لمراجعة أنظمة السلامة
+              </p>
+            </button>
+
+            {/* 3. تحديد موعد زيارة دفاع مدني */}
+            <button
+              onClick={() => setShowCDScheduleModal(true)}
+              className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-950/70 to-slate-900 border border-amber-500/50 hover:border-amber-400 text-right space-y-1.5 transition active:scale-95 group shadow-lg"
+            >
+              <div className="flex items-center justify-between">
+                <span className="p-2 rounded-xl bg-amber-600/30 text-amber-300 border border-amber-500/30 group-hover:scale-105 transition">
+                  <ShieldAlert className="w-4 h-4 text-amber-400" />
+                </span>
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-bold">
+                  جاهزية 100%
+                </span>
+              </div>
+              <h4 className="font-bold text-xs text-white">تحديد موعد دفاع مدني</h4>
+              <p className="text-[10px] text-slate-400 leading-snug">
+                جدولة التفتيش وتجهيز تقرير التدقيق
+              </p>
+            </button>
+
+            {/* 4. زيارة طارئة لعطل */}
+            <button
+              onClick={() => setShowUrgentFaultModal(true)}
+              className="p-3.5 rounded-2xl bg-gradient-to-br from-red-950/80 to-slate-900 border-2 border-red-500/80 hover:border-red-400 text-right space-y-1.5 transition active:scale-95 group shadow-lg animate-pulse"
+            >
+              <div className="flex items-center justify-between">
+                <span className="p-2 rounded-xl bg-red-600/40 text-red-300 border border-red-500/40 group-hover:scale-105 transition">
+                  <Flame className="w-4 h-4 text-red-400" />
+                </span>
+                <span className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold shadow">
+                  طوارئ 24/7
+                </span>
+              </div>
+              <h4 className="font-bold text-xs text-white">زيارة طارئة لعطل</h4>
+              <p className="text-[10px] text-slate-300 leading-snug">
+                مباشرة فورية لأعطال الإنذار والمضخات
+              </p>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1129,6 +1340,252 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                   className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs shadow-lg shadow-orange-950/60"
                 >
                   إرسال طلب التجديد
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 4. VISIT REQUEST MODAL (طلب زيارة فحص دوري) */}
+      {showVisitRequestModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm font-['Cairo',sans-serif]">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6 space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <h3 className="text-sm font-bold text-white">طلب زيارة فحص دوري ومعاينة هندسية</h3>
+              </div>
+              <button
+                onClick={() => setShowVisitRequestModal(false)}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitVisitRequest} className="space-y-3.5 text-xs">
+              <div className="space-y-1">
+                <label className="font-bold text-slate-300 block">الغرض من الزيارة</label>
+                <select
+                  value={visitPurpose}
+                  onChange={(e) => setVisitPurpose(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-orange-500"
+                >
+                  <option value="فحص دوري شامل لطفايات وأنظمة الإنذار">فحص دوري شامل لطفايات وأنظمة الإنذار</option>
+                  <option value="معاينة لتجديد ترخيص البلدية أو الدفاع المدني">معاينة لتجديد ترخيص البلدية أو الدفاع المدني</option>
+                  <option value="صيانة وتعبئة طفايات الحريق بالموقع">صيانة وتعبئة طفايات الحريق بالموقع</option>
+                  <option value="اختبار مضخات وشبكات الإطفاء المائي">اختبار مضخات وشبكات الإطفاء المائي</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-300 block">الموعد أو اليوم المفضل للزيارة (اختياري)</label>
+                <input
+                  type="date"
+                  value={visitPreferredDate}
+                  onChange={(e) => setVisitPreferredDate(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-300 block">ملاحظات إضافية للمهندس الفني</label>
+                <textarea
+                  rows={3}
+                  value={visitNotes}
+                  onChange={(e) => setVisitNotes(e.target.value)}
+                  placeholder="مثال: يرجى التنسيق هاتفياً قبل الحضور، الموقع مفتوح من 9 صباحاً..."
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
+                />
+              </div>
+
+              <div className="p-3 rounded-2xl bg-blue-950/30 border border-blue-900/40 text-blue-300 text-[11px]">
+                سيقوم فريق الدعم الفني بتأكيد موعد الزيارة معكم والتواصل خلال 24 ساعة.
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowVisitRequestModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-950/60"
+                >
+                  تأكيد وإرسال طلب الزيارة
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 5. CIVIL DEFENSE SCHEDULE MODAL (تحديد موعد زيارة دفاع مدني) */}
+      {showCDScheduleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm font-['Cairo',sans-serif]">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6 space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-amber-600/20 text-amber-400 flex items-center justify-center">
+                  <ShieldAlert className="w-4 h-4" />
+                </div>
+                <h3 className="text-sm font-bold text-white">تحديد موعد زيارة الدفاع المدني للمنشأة</h3>
+              </div>
+              <button
+                onClick={() => setShowCDScheduleModal(false)}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitCDSchedule} className="space-y-3.5 text-xs">
+              <div className="space-y-1">
+                <label className="font-bold text-slate-300 block">تاريخ الزيارة أو التفتيش المحدد *</label>
+                <input
+                  type="date"
+                  value={cdScheduleDate}
+                  onChange={(e) => setCdScheduleDate(e.target.value)}
+                  required
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-300 block">ملاحظات أو اشتراطات خاصة من المفتش</label>
+                <textarea
+                  rows={3}
+                  value={cdScheduleNotes}
+                  onChange={(e) => setCdScheduleNotes(e.target.value)}
+                  placeholder="مثال: تم إشعارنا عبر رسالة بلدي/سلامة بموعد الكشف..."
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
+                />
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-900/60 space-y-1 text-[11px] text-amber-200">
+                <span className="font-bold block">🚨 خدمة التدقيق الاستباقي من أوريكيت:</span>
+                <p>فور حفظ التاريخ، سيتم جدولة زيارة كشف استباقي لمنشأتكم للتحقق من جاهزية الطفايات والإنذار وتفادي أي مخالفات أثناء التفتيش الرسمي.</p>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCDScheduleModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs shadow-lg shadow-amber-950/60"
+                >
+                  حفظ وتفعيل خطة الجاهزية
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 6. URGENT FAULT VISIT MODAL (زيارة طارئة لعطل) */}
+      {showUrgentFaultModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm font-['Cairo',sans-serif]">
+          <div className="bg-slate-900 border border-red-800/80 rounded-3xl w-full max-w-lg p-6 space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-red-600/20 text-red-400 flex items-center justify-center">
+                  <Flame className="w-4 h-4 animate-bounce" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">طلب زيارة طارئة لعطل فوري</h3>
+                  <span className="text-[10px] text-red-400">أولوية قصوى لمباشرة أنظمة الإطفاء والإنذار</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowUrgentFaultModal(false)}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitUrgentFault} className="space-y-3.5 text-xs">
+              <div className="space-y-1">
+                <label className="font-bold text-slate-300 block">عنوان العطل الطارئ *</label>
+                <input
+                  type="text"
+                  value={faultTitle}
+                  onChange={(e) => setFaultTitle(e.target.value)}
+                  placeholder="مثال: صوت صفير مستمر بلوحة الإنذار، تسريب مياه بخط الرشاشات"
+                  required
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-red-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300 block">النظام المتأثر</label>
+                  <select
+                    value={faultCategory}
+                    onChange={(e) => setFaultCategory(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-red-500"
+                  >
+                    <option value="alarm">لوحة وكواشف الإنذار</option>
+                    <option value="pumps">مضخات الحريق</option>
+                    <option value="sprinklers">شبكة الرشاشات المائية</option>
+                    <option value="extinguisher">طفايات الحريق</option>
+                    <option value="emergency_light">إنارة ومخارج الطوارئ</option>
+                    <option value="other">عطل آخر</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300 block">الموقع داخل المنشأة</label>
+                  <input
+                    type="text"
+                    value={faultLocation}
+                    onChange={(e) => setFaultLocation(e.target.value)}
+                    placeholder="مثال: المطبخ، المستودع، المدخل"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-red-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-300 block">وصف وتفاصيل العطل *</label>
+                <textarea
+                  rows={3}
+                  value={faultDescription}
+                  onChange={(e) => setFaultDescription(e.target.value)}
+                  placeholder="اشرح المشكلة وما تمت ملاحظته ليتجهز الفني بالقطع المناسبة..."
+                  required
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-red-500"
+                />
+              </div>
+
+              <div className="p-3 rounded-2xl bg-red-950/40 border border-red-900/60 text-red-200 text-[11px]">
+                سيتم إرسال إشعار فوري لفريق الطوارئ والمندوب لمباشرة العطل بأسرع وقت.
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowUrgentFaultModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-950/60"
+                >
+                  إرسال بلاغ الطوارئ فوراً
                 </button>
               </div>
             </form>

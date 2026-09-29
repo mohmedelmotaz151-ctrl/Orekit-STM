@@ -244,15 +244,15 @@ export async function fsApproveSite(
   const path = `${SITES_COL}/${siteId}`;
   try {
     const docRef = doc(db, SITES_COL, siteId);
-    await updateDoc(docRef, cleanForFirestore({
+    await setDoc(docRef, cleanForFirestore({
       approvalStatus: approved ? 'approved' : 'rejected',
       rejectionReason: approved ? null : (reason || null),
       approvedAt: approved ? new Date().toISOString().split('T')[0] : null,
       approvedBy: approved ? (approvedBy || null) : null,
       incentivePaid: approved,
-    }));
+    }), { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, path);
+    handleFirestoreError(error, OperationType.WRITE, path);
   }
 }
 
@@ -260,12 +260,12 @@ export async function fsUpdateSiteStatus(siteId: string, status: string): Promis
   const path = `${SITES_COL}/${siteId}`;
   try {
     const docRef = doc(db, SITES_COL, siteId);
-    await updateDoc(docRef, cleanForFirestore({
+    await setDoc(docRef, cleanForFirestore({
       status,
       updatedAt: new Date().toISOString().split('T')[0],
-    }));
+    }), { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, path);
+    handleFirestoreError(error, OperationType.WRITE, path);
   }
 }
 
@@ -337,9 +337,9 @@ export async function fsUpdateIncident(
   try {
     const cleaned = cleanForFirestore(updates);
     const docRef = doc(db, INCIDENTS_COL, incidentId);
-    await updateDoc(docRef, cleaned);
+    await setDoc(docRef, cleaned, { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, path);
+    handleFirestoreError(error, OperationType.WRITE, path);
   }
 }
 
@@ -375,14 +375,14 @@ export async function fsAnswerInquiry(
   const path = `${INQUIRIES_COL}/${inquiryId}`;
   try {
     const docRef = doc(db, INQUIRIES_COL, inquiryId);
-    await updateDoc(docRef, cleanForFirestore({
+    await setDoc(docRef, cleanForFirestore({
       status: 'answered',
       answer,
       answeredBy,
       answeredAt: new Date().toISOString(),
-    }));
+    }), { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, path);
+    handleFirestoreError(error, OperationType.WRITE, path);
   }
 }
 
@@ -418,9 +418,9 @@ export async function fsUpdateRenewal(
   try {
     const cleaned = cleanForFirestore(updates);
     const docRef = doc(db, RENEWALS_COL, renewalId);
-    await updateDoc(docRef, cleaned);
+    await setDoc(docRef, cleaned, { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, path);
+    handleFirestoreError(error, OperationType.WRITE, path);
   }
 }
 

@@ -1,6 +1,7 @@
 import { 
   User, 
   Site, 
+  SiteType,
   Visit, 
   FollowUpLog, 
   IncentiveSettings,
@@ -176,6 +177,175 @@ export async function apiLogin(
       return { success: false, error: 'كلمة المرور غير صحيحة، يرجى التأكد وإعادة المحاولة.' };
     }
     return { success: true, user: matched };
+  }
+}
+
+export interface RegisterClientParams {
+  clientName: string;
+  phone: string;
+  password?: string;
+  facilityName: string;
+  siteType: SiteType;
+  city: string;
+  district?: string;
+  address?: string;
+  hasLicense: 'yes' | 'no';
+  licenseType?: string;
+  hasContract: 'yes' | 'no';
+  contractCompany?: string;
+  contractEndDate?: string;
+  initialRequestType?: 'none' | 'renewal' | 'regular_visit' | 'civil_defense' | 'urgent_fault';
+  initialRequestNotes?: string;
+}
+
+export async function apiRegisterClient(
+  params: RegisterClientParams
+): Promise<{ success: boolean; user?: User; site?: Site; error?: string }> {
+  try {
+    const res = await fetch('/api/register-client', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || 'فشل إنشاء الحساب' };
+    }
+
+    if (data.user) {
+      // Save user to storage
+      const users = getStoredUsers();
+      const uIdx = users.findIndex((u) => u.id === data.user.id || u.phone === data.user.phone);
+      if (uIdx >= 0) users[uIdx] = data.user;
+      else users.push(data.user);
+      saveStoredUsers(users);
+
+      // Cloud Firestore save
+      fsSaveUser(data.user).catch((e) => console.warn('Firestore user save warning:', e));
+    }
+
+    if (data.site) {
+      // Save site to storage
+      const sites = getStoredSites();
+      const sIdx = sites.findIndex((s) => s.id === data.site.id);
+      if (sIdx >= 0) sites[sIdx] = data.site;
+      else sites.unshift(data.site);
+      saveStoredSites(sites);
+
+      // Cloud Firestore save
+      fsSaveSite(data.site).catch((e) => console.warn('Firestore site save warning:', e));
+    }
+
+    if (data.allUsers && Array.isArray(data.allUsers)) {
+      saveStoredUsers(data.allUsers);
+    }
+    if (data.allSites && Array.isArray(data.allSites)) {
+      saveStoredSites(data.allSites);
+    }
+
+    return { success: true, user: data.user, site: data.site };
+  } catch (err: any) {
+    // Local fallback creation
+    const cleanPhone = params.phone.trim();
+    const siteId = `site_client_${Date.now()}`;
+    const userId = `client_${Date.now()}`;
+
+    const newSite: Site = {
+      id: siteId,
+      name: params.facilityName,
+      type: params.siteType,
+      managerName: params.clientName,
+      phone: cleanPhone,
+      city: params.city,
+      district: params.district || '',
+      address: params.address || '',
+      latitude: 24.7136,
+      longitude: 46.6753,
+      license: {
+        hasLicense: params.hasLicense,
+        licenseType: params.licenseType || 'رخصة دفاع مدني',
+        licenseNumber: '',
+        expiryDate: '',
+      },
+      contract: {
+        hasContract: params.hasContract,
+        companyName: params.contractCompany || '',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: params.contractEndDate || '',
+      },
+      equipment: {
+        extinguishers: {
+          totalCount: 4,
+          types: ['powder', 'co2'],
+          needsMaintenance: params.hasContract !== 'yes',
+          needsReplacement: false,
+          needsNewInstall: false,
+        },
+        alarmSystem: {
+          exists: true,
+          working: true,
+          needsMaintenance: false,
+          needsInstall: false,
+          detectorCount: 4,
+          callPointCount: 1,
+          panelType: 'معنون (Addressable)',
+        },
+        waterAndPumps: {
+          sprinklersExist: false,
+          sprinklersCount: 0,
+          sprinklersCondition: 'good',
+          pumpsExist: false,
+          pumpsType: 'كهرباء',
+          pumpsWorking: true,
+          fireHoseReelsCount: 1,
+          fireCabinetsCount: 1,
+          specialSuppressionSystem: 'لا يوجد',
+          specialSuppressionWorking: true,
+        },
+      },
+      civilDefense: {
+        hasRecord: true,
+      },
+      status: params.hasContract !== 'yes' ? 'urgent_maintenance' : 'needs_followup',
+      approvalStatus: 'approved',
+      approvedAt: new Date().toISOString().split('T')[0],
+      approvedBy: 'التسجيل الذاتي للعميل',
+      createdByAgentId: 'client_self_registration',
+      createdByAgentName: 'تسجيل العميل الذاتي',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      incentiveAmount: 0,
+      incentivePaid: false,
+      visitsCount: 0,
+    };
+
+    const newUser: User = {
+      id: userId,
+      name: params.clientName,
+      username: cleanPhone,
+      phone: cleanPhone,
+      password: params.password || '1234',
+      role: 'client',
+      active: true,
+      siteId: siteId,
+      facilityName: params.facilityName,
+      assignedCity: params.city,
+      targetSitesMonth: 0,
+      joinedDate: new Date().toISOString().split('T')[0],
+    };
+
+    const currentUsers = getStoredUsers();
+    currentUsers.push(newUser);
+    saveStoredUsers(currentUsers);
+
+    const currentSites = getStoredSites();
+    currentSites.unshift(newSite);
+    saveStoredSites(currentSites);
+
+    fsSaveUser(newUser).catch(() => {});
+    fsSaveSite(newSite).catch(() => {});
+
+    return { success: true, user: newUser, site: newSite };
   }
 }
 

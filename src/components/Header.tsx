@@ -80,7 +80,8 @@ export const Header: React.FC<HeaderProps> = ({
             title={`واتساب إدارة شركة أوريكيت (${ORIKET_COMPANY_PHONE})`}
           >
             <MessageCircle className="w-4 h-4 fill-current shrink-0" />
-            <span className="hidden md:inline">واتساب الإدارة</span>
+            <span className="hidden md:inline font-mono text-[11px]">0555334577</span>
+            <span className="hidden lg:inline text-[11px] text-emerald-300 font-normal">(واتساب الإدارة)</span>
           </a>
 
           {/* Alerts notification icon */}

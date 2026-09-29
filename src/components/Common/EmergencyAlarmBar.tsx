@@ -3,23 +3,26 @@ import {
   Bell, 
   Volume2, 
   VolumeX, 
-  AlertTriangle, 
   Flame, 
-  Check, 
-  X, 
-  Smartphone,
-  ShieldAlert,
-  Radio
+  ShieldAlert, 
+  Clock, 
+  Radio, 
+  X,
+  CheckCircle2
 } from 'lucide-react';
 import { soundNotifier } from '../../utils/soundNotifications';
 
 interface EmergencyAlarmBarProps {
-  urgentAlertsCount: number;
-  onOpenAlerts?: () => void;
+  expiringContractsCount: number;
+  urgentMaintenanceCount: number;
+  civilDefenseVisitsCount: number;
+  onOpenAlerts?: (target?: 'contracts' | 'maintenance' | 'civil_defense') => void;
 }
 
 export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
-  urgentAlertsCount,
+  expiringContractsCount,
+  urgentMaintenanceCount,
+  civilDefenseVisitsCount,
   onOpenAlerts,
 }) => {
   const [soundEnabled, setSoundEnabled] = useState(soundNotifier.isSoundEnabled());
@@ -27,16 +30,18 @@ export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
   );
   const [showPromptBanner, setShowPromptBanner] = useState(false);
-  const [isPlayingTest, setIsPlayingTest] = useState(false);
+  const [isPlayingSiren, setIsPlayingSiren] = useState(false);
+
+  const totalCriticalCount = expiringContractsCount + urgentMaintenanceCount + civilDefenseVisitsCount;
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setNotificationStatus(Notification.permission);
-      if (Notification.permission === 'default') {
+      if (Notification.permission === 'default' && totalCriticalCount > 0) {
         setShowPromptBanner(true);
       }
     }
-  }, []);
+  }, [totalCriticalCount]);
 
   const handleToggleSound = () => {
     const newState = !soundEnabled;
@@ -54,32 +59,35 @@ export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
     const perm = await soundNotifier.requestNotificationPermission();
     setNotificationStatus(perm);
     setShowPromptBanner(false);
-    if (perm === 'granted') {
-      soundNotifier.sendEmergencyNotification({
-        title: '🚨 تفعيل إنذارات وإشعارات أوريكيت الميدانية',
-        body: 'تم تفعيل التنبيهات الصوتية وإنذارات الطوارئ بنجاح! ستصلك التنبيهات خارج التطبيق حتى عند قفل الشاشة.',
-        urgent: true,
-      });
-    }
   };
 
-  const handleTestAlarm = () => {
+  // Triggers siren only for real critical alerts (Expiring contracts, urgent maintenance, or civil defense visits)
+  const handleTriggerAlarmForRealAlerts = () => {
+    if (totalCriticalCount === 0) return;
     soundNotifier.initAudio();
-    setIsPlayingTest(true);
+    setIsPlayingSiren(true);
+
+    const parts: string[] = [];
+    if (urgentMaintenanceCount > 0) parts.push(`${urgentMaintenanceCount} صيانة عاجلة`);
+    if (expiringContractsCount > 0) parts.push(`${expiringContractsCount} عقود قاربت على الانتهاء`);
+    if (civilDefenseVisitsCount > 0) parts.push(`${civilDefenseVisitsCount} زيارات دفاع مدني`);
+
     soundNotifier.sendEmergencyNotification({
-      title: '🚨 تجربة إنذار الطوارئ - شركة أوريكيت للسلامة',
-      body: 'هذا فحص صوتي واختبار لصفارة الإنذار الميدانية وإشعارات النظام خارج التطبيق.',
+      title: '🚨 إنذار طوارئ: تنبيهات ميدانية حرجة تتطلب المتابعة!',
+      body: parts.join(' • '),
       urgent: true,
+      tag: 'critical_emergency_alarm',
     });
+
     setTimeout(() => {
-      setIsPlayingTest(false);
-    }, 4000);
+      setIsPlayingSiren(false);
+    }, 4500);
   };
 
   return (
     <div className="w-full">
-      {/* 1. Request Permission Banner if not decided yet */}
-      {showPromptBanner && notificationStatus === 'default' && (
+      {/* 1. Request Permission Banner (only shown if there are real critical alerts pending) */}
+      {showPromptBanner && notificationStatus === 'default' && totalCriticalCount > 0 && (
         <div className="bg-gradient-to-r from-red-950 via-slate-900 to-amber-950 border-b border-red-800/80 px-4 py-2.5 text-xs text-white flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-red-600/30 text-red-400 border border-red-500/40 flex items-center justify-center shrink-0 animate-pulse">
@@ -87,10 +95,10 @@ export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
             </div>
             <div>
               <span className="font-bold text-red-300 block">
-                تفعيل الإشعارات الصوتية وإنذار الطوارئ خارج التطبيق:
+                تفعيل الإشعارات وإنذار الطوارئ خارج التطبيق:
               </span>
               <span className="text-[11px] text-slate-300">
-                اسمح بالإشعارات لتصلك صفارة إنذار الدفاع المدني وتنبيهات الأعطال والعقود حتى عندما يكون التطبيق مغلقاً.
+                اسمح بالإشعارات لتصلك صفارة الإنذار الميداني وتنبيهات العقود والصيانة العاجلة حتى عندما يكون التطبيق مغلقاً.
               </span>
             </div>
           </div>
@@ -114,75 +122,133 @@ export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
         </div>
       )}
 
-      {/* 2. Compact Sound Control Strip (Header or Dashboard) */}
-      <div className="bg-slate-900/80 border-b border-slate-800/80 px-3 sm:px-6 py-1.5 flex items-center justify-between text-xs text-slate-300">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="flex items-center gap-1.5 font-bold text-slate-200">
-            <ShieldAlert className="w-4 h-4 text-orange-500" />
-            <span>نظام إنذار الطوارئ الصوتي:</span>
-          </span>
-
-          <span
-            className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
-              notificationStatus === 'granted'
-                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                : 'bg-amber-950 text-amber-400 border border-amber-800'
-            }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${notificationStatus === 'granted' ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
-            {notificationStatus === 'granted' ? 'مفعل خارج التطبيق' : 'يحتاج إذن إشعارات'}
-          </span>
-
-          {urgentAlertsCount > 0 && (
-            <span
-              onClick={onOpenAlerts}
-              className="cursor-pointer text-[10px] px-2.5 py-0.5 rounded-full bg-red-950 text-red-400 border border-red-800 font-bold animate-pulse hover:bg-red-900 transition"
-            >
-              🚨 {urgentAlertsCount} تنبيه طوارئ نشط
+      {/* 2. Emergency Alarm Bar */}
+      {totalCriticalCount > 0 ? (
+        /* ACTIVE ALARM: Triggers and displays ONLY with real critical alerts */
+        <div className="bg-gradient-to-r from-red-950/90 via-slate-900 to-amber-950/80 border-b border-red-700/70 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs text-slate-200 shadow-md">
+          {/* Left: Alert Badges Breakdown */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="flex items-center gap-1.5 font-black text-rose-300 text-xs shrink-0">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+              </span>
+              <span>إنذار الحالات الحرجة ({totalCriticalCount}):</span>
             </span>
-          )}
-        </div>
 
-        <div className="flex items-center gap-2">
-          {/* Test Alarm Sound Button */}
-          <button
-            onClick={handleTestAlarm}
-            disabled={isPlayingTest}
-            className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border transition flex items-center gap-1.5 ${
-              isPlayingTest
-                ? 'bg-red-600 text-white border-red-500 animate-pulse'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-            }`}
-            title="تجربة صوت صفارة إنذار الحريق وإشعار النظام"
-          >
-            <Flame className="w-3.5 h-3.5 text-orange-400" />
-            <span>{isPlayingTest ? 'جاري إطلاق الإنذار...' : 'تجربة الإنذار 🔊'}</span>
-          </button>
-
-          {/* Mute / Unmute Toggle */}
-          <button
-            onClick={handleToggleSound}
-            className={`p-1.5 rounded-xl border transition flex items-center gap-1 text-[11px] font-bold ${
-              soundEnabled
-                ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/80 hover:bg-emerald-900'
-                : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
-            }`}
-            title={soundEnabled ? 'كتم الصوت' : 'تشغيل الصوت'}
-          >
-            {soundEnabled ? (
-              <>
-                <Volume2 className="w-4 h-4 text-emerald-400" />
-                <span className="hidden sm:inline">الصوت مفعل</span>
-              </>
-            ) : (
-              <>
-                <VolumeX className="w-4 h-4 text-slate-400" />
-                <span className="hidden sm:inline">الصوت مكتوم</span>
-              </>
+            {/* Urgent Maintenance Badge */}
+            {urgentMaintenanceCount > 0 && (
+              <button
+                onClick={() => onOpenAlerts?.('maintenance')}
+                className="px-2.5 py-1 rounded-xl bg-rose-950/90 text-rose-300 border border-rose-700/80 font-bold text-[11px] flex items-center gap-1 hover:bg-rose-900 transition active:scale-95 shadow-sm"
+                title="عرض مواقع وبلاغات الصيانة العاجلة"
+              >
+                <Flame className="w-3.5 h-3.5 text-rose-400 animate-bounce" />
+                <span>{urgentMaintenanceCount} صيانة عاجلة</span>
+              </button>
             )}
-          </button>
+
+            {/* Expiring Contracts Badge */}
+            {expiringContractsCount > 0 && (
+              <button
+                onClick={() => onOpenAlerts?.('contracts')}
+                className="px-2.5 py-1 rounded-xl bg-amber-950/90 text-amber-300 border border-amber-700/80 font-bold text-[11px] flex items-center gap-1 hover:bg-amber-900 transition active:scale-95 shadow-sm"
+                title="عرض العقود التي قاربت على الانتهاء"
+              >
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span>{expiringContractsCount} عقود قاربت على الانتهاء</span>
+              </button>
+            )}
+
+            {/* Civil Defense Visits Badge */}
+            {civilDefenseVisitsCount > 0 && (
+              <button
+                onClick={() => onOpenAlerts?.('civil_defense')}
+                className="px-2.5 py-1 rounded-xl bg-blue-950/90 text-blue-300 border border-blue-700/80 font-bold text-[11px] flex items-center gap-1 hover:bg-blue-900 transition active:scale-95 shadow-sm"
+                title="عرض مواعيد زيارات وتفتيش الدفاع المدني"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-blue-400" />
+                <span>{civilDefenseVisitsCount} زيارات دفاع مدني</span>
+              </button>
+            )}
+          </div>
+
+          {/* Right: Sound Trigger for Real Critical Alerts & Sound Mute Toggle */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Trigger siren for real critical alerts (No demo / test alarm) */}
+            <button
+              onClick={handleTriggerAlarmForRealAlerts}
+              disabled={isPlayingSiren}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 shadow-md active:scale-95 ${
+                isPlayingSiren
+                  ? 'bg-red-600 text-white border-red-500 animate-pulse'
+                  : 'bg-red-600/90 hover:bg-red-500 text-white border-red-500'
+              }`}
+              title="إطلاق صفارة إنذار الطوارئ لهذه الحالات الميدانية الحرجة"
+            >
+              <Radio className="w-3.5 h-3.5 shrink-0" />
+              <span>{isPlayingSiren ? 'صفارة الإنذار نشطة 🔊' : 'تشغيل صفارة الإنذار 🚨'}</span>
+            </button>
+
+            {/* Mute / Unmute Toggle */}
+            <button
+              onClick={handleToggleSound}
+              className={`p-1.5 rounded-xl border transition flex items-center gap-1 text-[11px] font-bold ${
+                soundEnabled
+                  ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/80 hover:bg-emerald-900'
+                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+              }`}
+              title={soundEnabled ? 'كتم الصوت' : 'تشغيل الصوت'}
+            >
+              {soundEnabled ? (
+                <>
+                  <Volume2 className="w-4 h-4 text-emerald-400" />
+                  <span className="hidden sm:inline">الصوت مفعل</span>
+                </>
+              ) : (
+                <>
+                  <VolumeX className="w-4 h-4 text-slate-400" />
+                  <span className="hidden sm:inline">الصوت مكتوم</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        /* QUIET STANDBY: When all contracts, maintenance, and civil defense visits are in order */
+        <div className="bg-slate-900/60 border-b border-slate-800/60 px-3 sm:px-6 py-1.5 flex items-center justify-between text-xs text-slate-400">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shadow-sm shadow-emerald-500/50" />
+            <span className="text-[11px] text-slate-300 font-medium">
+              نظام إنذار السلامة: مستقر — لا توجد عقود قاربت على الانتهاء أو صيانة عاجلة أو زيارات دفاع مدني حالياً
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleToggleSound}
+              className={`p-1 rounded-lg border transition flex items-center gap-1 text-[10px] font-medium ${
+                soundEnabled
+                  ? 'bg-slate-900 text-emerald-400 border-slate-800 hover:border-slate-700'
+                  : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-slate-300'
+              }`}
+              title={soundEnabled ? 'كتم صوت التنبيهات' : 'تفعيل صوت التنبيهات'}
+            >
+              {soundEnabled ? (
+                <>
+                  <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden sm:inline">جاهز للتنبيه</span>
+                </>
+              ) : (
+                <>
+                  <VolumeX className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="hidden sm:inline">مكتوم</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

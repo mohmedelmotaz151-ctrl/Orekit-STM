@@ -138,13 +138,30 @@ export const AgentAlerts: React.FC<AgentAlertsProps> = ({
 
   const [isPlayingSiren, setIsPlayingSiren] = useState(false);
 
+  const criticalAlertsCount = 
+    contractsExpiring7Days.length + 
+    contractsExpiring30Days.length + 
+    urgentMaintenance.length + 
+    upcomingCivilDefense.length +
+    agentIncidents.filter((i) => i.priority === 'urgent' || i.priority === 'high').length;
+
   const handleTriggerEmergencyAlarm = () => {
+    if (criticalAlertsCount === 0) return;
     soundNotifier.initAudio();
     setIsPlayingSiren(true);
+
+    const parts: string[] = [];
+    if (urgentMaintenance.length > 0) parts.push(`${urgentMaintenance.length} صيانة عاجلة`);
+    if (contractsExpiring7Days.length > 0 || contractsExpiring30Days.length > 0) {
+      parts.push(`${contractsExpiring7Days.length + contractsExpiring30Days.length} عقود تنتهي قريباً`);
+    }
+    if (upcomingCivilDefense.length > 0) parts.push(`${upcomingCivilDefense.length} زيارات دفاع مدني`);
+
     soundNotifier.sendEmergencyNotification({
-      title: '🚨 إنذار طوارئ فوري: طلبات عملاء وتنبيهات ميدانية نشطة!',
-      body: `يوجد ${totalAlerts} تنبيه عاجل (${agentIncidents.length} طلبات صيانة عملاء، و${contractsExpiring7Days.length} عقود تنتهي فوراً).`,
+      title: '🚨 إنذار طوارئ: تنبيهات ميدانية حرجة تتطلب المتابعة!',
+      body: parts.join(' • '),
       urgent: true,
+      tag: 'agent_critical_alarm',
     });
     setTimeout(() => {
       setIsPlayingSiren(false);
@@ -172,18 +189,25 @@ export const AgentAlerts: React.FC<AgentAlertsProps> = ({
 
         {/* Emergency Sound & Outside Notification Action */}
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
-          <button
-            onClick={handleTriggerEmergencyAlarm}
-            disabled={isPlayingSiren}
-            className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg transition active:scale-95 ${
-              isPlayingSiren
-                ? 'bg-red-600 text-white animate-pulse'
-                : 'bg-red-600/90 hover:bg-red-500 text-white'
-            }`}
-          >
-            <Radio className="w-4 h-4 shrink-0" />
-            <span>{isPlayingSiren ? 'جاري إطلاق صفارة الإنذار...' : 'إطلاق إنذار طوارئ صوتي 🚨'}</span>
-          </button>
+          {criticalAlertsCount > 0 ? (
+            <button
+              onClick={handleTriggerEmergencyAlarm}
+              disabled={isPlayingSiren}
+              className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg transition active:scale-95 ${
+                isPlayingSiren
+                  ? 'bg-red-600 text-white animate-pulse'
+                  : 'bg-red-600/90 hover:bg-red-500 text-white'
+              }`}
+            >
+              <Radio className="w-4 h-4 shrink-0" />
+              <span>{isPlayingSiren ? 'صفارة الإنذار نشطة 🔊' : `إنذار الحالات الحرجة (${criticalAlertsCount}) 🚨`}</span>
+            </button>
+          ) : (
+            <div className="flex-1 py-2 px-3 rounded-xl bg-slate-900/90 border border-slate-800 text-emerald-400 font-bold text-xs flex items-center justify-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>جميع العقود والصيانة مستقرة</span>
+            </div>
+          )}
 
           <button
             onClick={() => {

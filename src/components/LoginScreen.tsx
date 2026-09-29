@@ -15,6 +15,7 @@ import {
 import { User, Site } from '../types';
 import { apiLogin } from '../utils/api';
 import { ClientRegisterModal } from './ClientPortal/ClientRegisterModal';
+import { PWAInstallButton } from './Common/PWAInstallButton';
 
 interface LoginScreenProps {
   users: User[];
@@ -98,6 +99,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <span className="inline-block mt-2 text-[11px] px-3 py-1 rounded-full bg-slate-900 text-slate-300 border border-slate-800">
               بوابة المنظومة الميدانية وبوابة عملاء المنشآت
             </span>
+          </div>
+
+          <div className="flex justify-center pt-1">
+            <PWAInstallButton />
           </div>
         </div>
 

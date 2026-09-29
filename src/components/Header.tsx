@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { ORIKET_COMPANY_PHONE, createWhatsAppUrl } from '../utils/whatsapp';
+import { PWAInstallButton } from './Common/PWAInstallButton';
 
 interface HeaderProps {
   currentUser: User;
@@ -68,6 +69,9 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right side: Alerts & User Profile & Logout */}
         <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* In-App PWA Install Prompt */}
+          <PWAInstallButton />
+
           {/* Quick WhatsApp to Oriket Administration */}
           <a
             href={createWhatsAppUrl(

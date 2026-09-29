@@ -53,6 +53,7 @@ import { SiteDetailModal } from './components/Admin/SiteDetailModal';
 import { ClientPortal } from './components/ClientPortal/ClientPortal';
 import { LeafletMap } from './components/Common/LeafletMap';
 import { EmergencyAlarmBar } from './components/Common/EmergencyAlarmBar';
+import { OfflineIndicator } from './components/Common/OfflineIndicator';
 import { soundNotifier } from './utils/soundNotifications';
 import { getDaysRemaining } from './utils/date';
 import { 
@@ -286,35 +287,50 @@ export default function App() {
     );
   }, [sites, currentUser]);
 
-  // Counts for alerts (tailored strictly to visible sites according to role)
-  const totalExpiringContracts = visibleSites.filter(
-    (s) => s?.contract?.hasContract === 'yes' && s?.contract?.endDate && (getDaysRemaining(s.contract.endDate) || 999) <= 60
-  ).length;
+  // 1. تنبيهات العقود التي قاربت على الانتهاء
+  const expiringContractsCount = useMemo(() => {
+    return visibleSites.filter(
+      (s) => s?.contract?.hasContract === 'yes' && s?.contract?.endDate && (getDaysRemaining(s.contract.endDate) || 999) <= 60
+    ).length;
+  }, [visibleSites]);
 
-  const totalUrgentSites = visibleSites.filter((s) => s?.status === 'urgent_maintenance').length;
-
-  // Client requests count tailored to role:
-  // For Admin: all active pending tickets
-  // For Agent: tickets belonging strictly to their added sites
-  const activeClientRequestsCount = currentUser
-    ? currentUser.role === 'admin'
-      ? incidents.filter((i) => i.status !== 'resolved' && i.status !== 'closed').length +
-        renewals.filter((r) => r.status === 'pending').length
+  // 2. تنبيهات الصيانة العاجلة (المواقع الحرجة وبلاغات الأعطال الطارئة)
+  const urgentMaintenanceCount = useMemo(() => {
+    const urgentSites = visibleSites.filter((s) => s?.status === 'urgent_maintenance').length;
+    const urgentTickets = currentUser?.role === 'admin'
+      ? incidents.filter((i) => (i.status !== 'resolved' && i.status !== 'closed') && (i.priority === 'urgent' || i.priority === 'high')).length
       : incidents.filter((i) => {
           if (i.status === 'resolved' || i.status === 'closed') return false;
-          if (i.assignedAgentId === currentUser.id || i.assignedAgentName === currentUser.name) return true;
+          if (i.priority !== 'urgent' && i.priority !== 'high') return false;
+          if (i.assignedAgentId === currentUser?.id || i.assignedAgentName === currentUser?.name) return true;
           const site = visibleSites.find((s) => s.id === i.siteId);
           return !!site;
-        }).length +
-        renewals.filter((r) => {
-          if (r.status !== 'pending') return false;
-          if (r.assignedAgentId === currentUser.id || r.assignedAgentName === currentUser.name) return true;
-          const site = visibleSites.find((s) => s.id === r.siteId);
-          return !!site;
-        }).length
-    : 0;
+        }).length;
+    return urgentSites + urgentTickets;
+  }, [visibleSites, incidents, currentUser]);
 
-  const totalAlertsCount = totalExpiringContracts + totalUrgentSites + activeClientRequestsCount;
+  // 3. تنبيهات زيارات وتفتيش الدفاع المدني
+  const civilDefenseVisitsCount = useMemo(() => {
+    const upcomingVisits = visibleSites.filter((s) => {
+      if (s.civilDefense?.hasRecord && s.civilDefense?.nextVisitDate) {
+        const days = getDaysRemaining(s.civilDefense.nextVisitDate);
+        return days !== null && days >= 0 && days <= 30;
+      }
+      return false;
+    }).length;
+
+    const cdAlerts = civilDefenseAlerts.filter((a) => {
+      if (a.status !== 'upcoming') return false;
+      if (currentUser?.role === 'admin') return true;
+      const site = visibleSites.find((s) => s.id === a.siteId);
+      return !!site;
+    }).length;
+
+    return upcomingVisits + cdAlerts;
+  }, [visibleSites, civilDefenseAlerts, currentUser]);
+
+  // Total alert count for header badges
+  const totalAlertsCount = expiringContractsCount + urgentMaintenanceCount + civilDefenseVisitsCount;
 
   // Handlers for authentication
   const handleLoginSuccess = (user: User) => {
@@ -656,16 +672,19 @@ export default function App() {
   // If user is not logged in, show the login portal
   if (!currentUser) {
     return (
-      <LoginScreen
-        users={users}
-        onLoginSuccess={handleLoginSuccess}
-        onRegisterClientSuccess={(newUser, newSite) => {
-          setUsers((prev) => [newUser, ...prev.filter((u) => u.id !== newUser.id && u.phone !== newUser.phone)]);
-          if (newSite) {
-            setSites((prev) => [newSite, ...prev.filter((s) => s.id !== newSite.id)]);
-          }
-        }}
-      />
+      <>
+        <LoginScreen
+          users={users}
+          onLoginSuccess={handleLoginSuccess}
+          onRegisterClientSuccess={(newUser, newSite) => {
+            setUsers((prev) => [newUser, ...prev.filter((u) => u.id !== newUser.id && u.phone !== newUser.phone)]);
+            if (newSite) {
+              setSites((prev) => [newSite, ...prev.filter((s) => s.id !== newSite.id)]);
+            }
+          }}
+        />
+        <OfflineIndicator />
+      </>
     );
   }
 
@@ -686,12 +705,18 @@ export default function App() {
         }}
       />
 
-      {/* Emergency Alarm & Outside Notification Strip */}
+      {/* Emergency Alarm & Outside Notification Strip: Active ONLY on contracts nearing expiration, urgent maintenance, or civil defense visits */}
       <EmergencyAlarmBar
-        urgentAlertsCount={totalAlertsCount}
-        onOpenAlerts={() => {
+        expiringContractsCount={expiringContractsCount}
+        urgentMaintenanceCount={urgentMaintenanceCount}
+        civilDefenseVisitsCount={civilDefenseVisitsCount}
+        onOpenAlerts={(target) => {
           if (currentUser.role === 'admin') {
-            setAdminTab('dashboard');
+            if (target === 'contracts' || target === 'maintenance') {
+              setAdminTab('sites');
+            } else {
+              setAdminTab('dashboard');
+            }
           } else {
             setMobileTab('alerts');
           }
@@ -1010,6 +1035,9 @@ export default function App() {
           visits={visits}
         />
       )}
+
+      {/* Real-time Offline Connectivity Banner */}
+      <OfflineIndicator />
 
     </div>
   );

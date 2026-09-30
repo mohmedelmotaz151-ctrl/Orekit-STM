@@ -9,12 +9,39 @@ import {
   Lock, 
   X, 
   CheckCircle2, 
-  Sparkles,
-  AlertTriangle,
-  Loader2
+  Sparkles, 
+  AlertTriangle, 
+  Loader2,
+  Navigation,
+  Compass,
+  ExternalLink
 } from 'lucide-react';
 import { User, Site, SiteType, SAUDI_CITIES } from '../../types';
 import { apiRegisterClient } from '../../utils/api';
+import { LeafletMap } from '../Common/LeafletMap';
+import { getCurrentPosition, detectClosestSaudiCity } from '../../utils/geo';
+
+const CITY_CENTERS: Record<string, [number, number]> = {
+  'الرياض': [24.7136, 46.6753],
+  'جدة': [21.5433, 39.1728],
+  'مكة المكرمة': [21.3891, 39.8579],
+  'المدينة المنورة': [24.5247, 39.5692],
+  'الدمام': [26.4207, 50.0888],
+  'الخبر': [26.2172, 50.1971],
+  'الظهران': [26.2886, 50.1140],
+  'الأحساء': [25.3833, 49.5833],
+  'الجبيل': [27.0046, 49.6606],
+  'القصيم / بريدة': [26.3592, 43.9818],
+  'عنيزة': [26.0843, 43.9936],
+  'حائل': [27.5114, 41.7208],
+  'تبوك': [28.3835, 36.5662],
+  'أبها': [18.2164, 42.5053],
+  'خميس مشيط': [18.3000, 42.7333],
+  'جازان': [16.8892, 42.5706],
+  'نجران': [17.4924, 44.1277],
+  'ينبع': [24.0895, 38.0618],
+  'الطائف': [21.2854, 40.4222],
+};
 
 interface ClientRegisterModalProps {
   isOpen: boolean;
@@ -36,6 +63,15 @@ export const ClientRegisterModal: React.FC<ClientRegisterModalProps> = ({
   const [city, setCity] = useState<string>('الرياض');
   const [district, setDistrict] = useState('');
   const [address, setAddress] = useState('');
+
+  // Map & GPS Coordinates
+  const [coordinates, setCoordinates] = useState<{ lat: number; lon: number }>({
+    lat: 24.7136,
+    lon: 46.6753,
+  });
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationSuccessMsg, setLocationSuccessMsg] = useState('');
+  const [showMap, setShowMap] = useState(true);
   
   // Licensing & Maintenance Contract options
   const [hasLicense, setHasLicense] = useState<'yes' | 'no'>('yes');
@@ -54,6 +90,43 @@ export const ClientRegisterModal: React.FC<ClientRegisterModalProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
 
   if (!isOpen) return null;
+
+  // City change handler: re-centers map to selected city
+  const handleCityChange = (newCity: string) => {
+    setCity(newCity);
+    if (CITY_CENTERS[newCity]) {
+      const [cLat, cLon] = CITY_CENTERS[newCity];
+      setCoordinates({ lat: cLat, lon: cLon });
+    }
+  };
+
+  // Device GPS handler
+  const handleGetDeviceLocation = async () => {
+    setIsLocating(true);
+    setLocationSuccessMsg('');
+    setErrorMsg('');
+    try {
+      const pos = await getCurrentPosition();
+      setCoordinates({ lat: pos.latitude, lon: pos.longitude });
+      const detectedCity = detectClosestSaudiCity(pos.latitude, pos.longitude);
+      if (detectedCity && (SAUDI_CITIES as readonly string[]).includes(detectedCity)) {
+        setCity(detectedCity);
+      }
+      setLocationSuccessMsg('تم التقاط إحداثيات موقعك عبر GPS بنجاح وتثبيت الدبوس على الخريطة 📍');
+      setTimeout(() => setLocationSuccessMsg(''), 4500);
+    } catch {
+      setErrorMsg('تعذر التقاط الموقع الجغرافي تلقائياً، يمكنك النقر مباشرة على الخريطة لتثبيت الدبوس.');
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  // Map pin click handler
+  const handleLocationPicked = (lat: number, lon: number) => {
+    setCoordinates({ lat, lon });
+    setLocationSuccessMsg('تم تحديث موقع المنشأة وتثبيت الدبوس بنجاح');
+    setTimeout(() => setLocationSuccessMsg(''), 3000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +148,8 @@ export const ClientRegisterModal: React.FC<ClientRegisterModalProps> = ({
         city,
         district: district.trim(),
         address: address.trim(),
+        latitude: coordinates ? coordinates.lat : 24.7136,
+        longitude: coordinates ? coordinates.lon : 46.6753,
         hasLicense,
         licenseType: hasLicense === 'yes' ? licenseType : '',
         hasContract,
@@ -235,7 +310,7 @@ export const ClientRegisterModal: React.FC<ClientRegisterModalProps> = ({
                 <label className="font-bold text-slate-300 block">المدينة *</label>
                 <select
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(e) => handleCityChange(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-orange-500"
                 >
                   {SAUDI_CITIES.map((c) => (
@@ -265,6 +340,97 @@ export const ClientRegisterModal: React.FC<ClientRegisterModalProps> = ({
                 placeholder="مثال: طريق الملك فهد، بجوار مصرف الراجحي"
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
               />
+            </div>
+
+            {/* Interactive Map Location Picker (GPS) */}
+            <div className="pt-3 border-t border-slate-800/80 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span className="font-bold text-slate-200 block text-xs flex items-center gap-1.5">
+                    <span>موقع المنشأة الجغرافي على الخريطة (GPS)</span>
+                    <span className="text-[10px] text-orange-400 font-normal">
+                      {coordinates ? '· تم تحديد الإحداثيات' : '· انقر لتحديد الموقع'}
+                    </span>
+                  </span>
+                  <span className="text-[11px] text-slate-400 block mt-0.5">
+                    انقر على الخريطة لتثبيت مكان منشأتك بدقة لمساعدة مهندسي الصيانة والمندوبين
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleGetDeviceLocation}
+                    disabled={isLocating}
+                    className="py-1.5 px-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-orange-950/40 transition active:scale-95 disabled:opacity-50"
+                    title="التقاط موقعك الحالي عبر GPS الهاتف أو الجهاز"
+                  >
+                    {isLocating ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>جاري التحديد...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Navigation className="w-3.5 h-3.5" />
+                        <span>تحديد موقعي الحالي</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowMap(!showMap)}
+                    className="py-1.5 px-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold transition"
+                  >
+                    {showMap ? 'إخفاء الخريطة' : 'إظهار الخريطة'}
+                  </button>
+                </div>
+              </div>
+
+              {locationSuccessMsg && (
+                <div className="p-2.5 rounded-xl bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 text-[11px] flex items-center gap-2 animate-fadeIn">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                  <span>{locationSuccessMsg}</span>
+                </div>
+              )}
+
+              {showMap && (
+                <div className="space-y-2">
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-700 shadow-xl">
+                    <LeafletMap
+                      interactivePicker={true}
+                      onLocationPicked={handleLocationPicked}
+                      pickedLocation={coordinates ? { lat: coordinates.lat, lon: coordinates.lon } : undefined}
+                      center={coordinates ? [coordinates.lat, coordinates.lon] : (CITY_CENTERS[city] || [24.7136, 46.6753])}
+                      zoom={coordinates ? 15 : 12}
+                      className="w-full h-56 sm:h-64 rounded-2xl"
+                    />
+                  </div>
+
+                  {coordinates && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-slate-300">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                        <span className="font-mono text-slate-200" dir="ltr">
+                          {coordinates.lat.toFixed(5)}°, {coordinates.lon.toFixed(5)}°
+                        </span>
+                        <span className="text-slate-500">({city})</span>
+                      </div>
+
+                      <a
+                        href={`https://www.google.com/maps?q=${coordinates.lat},${coordinates.lon}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-orange-400 hover:text-orange-300 flex items-center gap-1 font-bold underline transition"
+                      >
+                        <span>معاينة في خرائط Google</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

@@ -29,7 +29,7 @@ export interface AppModulesHubProps {
   currentUser: User;
   onNavigate: (destination: {
     view?: 'admin_dashboard' | 'mobile_agent';
-    adminTab?: 'dashboard' | 'sites' | 'extinguishers' | 'agents' | 'clients' | 'incentives' | 'reports';
+    adminTab?: 'dashboard' | 'sites' | 'extinguishers' | 'agents' | 'clients' | 'incentives' | 'reports' | 'alerts';
     mobileTab?: 'home' | 'sites' | 'map' | 'alerts' | 'profile';
     openNewVisit?: boolean;
     openFilter?: string;
@@ -157,7 +157,7 @@ export const AppModulesHub: React.FC<AppModulesHubProps> = ({
       roles: ['admin', 'supervisor', 'agent'],
       action: () => {
         if (currentUser.role === 'admin') {
-          onNavigate({ view: 'admin_dashboard', adminTab: 'dashboard' });
+          onNavigate({ view: 'admin_dashboard', adminTab: 'alerts' });
         } else {
           onNavigate({ view: 'mobile_agent', mobileTab: 'alerts' });
         }

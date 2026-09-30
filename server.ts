@@ -4,7 +4,7 @@ import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = 3000;
 
 app.use(express.json({ limit: '15mb' }));
 
@@ -365,6 +365,8 @@ app.post('/api/register-client', (req, res) => {
     city,
     district,
     address,
+    latitude,
+    longitude,
     hasLicense,
     licenseType,
     hasContract,
@@ -404,8 +406,8 @@ app.post('/api/register-client', (req, res) => {
     city: city || 'الرياض',
     district: district || '',
     address: address || '',
-    latitude: 24.7136,
-    longitude: 46.6753,
+    latitude: typeof latitude === 'number' && !isNaN(latitude) ? latitude : 24.7136,
+    longitude: typeof longitude === 'number' && !isNaN(longitude) ? longitude : 46.6753,
     license: {
       hasLicense: hasLicense === 'yes' ? 'yes' : 'no',
       licenseType: licenseType || 'رخصة دفاع مدني',

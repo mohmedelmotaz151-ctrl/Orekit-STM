@@ -41,7 +41,7 @@ interface AdminDashboardProps {
   renewals?: ContractRenewalRequest[];
   onSelectSite: (site: Site) => void;
   onOpenNewVisit: (site?: Site) => void;
-  onNavigateTab: (tab: 'dashboard' | 'sites' | 'extinguishers' | 'clients' | 'agents' | 'incentives' | 'reports') => void;
+  onNavigateTab: (tab: 'dashboard' | 'sites' | 'extinguishers' | 'clients' | 'agents' | 'incentives' | 'reports' | 'alerts') => void;
   onApproveSite: (siteId: string, approved: boolean, reason?: string) => void;
 }
 
@@ -286,10 +286,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             <button
-              onClick={() => onNavigateTab('clients')}
-              className="text-xs text-red-200 hover:text-white font-bold bg-red-900/60 hover:bg-red-800 px-3.5 py-1.5 rounded-xl border border-red-700 transition"
+              onClick={() => onNavigateTab('alerts')}
+              className="text-xs text-white font-bold bg-red-600 hover:bg-red-500 px-3.5 py-1.5 rounded-xl border border-red-500 shadow-md shadow-red-950 transition flex items-center gap-1.5"
             >
-              فتح بوابة إدارة طلبات العملاء ➔
+              <span>🚨 فتح مركز الإشعارات والطوارئ</span>
+              <span>➔</span>
             </button>
           </div>
 

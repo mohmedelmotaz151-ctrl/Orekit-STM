@@ -383,6 +383,18 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                   {linkedSite?.city || 'المملكة العربية السعودية'}
                   {linkedSite?.district ? ` - حي ${linkedSite.district}` : ''}
                 </span>
+                {linkedSite?.latitude && linkedSite?.longitude && (
+                  <a
+                    href={`https://www.google.com/maps?q=${linkedSite.latitude},${linkedSite.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-orange-400 hover:text-orange-300 font-bold underline transition"
+                    title="عرض موقع المنشأة المثبت على خرائط Google"
+                  >
+                    <span>الموقع على الخريطة</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
                 <span className="flex items-center gap-1">
                   <Phone className="w-3.5 h-3.5 text-slate-500" />
                   المسؤول: {currentUser.name} ({currentUser.phone})

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   getStoredUsers, 
   saveStoredUsers, 
@@ -49,6 +49,7 @@ import { AgentsManagement } from './components/Admin/AgentsManagement';
 import { ClientsManagement } from './components/Admin/ClientsManagement';
 import { IncentivesManagement } from './components/Admin/IncentivesManagement';
 import { ReportsManagement } from './components/Admin/ReportsManagement';
+import { AdminNotifications } from './components/Admin/AdminNotifications';
 import { SiteDetailModal } from './components/Admin/SiteDetailModal';
 import { ClientPortal } from './components/ClientPortal/ClientPortal';
 import { LeafletMap } from './components/Common/LeafletMap';
@@ -122,7 +123,10 @@ export default function App() {
   const [mobileTab, setMobileTab] = useState<'home' | 'sites' | 'map' | 'alerts' | 'profile'>('home');
 
   // Admin dashboard navigation tabs
-  const [adminTab, setAdminTab] = useState<'dashboard' | 'sites' | 'extinguishers' | 'agents' | 'clients' | 'incentives' | 'reports'>('dashboard');
+  const [adminTab, setAdminTab] = useState<'dashboard' | 'sites' | 'extinguishers' | 'agents' | 'clients' | 'incentives' | 'reports' | 'alerts'>('dashboard');
+
+  // Track notified urgent incident IDs so alarm only fires once per new urgent incident
+  const notifiedUrgentIncidentIdsRef = useRef<Set<string>>(new Set());
 
   // Navigation Hub: Opened when clicking on company logo
   const [isHubOpen, setIsHubOpen] = useState(false);
@@ -255,6 +259,42 @@ export default function App() {
     saveStoredIncidents(incidents);
   }, [incidents]);
 
+  // Real-time Emergency Audio Alarm for System Administrator on incoming client emergency visits & urgent maintenance
+  useEffect(() => {
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'supervisor')) return;
+
+    const unhandledUrgent = incidents.filter(
+      (i) =>
+        i.status === 'pending' &&
+        (i.priority === 'urgent' ||
+          i.priority === 'high' ||
+          i.title.includes('زيارة طارئة') ||
+          i.title.includes('صيانة عاجلة') ||
+          i.description.includes('زيارة طارئة') ||
+          i.description.includes('صيانة عاجلة'))
+    );
+
+    let hasNewUrgent = false;
+    let latestUrgent: ClientIncident | null = null;
+
+    for (const inc of unhandledUrgent) {
+      if (!notifiedUrgentIncidentIdsRef.current.has(inc.id)) {
+        notifiedUrgentIncidentIdsRef.current.add(inc.id);
+        hasNewUrgent = true;
+        latestUrgent = inc;
+      }
+    }
+
+    if (hasNewUrgent && latestUrgent) {
+      soundNotifier.sendEmergencyNotification({
+        title: `🚨 إنذار طوارئ: بلاغ عميل عاجل!`,
+        body: `منشأة ${latestUrgent.siteName}: ${latestUrgent.title}`,
+        urgent: true,
+        tag: `urgent_${latestUrgent.id}`,
+      });
+    }
+  }, [incidents, currentUser]);
+
   useEffect(() => {
     saveStoredInquiries(inquiries);
   }, [inquiries]);
@@ -335,6 +375,19 @@ export default function App() {
 
   // Total alert count for header badges
   const totalAlertsCount = expiringContractsCount + urgentMaintenanceCount + civilDefenseVisitsCount;
+
+  // Urgent client tickets count specifically (Emergency visits & urgent maintenance)
+  const urgentClientTicketsCount = useMemo(() => {
+    return incidents.filter(
+      (i) =>
+        i.status !== 'resolved' &&
+        i.status !== 'closed' &&
+        (i.priority === 'urgent' ||
+          i.priority === 'high' ||
+          i.title.includes('زيارة طارئة') ||
+          i.title.includes('صيانة عاجلة'))
+    ).length;
+  }, [incidents]);
 
   // Handlers for authentication
   const handleLoginSuccess = (user: User) => {
@@ -704,8 +757,8 @@ export default function App() {
         isHubActive={isHubOpen}
         onOpenAlerts={() => {
           setIsHubOpen(false);
-          if (currentUser.role === 'admin') {
-            setAdminTab('dashboard');
+          if (currentUser.role === 'admin' || currentUser.role === 'supervisor') {
+            setAdminTab('alerts');
           } else {
             setMobileTab('alerts');
           }
@@ -719,12 +772,8 @@ export default function App() {
         civilDefenseVisitsCount={civilDefenseVisitsCount}
         onOpenAlerts={(target) => {
           setIsHubOpen(false);
-          if (currentUser.role === 'admin') {
-            if (target === 'contracts' || target === 'maintenance') {
-              setAdminTab('sites');
-            } else {
-              setAdminTab('dashboard');
-            }
+          if (currentUser.role === 'admin' || currentUser.role === 'supervisor') {
+            setAdminTab('alerts');
           } else {
             setMobileTab('alerts');
           }
@@ -917,6 +966,14 @@ export default function App() {
           <div className="flex bg-slate-900 p-1.5 rounded-2xl border border-slate-800 text-xs overflow-x-auto gap-1">
             {[
               { id: 'dashboard', label: 'لوحة المؤشرات والخريطة', icon: LayoutDashboard },
+              { 
+                id: 'alerts', 
+                label: urgentClientTicketsCount > 0 
+                  ? `🚨 مركز الإشعارات والطوارئ (${urgentClientTicketsCount})` 
+                  : `مركز الإشعارات (${totalAlertsCount})`, 
+                icon: Bell, 
+                isEmergency: urgentClientTicketsCount > 0 
+              },
               { id: 'sites', label: `سجل المواقع المركزي CRM (${sites.length})`, icon: Building2 },
               { id: 'extinguishers', label: `صيانة طفايات المواقع المعتمدة (${sites.filter(s => s.approvalStatus === 'approved').length})`, icon: Flame },
               { id: 'clients', label: `بوابة وطلبات العملاء (${users.filter(u => u.role === 'client').length})`, icon: Users },
@@ -926,17 +983,22 @@ export default function App() {
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = adminTab === tab.id;
+              const isUrgentTab = tab.id === 'alerts' && (tab as any).isEmergency;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setAdminTab(tab.id as any)}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold whitespace-nowrap transition ${
                     isActive
-                      ? 'bg-orange-600 text-white shadow-lg shadow-orange-950/40'
+                      ? isUrgentTab
+                        ? 'bg-red-600 text-white shadow-xl shadow-red-950/60 ring-2 ring-red-400'
+                        : 'bg-orange-600 text-white shadow-lg shadow-orange-950/40'
+                      : isUrgentTab
+                      ? 'text-red-400 bg-red-950/60 border border-red-700/80 animate-pulse hover:bg-red-900/60 hover:text-white'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-850'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className={`w-4 h-4 ${isUrgentTab && !isActive ? 'text-red-400' : ''}`} />
                   <span>{tab.label}</span>
                 </button>
               );
@@ -951,10 +1013,27 @@ export default function App() {
               visits={visits}
               agents={users}
               settings={settings}
+              incidents={incidents}
+              inquiries={inquiries}
+              renewals={renewals}
               onSelectSite={(site) => setSelectedSiteForDetail(site)}
               onOpenNewVisit={handleOpenNewVisit}
               onNavigateTab={(tab) => setAdminTab(tab)}
               onApproveSite={handleApproveSite}
+            />
+          )}
+
+          {adminTab === 'alerts' && (
+            <AdminNotifications
+              currentUser={currentUser}
+              sites={sites}
+              incidents={incidents}
+              civilDefenseAlerts={civilDefenseAlerts}
+              renewals={renewals}
+              inquiries={inquiries}
+              onSelectSite={(site) => setSelectedSiteForDetail(site)}
+              onUpdateIncident={handleUpdateIncident}
+              onUpdateSiteStatus={handleUpdateStatus}
             />
           )}
 

@@ -189,6 +189,8 @@ export interface RegisterClientParams {
   city: string;
   district?: string;
   address?: string;
+  latitude?: number;
+  longitude?: number;
   hasLicense: 'yes' | 'no';
   licenseType?: string;
   hasContract: 'yes' | 'no';
@@ -259,8 +261,8 @@ export async function apiRegisterClient(
       city: params.city,
       district: params.district || '',
       address: params.address || '',
-      latitude: 24.7136,
-      longitude: 46.6753,
+      latitude: typeof params.latitude === 'number' && !isNaN(params.latitude) ? params.latitude : 24.7136,
+      longitude: typeof params.longitude === 'number' && !isNaN(params.longitude) ? params.longitude : 46.6753,
       license: {
         hasLicense: params.hasLicense,
         licenseType: params.licenseType || 'رخصة دفاع مدني',

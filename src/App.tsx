@@ -54,6 +54,7 @@ import { ClientPortal } from './components/ClientPortal/ClientPortal';
 import { LeafletMap } from './components/Common/LeafletMap';
 import { EmergencyAlarmBar } from './components/Common/EmergencyAlarmBar';
 import { OfflineIndicator } from './components/Common/OfflineIndicator';
+import { AppModulesHub } from './components/NavigationHub/AppModulesHub';
 import { soundNotifier } from './utils/soundNotifications';
 import { getDaysRemaining } from './utils/date';
 import { 
@@ -122,6 +123,9 @@ export default function App() {
 
   // Admin dashboard navigation tabs
   const [adminTab, setAdminTab] = useState<'dashboard' | 'sites' | 'extinguishers' | 'agents' | 'clients' | 'incentives' | 'reports'>('dashboard');
+
+  // Navigation Hub: Opened when clicking on company logo
+  const [isHubOpen, setIsHubOpen] = useState(false);
 
   // Modals
   const [isNewVisitModalOpen, setIsNewVisitModalOpen] = useState(false);
@@ -691,12 +695,15 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-['Cairo',sans-serif]">
       
-      {/* Top Header - No Admin switcher icon! */}
+      {/* Top Header - Clicking logo opens AppModulesHub */}
       <Header
         currentUser={currentUser}
         onLogout={handleLogout}
         alertsCount={totalAlertsCount}
+        onOpenHub={() => setIsHubOpen((prev) => !prev)}
+        isHubActive={isHubOpen}
         onOpenAlerts={() => {
+          setIsHubOpen(false);
           if (currentUser.role === 'admin') {
             setAdminTab('dashboard');
           } else {
@@ -711,6 +718,7 @@ export default function App() {
         urgentMaintenanceCount={urgentMaintenanceCount}
         civilDefenseVisitsCount={civilDefenseVisitsCount}
         onOpenAlerts={(target) => {
+          setIsHubOpen(false);
           if (currentUser.role === 'admin') {
             if (target === 'contracts' || target === 'maintenance') {
               setAdminTab('sites');
@@ -723,8 +731,34 @@ export default function App() {
         }}
       />
 
-      {/* VIEW MODE 1: MOBILE AGENT APPLICATION (For field sales agents) */}
-      {currentUser.role === 'agent' && (
+      {/* APP MODULES NAVIGATION HUB (When clicking on company logo) */}
+      {isHubOpen ? (
+        <main className="flex-1 w-full pb-16">
+          <AppModulesHub
+            currentUser={currentUser}
+            onClose={() => setIsHubOpen(false)}
+            onNavigate={({ view, adminTab: targetAdminTab, mobileTab: targetMobileTab, openNewVisit }) => {
+              setIsHubOpen(false);
+              if (openNewVisit) {
+                handleOpenNewVisit();
+                return;
+              }
+              if (targetAdminTab) {
+                setAdminTab(targetAdminTab);
+              }
+              if (targetMobileTab) {
+                setMobileTab(targetMobileTab);
+              }
+            }}
+            sitesCount={visibleSites.length}
+            criticalAlertsCount={totalAlertsCount}
+            expiringContractsCount={expiringContractsCount}
+          />
+        </main>
+      ) : (
+        <>
+          {/* VIEW MODE 1: MOBILE AGENT APPLICATION (For field sales agents) */}
+          {currentUser.role === 'agent' && (
         <div className="flex-1 flex flex-col justify-between max-w-lg mx-auto w-full px-3 py-4 pb-24">
           
           {/* Main Mobile Screen Tabs */}
@@ -1003,6 +1037,8 @@ export default function App() {
           )}
 
         </div>
+      )}
+        </>
       )}
 
       {/* MULTI-STEP NEW VISIT & REGISTRATION MODAL */}

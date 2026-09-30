@@ -15,6 +15,8 @@ interface HeaderProps {
   onLogout: () => void;
   alertsCount: number;
   onOpenAlerts?: () => void;
+  onOpenHub?: () => void;
+  isHubActive?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,6 +24,8 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout,
   alertsCount,
   onOpenAlerts,
+  onOpenHub,
+  isHubActive = false,
 }) => {
   const getRoleLabel = (role: UserRole) => {
     switch (role) {
@@ -47,25 +51,37 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-xl transition-all">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
         
-        {/* Logo & Company Name */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 via-orange-600 to-amber-600 flex items-center justify-center text-white shadow-lg shadow-orange-950/50">
+        {/* Logo & Company Name (Clickable to open Navigation Hub) */}
+        <button
+          type="button"
+          onClick={onOpenHub}
+          className={`flex items-center gap-3 text-right p-1.5 -m-1.5 rounded-2xl transition group focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
+            isHubActive ? 'bg-orange-950/50 ring-1 ring-orange-500/60 shadow-lg shadow-orange-950/40' : 'hover:bg-slate-800/70'
+          }`}
+          title="اضغط هنا لفتح بوابة وتطبيقات وأقسام المنظومة (Hub)"
+          aria-label="بوابة أقسام منظومة أوريكيت"
+        >
+          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 via-orange-600 to-amber-600 flex items-center justify-center text-white shadow-lg shadow-orange-950/50 group-hover:scale-105 group-active:scale-95 transition-transform shrink-0">
             <Flame className="w-6 h-6 animate-pulse" />
+            <span className="absolute -bottom-1 -left-1 w-3.5 h-3.5 bg-slate-900 rounded-full flex items-center justify-center border border-slate-700">
+              <span className="w-2 h-2 rounded-full bg-orange-400 animate-ping" />
+            </span>
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-black text-lg sm:text-xl tracking-tight text-white flex items-center gap-1.5">
+              <span className="font-black text-lg sm:text-xl tracking-tight text-white flex items-center gap-1.5 group-hover:text-orange-400 transition-colors">
                 أوريكيت <span className="text-orange-500 font-bold text-sm sm:text-base">ORIKET</span>
               </span>
-              <span className="hidden sm:inline-block text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-medium">
-                أنظمة السلامة ومكافحة الحريق
+              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-medium group-hover:border-orange-500/50 group-hover:text-white transition">
+                <span>أقسام المنظومة</span>
+                <span className="text-orange-400 text-xs">▾</span>
               </span>
             </div>
-            <p className="text-[10px] sm:text-xs text-slate-400 hidden xs:block">
+            <p className="text-[10px] sm:text-xs text-slate-400 hidden xs:block group-hover:text-slate-300 transition-colors">
               المنظومة الميدانية لإدارة المواقع وعقود الصيانة
             </p>
           </div>
-        </div>
+        </button>
 
         {/* Right side: Alerts & User Profile & Logout */}
         <div className="flex items-center gap-2 sm:gap-2.5">

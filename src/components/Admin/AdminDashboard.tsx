@@ -106,15 +106,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     <div className="space-y-6">
       
       {/* Executive Welcome Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-850 to-orange-950/40 p-5 rounded-3xl border border-slate-800 shadow-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-850 to-orange-950/40 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-xl">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-bold text-orange-400 bg-orange-950/70 border border-orange-700/60 px-2.5 py-0.5 rounded-full">
               مركز العمليات والرقابة الميدانية
             </span>
             <span className="text-xs text-slate-400">اليوم: {new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-white">
+          <h1 className="text-lg sm:text-2xl font-black text-white">
             لوحة الإدارة العامة - شركة أوريكيت للسلامة
           </h1>
           <p className="text-xs text-slate-300">
@@ -125,10 +125,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => onNavigateTab('extinguishers')}
-            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-orange-950/40 transition"
+            className="px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-orange-950/40 transition"
           >
             <Flame className="w-4 h-4" />
-            <span>صيانة طفايات المواقع المعتمدة ({approvedSitesCount})</span>
+            <span>صيانة طفايات المواقع ({approvedSitesCount})</span>
             {extinguishersDueCount > 0 && (
               <span className="bg-rose-950 text-rose-200 border border-rose-500 px-1.5 py-0.2 rounded-full text-[10px]">
                 {extinguishersDueCount} تنبيه
@@ -137,14 +137,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
           <button
             onClick={() => onNavigateTab('reports')}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition"
+            className="px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
             <span>التقارير والتصدير</span>
           </button>
           <button
             onClick={() => onNavigateTab('incentives')}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition"
+            className="px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition"
           >
             <Award className="w-4 h-4 text-orange-400" />
             <span>الحوافز ({settings.ratePerApprovedSiteSAR} ر.س)</span>
@@ -153,18 +153,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </div>
 
       {/* KPI METRIC CARDS (Matching User Spec #6: إحصائيات اليوم) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
         
         {/* 1. Total Sites */}
         <div 
           onClick={() => onNavigateTab('sites')}
-          className="bg-slate-900/90 hover:bg-slate-850 p-4 rounded-2xl border border-slate-800 cursor-pointer transition shadow-md flex flex-col justify-between"
+          className="bg-slate-900/90 hover:bg-slate-850 p-3 sm:p-4 rounded-2xl border border-slate-800 cursor-pointer transition shadow-md flex flex-col justify-between"
         >
           <div className="text-slate-400 text-xs font-medium flex items-center justify-between">
             <span>إجمالي المواقع</span>
             <Building2 className="w-4 h-4 text-sky-400" />
           </div>
-          <div className="text-2xl font-black text-white mt-2 font-mono">
+          <div className="text-xl sm:text-2xl font-black text-white mt-1.5 font-mono">
             {totalSitesCount.toLocaleString('ar-SA')}
           </div>
           <span className="text-[10px] text-emerald-400 mt-1 block">+12 هذا الأسبوع</span>

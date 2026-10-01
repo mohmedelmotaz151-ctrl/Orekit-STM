@@ -374,34 +374,33 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
       />
 
       {/* 1. Facility Header Profile Card */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 left-0 w-80 h-80 bg-orange-600/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white shadow-lg shadow-orange-950/60 shrink-0">
-              <Building2 className="w-8 h-8" />
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6 relative z-10">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white shadow-lg shadow-orange-950/60 shrink-0">
+              <Building2 className="w-6 h-6 sm:w-8 sm:h-8" />
             </div>
             <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-black text-white">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg sm:text-2xl font-black text-white">
                   {currentUser.facilityName || linkedSite?.name || 'منشأة العميل'}
                 </h1>
-                <span className="text-xs px-2.5 py-1 rounded-full bg-orange-950/80 text-orange-400 border border-orange-800/80 font-bold">
+                <span className="text-[11px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-orange-950/80 text-orange-400 border border-orange-800/80 font-bold">
                   بوابة عميل معتمد
                 </span>
                 {linkedSite?.type && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
                     {linkedSite.type}
                   </span>
                 )}
               </div>
 
-              <div className="flex items-center gap-4 mt-2 text-xs text-slate-400 flex-wrap">
+              <div className="flex items-center gap-3 sm:gap-4 mt-2 text-xs text-slate-400 flex-wrap">
                 <span className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-orange-500" />
-                  {linkedSite?.city || 'المملكة العربية السعودية'}
-                  {linkedSite?.district ? ` - حي ${linkedSite.district}` : ''}
+                  <MapPin className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                  <span>{linkedSite?.city || 'المملكة العربية السعودية'}{linkedSite?.district ? ` - حي ${linkedSite.district}` : ''}</span>
                 </span>
                 {linkedSite?.latitude && linkedSite?.longitude && (
                   <a
@@ -416,15 +415,15 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                   </a>
                 )}
                 <span className="flex items-center gap-1">
-                  <Phone className="w-3.5 h-3.5 text-slate-500" />
-                  المسؤول: {currentUser.name} ({currentUser.phone})
+                  <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  <span>{currentUser.name} ({currentUser.phone})</span>
                 </span>
               </div>
             </div>
           </div>
 
           {/* Quick Direct WhatsApp Support to Oriket */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 self-stretch sm:self-auto justify-end">
             <a
               href={createWhatsAppUrl(
                 ORIKET_COMPANY_PHONE,
@@ -652,11 +651,11 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
             <div className="pt-2">
               <div className="grid grid-cols-5 gap-1.5 text-center">
                 {[
-                  { label: 'تم الاستلام', done: true, current: isPending && !activeIncident.assignedTechnician },
-                  { label: 'مراجعة الإدارة', done: !!activeIncident.assignedTechnician || isInProgress || isResolved, current: isPending && !!activeIncident.assignedTechnician },
-                  { label: 'تكليف الفني', done: !!activeIncident.assignedTechnician || isInProgress || isResolved, current: isInProgress && !!activeIncident.assignedTechnician },
-                  { label: 'مباشرة ميدانية', done: isInProgress || isResolved, current: isInProgress },
-                  { label: 'اكتمال وإغلاق', done: isResolved, current: isResolved },
+                  { label: 'تم الاستلام', mobileLabel: 'مستلم', done: true, current: isPending && !activeIncident.assignedTechnician },
+                  { label: 'مراجعة الإدارة', mobileLabel: 'مراجعة', done: !!activeIncident.assignedTechnician || isInProgress || isResolved, current: isPending && !!activeIncident.assignedTechnician },
+                  { label: 'تكليف الفني', mobileLabel: 'تكليف', done: !!activeIncident.assignedTechnician || isInProgress || isResolved, current: isInProgress && !!activeIncident.assignedTechnician },
+                  { label: 'مباشرة ميدانية', mobileLabel: 'مباشرة', done: isInProgress || isResolved, current: isInProgress },
+                  { label: 'اكتمال وإغلاق', mobileLabel: 'مكتمل', done: isResolved, current: isResolved },
                 ].map((step, idx) => (
                   <div key={idx} className="space-y-1">
                     <div
@@ -669,7 +668,8 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                       }`}
                     />
                     <span className={`text-[10px] block font-bold truncate ${step.done ? 'text-emerald-400' : step.current ? 'text-orange-300' : 'text-slate-500'}`}>
-                      {step.label}
+                      <span className="hidden sm:inline">{step.label}</span>
+                      <span className="sm:hidden">{step.mobileLabel}</span>
                     </span>
                   </div>
                 ))}

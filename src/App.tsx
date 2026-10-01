@@ -900,7 +900,7 @@ export default function App() {
           )}
 
           {/* Sticky Bottom Navigation Bar for Agents */}
-          <nav className="fixed bottom-0 inset-x-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 shadow-2xl py-2 px-3 flex items-center justify-around max-w-lg mx-auto">
+          <nav className="fixed bottom-0 inset-x-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 shadow-2xl py-1.5 px-3 pb-safe flex items-center justify-around max-w-lg mx-auto">
             <button
               onClick={() => setMobileTab('home')}
               className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
@@ -961,7 +961,7 @@ export default function App() {
 
       {/* VIEW MODE 2: CLIENT PORTAL (For facility owners & clients) */}
       {currentUser.role === 'client' && (
-        <div className="flex-1 max-w-6xl mx-auto w-full px-3 sm:px-6 py-6">
+        <div className="flex-1 max-w-6xl mx-auto w-full px-2.5 sm:px-6 py-4 sm:py-6 pb-20">
           <ClientPortal
             currentUser={currentUser}
             linkedSite={sites.find(
@@ -984,10 +984,10 @@ export default function App() {
 
       {/* VIEW MODE 3: ADMIN / SUPERVISOR DASHBOARD (Exclusively for Admin) */}
       {(currentUser.role === 'admin' || currentUser.role === 'supervisor') && (
-        <div className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 py-6 space-y-6">
+        <div className="flex-1 max-w-7xl mx-auto w-full px-2.5 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-20">
           
           {/* Admin Navigation Tabs */}
-          <div className="flex bg-slate-900 p-1.5 rounded-2xl border border-slate-800 text-xs overflow-x-auto gap-1">
+          <div className="flex bg-slate-900 p-1 sm:p-1.5 rounded-2xl border border-slate-800 text-xs overflow-x-auto gap-1 no-scrollbar scroll-smooth">
             {[
               { id: 'dashboard', label: 'لوحة المؤشرات والخريطة', icon: LayoutDashboard },
               { 
@@ -1012,7 +1012,7 @@ export default function App() {
                 <button
                   key={tab.id}
                   onClick={() => setAdminTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold whitespace-nowrap transition ${
+                  className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold whitespace-nowrap transition shrink-0 ${
                     isActive
                       ? isUrgentTab
                         ? 'bg-red-600 text-white shadow-xl shadow-red-950/60 ring-2 ring-red-400'

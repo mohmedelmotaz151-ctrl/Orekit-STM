@@ -1,83 +1,23 @@
 {
-  "id": "/",
-  "name": "أوريكيت للسلامة | Oriket Safety CRM",
-  "short_name": "أوريكيت",
-  "description": "منظومة إدارة مندوبي شركة أوريكيت للسلامة، زيارات المواقع، عقود الصيانة، وحصر أجهزة السلامة ومتابعة التراخيص",
+  "name": "Oriket Safety",
+  "short_name": "Oriket",
+  "description": "منصة Oriket لخدمات السلامة والحماية من الحريق",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "theme_color": "#0f172a",
+  "orientation": "portrait",
   "background_color": "#020617",
-  "lang": "ar",
-  "dir": "rtl",
-  "categories": [
-    "business",
-    "productivity",
-    "utilities"
-  ],
+  "theme_color": "#0f172a",
   "icons": [
     {
       "src": "/pwa-192x192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     },
     {
       "src": "/pwa-512x512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/pwa-maskable-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "بدء زيارة ميدانية جديدة",
-      "short_name": "زيارة جديدة",
-      "description": "تسجيل موقع وفحص أجهزة السلامة",
-      "url": "/?action=new_visit",
-      "icons": [
-        {
-          "src": "/pwa-192x192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "سجل المواقع والعملاء",
-      "short_name": "المواقع",
-      "description": "عرض مواقع المنشآت ومتابعة العقود",
-      "url": "/?tab=sites",
-      "icons": [
-        {
-          "src": "/pwa-192x192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "تنبيهات الطوارئ والعقود",
-      "short_name": "التنبيهات",
-      "description": "متابعة العقود المنتهية والصيانة العاجلة",
-      "url": "/?tab=alerts",
-      "icons": [
-        {
-          "src": "/pwa-192x192.png",
-          "sizes": "192x192"
-        }
-      ]
+      "type": "image/png"
     }
   ]
 }

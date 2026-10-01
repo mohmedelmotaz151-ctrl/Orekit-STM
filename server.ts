@@ -8,11 +8,34 @@ const PORT = 3000;
 
 app.use(express.json({ limit: '15mb' }));
 
+// PWA Manifest endpoints with full CORS and correct MIME types for PWABuilder & Android
+app.get(['/manifest.json', '/manifest.webmanifest'], (req, res) => {
+  const manifestPath = path.resolve(process.cwd(), 'public', 'manifest.json');
+  res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.sendFile(manifestPath);
+});
+
+// PWA Service Worker endpoint with root scope header
+app.get('/sw.js', (req, res) => {
+  const swPath = path.resolve(process.cwd(), 'public', 'sw.js');
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.sendFile(swPath);
+});
+
 // Serve public assets (PWA manifests, icons, etc.)
 app.use(express.static(path.resolve(process.cwd(), 'public'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.webmanifest') || filePath.endsWith('manifest.json')) {
-      res.setHeader('Content-Type', 'application/manifest+json');
+      res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    } else if (filePath.endsWith('sw.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Service-Worker-Allowed', '/');
     }
   }
 }));

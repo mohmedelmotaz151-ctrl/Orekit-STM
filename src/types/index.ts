@@ -258,7 +258,15 @@ export interface ClientIncident {
   adminNotes?: string;
   assignedTechnician?: string;
   createdAt: string;
+  updatedAt?: string;
   resolvedAt?: string;
+  statusHistory?: Array<{
+    status: 'pending' | 'in_progress' | 'resolved' | 'closed';
+    changedAt: string;
+    changedBy: string;
+    notes?: string;
+    technicianName?: string;
+  }>;
 }
 
 // Client Portal: Inquiries & Consultations (الاستفسارات الفنية والاستشارات)

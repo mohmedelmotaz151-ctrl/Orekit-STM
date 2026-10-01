@@ -32,10 +32,15 @@ import {
   X,
   ExternalLink,
   Layers,
-  Check
+  Check,
+  Wrench,
+  Radio,
+  ArrowLeft
 } from 'lucide-react';
 import { createWhatsAppUrl, ORIKET_COMPANY_PHONE } from '../../utils/whatsapp';
 import { formatDateArabic, getDaysRemaining } from '../../utils/date';
+import { ClientRequestTimelineModal } from './ClientRequestTimelineModal';
+import { ClientLiveNotificationBanner } from './ClientLiveNotificationBanner';
 
 interface ClientPortalProps {
   currentUser: User;
@@ -118,6 +123,13 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
   const [faultLocation, setFaultLocation] = useState('');
   const [faultDescription, setFaultDescription] = useState('');
   const [faultPhoto, setFaultPhoto] = useState('');
+
+  // Interactive tracking modal state for live updates and lifecycle steps
+  const [selectedTrackingItem, setSelectedTrackingItem] = useState<{
+    incident?: ClientIncident | null;
+    renewal?: ContractRenewalRequest | null;
+    inquiry?: ClientInquiry | null;
+  } | null>(null);
 
   // Handlers
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -353,6 +365,14 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
   return (
     <div className="space-y-6 pb-20">
       
+      {/* Live Push Notification Banner for Admin Updates on Client Requests */}
+      <ClientLiveNotificationBanner
+        incidents={myIncidents}
+        renewals={myRenewals}
+        inquiries={myInquiries}
+        onOpenTracker={(item) => setSelectedTrackingItem(item)}
+      />
+
       {/* 1. Facility Header Profile Card */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 left-0 w-80 h-80 bg-orange-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -581,6 +601,117 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
         </div>
       </div>
 
+      {/* Live Request Status & Admin Interaction Hero Widget */}
+      {(() => {
+        const activeIncident = myIncidents.find((i) => i.status !== 'closed' && i.status !== 'resolved') || myIncidents[0];
+        if (!activeIncident) return null;
+
+        const isPending = activeIncident.status === 'pending';
+        const isInProgress = activeIncident.status === 'in_progress';
+        const isResolved = activeIncident.status === 'resolved';
+
+        return (
+          <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-orange-950/40 border-2 border-orange-500/60 rounded-3xl p-5 shadow-xl space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-orange-600/30 text-orange-400 border border-orange-500/40 flex items-center justify-center font-bold">
+                  <Radio className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-orange-400">متابعة مسار الطلب الأحدث مباشرة:</span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isResolved
+                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
+                          : isInProgress
+                          ? 'bg-blue-950 text-blue-300 border border-blue-700 animate-pulse'
+                          : 'bg-amber-950 text-amber-300 border border-amber-700'
+                      }`}
+                    >
+                      {isResolved ? '✓ مكتمل ومعتمد' : isInProgress ? '🛠️ جاري المعالجة الميدانية' : '⏳ قيد المراجعة وتكليف الفني'}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-black text-white mt-0.5">{activeIncident.title}</h3>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTrackingItem({ incident: activeIncident })}
+                  className="py-2 px-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-orange-950"
+                >
+                  <span>تتبع مسار البلاغ والمراحل</span>
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Stepper Bar */}
+            <div className="pt-2">
+              <div className="grid grid-cols-5 gap-1.5 text-center">
+                {[
+                  { label: 'تم الاستلام', done: true, current: isPending && !activeIncident.assignedTechnician },
+                  { label: 'مراجعة الإدارة', done: !!activeIncident.assignedTechnician || isInProgress || isResolved, current: isPending && !!activeIncident.assignedTechnician },
+                  { label: 'تكليف الفني', done: !!activeIncident.assignedTechnician || isInProgress || isResolved, current: isInProgress && !!activeIncident.assignedTechnician },
+                  { label: 'مباشرة ميدانية', done: isInProgress || isResolved, current: isInProgress },
+                  { label: 'اكتمال وإغلاق', done: isResolved, current: isResolved },
+                ].map((step, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <div
+                      className={`h-1.5 rounded-full transition ${
+                        step.done
+                          ? 'bg-emerald-500'
+                          : step.current
+                          ? 'bg-orange-500 animate-pulse ring-2 ring-orange-500/40'
+                          : 'bg-slate-800'
+                      }`}
+                    />
+                    <span className={`text-[10px] block font-bold truncate ${step.done ? 'text-emerald-400' : step.current ? 'text-orange-300' : 'text-slate-500'}`}>
+                      {step.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Admin Interaction Callout (Technician or Notes) */}
+            {(activeIncident.assignedTechnician || activeIncident.adminNotes) && (
+              <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="space-y-1">
+                  {activeIncident.assignedTechnician && (
+                    <div className="flex items-center gap-1.5 text-blue-300 font-bold">
+                      <Wrench className="w-3.5 h-3.5 text-blue-400" />
+                      <span>فني الصيانة المكلف من الإدارة: <strong>{activeIncident.assignedTechnician}</strong></span>
+                    </div>
+                  )}
+                  {activeIncident.adminNotes && (
+                    <div className="text-slate-300 text-[11px] leading-relaxed">
+                      <span className="text-orange-400 font-bold">إفادة وتوجيهات مدير النظام: </span>
+                      <span>"{activeIncident.adminNotes}"</span>
+                    </div>
+                  )}
+                </div>
+
+                <a
+                  href={createWhatsAppUrl(
+                    ORIKET_COMPANY_PHONE,
+                    `السلام عليكم، أود المتابعة بخصوص البلاغ "${activeIncident.title}" لمنشأة "${activeIncident.siteName}".`
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition flex items-center gap-1 shrink-0 shadow"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>تواصل عبر واتساب</span>
+                </a>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* 2. Navigation Tabs */}
       <div className="flex bg-slate-900 p-1.5 rounded-2xl border border-slate-800 text-xs overflow-x-auto gap-1">
         {[
@@ -721,20 +852,48 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-800/60">
-                      <span>تاريخ البلاغ: {formatDateArabic(incident.createdAt)}</span>
-                      <a
-                        href={createWhatsAppUrl(
-                          ORIKET_COMPANY_PHONE,
-                          `السلام عليكم بخصوص البلاغ "${incident.title}" (كود: ${incident.id}) في منشأة "${incident.siteName}".`
-                        )}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-bold"
-                      >
-                        <MessageCircle className="w-3 h-3" />
-                        <span>متابعة عبر واتساب</span>
-                      </a>
+                    {/* Live Stepper & Tracking Button */}
+                    <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                      <div className="grid grid-cols-5 gap-1 text-center">
+                        {[
+                          { label: 'مستلم', done: true },
+                          { label: 'تدقيق', done: !!incident.assignedTechnician || incident.status === 'in_progress' || incident.status === 'resolved' },
+                          { label: 'تكليف فني', done: !!incident.assignedTechnician || incident.status === 'in_progress' || incident.status === 'resolved' },
+                          { label: 'مباشرة', done: incident.status === 'in_progress' || incident.status === 'resolved' },
+                          { label: 'مكتمل', done: incident.status === 'resolved' },
+                        ].map((s, idx) => (
+                          <div key={idx} className="space-y-0.5">
+                            <div className={`h-1 rounded-full ${s.done ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+                            <span className={`text-[9px] block font-bold ${s.done ? 'text-emerald-400' : 'text-slate-600'}`}>
+                              {s.label}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTrackingItem({ incident })}
+                          className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-orange-400 hover:text-white border border-slate-700 text-[11px] font-bold transition flex items-center gap-1"
+                        >
+                          <Clock className="w-3 h-3" />
+                          <span>تتبع مسار البلاغ وتفاعل الإدارة</span>
+                        </button>
+
+                        <a
+                          href={createWhatsAppUrl(
+                            ORIKET_COMPANY_PHONE,
+                            `السلام عليكم بخصوص البلاغ "${incident.title}" (كود: ${incident.id}) في منشأة "${incident.siteName}".`
+                          )}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-bold"
+                        >
+                          <MessageCircle className="w-3 h-3" />
+                          <span>متابعة عبر واتساب</span>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 );
@@ -826,6 +985,14 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
 
                   <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-800/60">
                     <span>تاريخ الطرح: {formatDateArabic(inquiry.createdAt)}</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTrackingItem({ inquiry })}
+                      className="text-orange-400 hover:text-white font-bold flex items-center gap-1 transition"
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>تتبع الرد والتفاعل الفني ➔</span>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -941,11 +1108,21 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                       </span>
                     </div>
 
-                    {renewal.adminResponse && (
-                      <div className="text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-850">
-                        ملاحظات الإدارة: {renewal.adminResponse}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {renewal.adminResponse && (
+                        <div className="text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-850">
+                          ملاحظات الإدارة: {renewal.adminResponse}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTrackingItem({ renewal })}
+                        className="py-1.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-orange-400 hover:text-white border border-slate-700 text-xs font-bold transition flex items-center gap-1.5"
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>تتبع مراحل التجديد</span>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1603,6 +1780,18 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Interactive Request Timeline & Lifecycle Modal */}
+      {selectedTrackingItem && (
+        <ClientRequestTimelineModal
+          isOpen={!!selectedTrackingItem}
+          onClose={() => setSelectedTrackingItem(null)}
+          incident={selectedTrackingItem.incident}
+          renewal={selectedTrackingItem.renewal}
+          inquiry={selectedTrackingItem.inquiry}
+          site={linkedSite}
+        />
       )}
 
     </div>

@@ -175,15 +175,12 @@ export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
 
           {/* Right: Sound Trigger for Real Critical Alerts & Sound Mute Toggle */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Trigger siren for real critical alerts (No demo / test alarm) */}
+            {/* Trigger siren for real critical alerts (Hidden as requested) */}
             <button
               onClick={handleTriggerAlarmForRealAlerts}
               disabled={isPlayingSiren}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 shadow-md active:scale-95 ${
-                isPlayingSiren
-                  ? 'bg-red-600 text-white border-red-500 animate-pulse'
-                  : 'bg-red-600/90 hover:bg-red-500 text-white border-red-500'
-              }`}
+              className="hidden"
+              style={{ display: 'none' }}
               title="إطلاق صفارة إنذار الطوارئ لهذه الحالات الميدانية الحرجة"
             >
               <Radio className="w-3.5 h-3.5 shrink-0" />

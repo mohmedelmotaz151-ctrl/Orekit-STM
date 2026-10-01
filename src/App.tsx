@@ -663,10 +663,34 @@ export default function App() {
   };
 
   const handleUpdateIncident = (incidentId: string, updates: Partial<ClientIncident>) => {
+    const now = new Date().toISOString();
     setIncidents((prev) =>
-      prev.map((i) => (i.id === incidentId ? { ...i, ...updates } : i))
+      prev.map((i) => {
+        if (i.id === incidentId) {
+          const updatedHistory = i.statusHistory ? [...i.statusHistory] : [];
+          if (updates.status || updates.assignedTechnician || updates.adminNotes) {
+            updatedHistory.push({
+              status: updates.status || i.status,
+              changedAt: now,
+              changedBy: currentUser?.name || 'مدير النظام',
+              notes: updates.adminNotes !== undefined ? updates.adminNotes : i.adminNotes,
+              technicianName: updates.assignedTechnician !== undefined ? updates.assignedTechnician : i.assignedTechnician,
+            });
+          }
+          return {
+            ...i,
+            ...updates,
+            updatedAt: now,
+            statusHistory: updatedHistory,
+          };
+        }
+        return i;
+      })
     );
-    apiUpdateIncident(incidentId, updates);
+    apiUpdateIncident(incidentId, {
+      ...updates,
+      updatedAt: now,
+    });
     soundNotifier.playChime();
   };
 

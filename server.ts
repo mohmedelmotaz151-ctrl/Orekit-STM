@@ -8,6 +8,18 @@ const PORT = 3000;
 
 app.use(express.json({ limit: '15mb' }));
 
+// Digital Asset Links endpoint for Android TWA (Hides Chrome address bar / domain header on Android)
+app.get(['/.well-known/assetlinks.json', '/assetlinks.json'], (req, res) => {
+  const assetLinksPath = path.resolve(process.cwd(), 'public', '.well-known', 'assetlinks.json');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  if (fs.existsSync(assetLinksPath)) {
+    return res.sendFile(assetLinksPath);
+  }
+  res.json([]);
+});
+
 // PWA Manifest endpoints with full CORS and correct MIME types for PWABuilder & Android
 app.get(['/manifest.json', '/manifest.webmanifest'], (req, res) => {
   const manifestPath = path.resolve(process.cwd(), 'public', 'manifest.json');

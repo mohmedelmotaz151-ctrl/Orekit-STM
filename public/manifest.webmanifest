@@ -1,10 +1,15 @@
 {
+  "id": "/",
   "name": "Oriket Safety",
   "short_name": "Oriket",
   "description": "منصة Oriket لخدمات السلامة والحماية من الحريق",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "window-controls-overlay"
+  ],
   "orientation": "portrait",
   "background_color": "#020617",
   "theme_color": "#0f172a",
@@ -12,12 +17,20 @@
     {
       "src": "/pwa-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/pwa-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

@@ -98,7 +98,10 @@ import {
   LayoutDashboard, 
   Users, 
   FileSpreadsheet,
-  Flame
+  Flame,
+  Layers,
+  Clock,
+  X
 } from 'lucide-react';
 
 export default function App() {
@@ -124,6 +127,7 @@ export default function App() {
 
   // Admin dashboard navigation tabs
   const [adminTab, setAdminTab] = useState<'dashboard' | 'sites' | 'extinguishers' | 'agents' | 'clients' | 'incentives' | 'reports' | 'alerts'>('dashboard');
+  const [isAdminMoreOpen, setIsAdminMoreOpen] = useState(false);
 
   // Track notified urgent incident IDs so alarm only fires once per new urgent incident
   const notifiedUrgentIncidentIdsRef = useRef<Set<string>>(new Set());
@@ -770,7 +774,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-['Cairo',sans-serif]">
+    <div className="min-h-screen bg-[#070B1C] text-[#F5F7FF] flex flex-col font-['Cairo',sans-serif]">
       
       {/* Top Header - Clicking logo opens AppModulesHub */}
       <Header
@@ -900,11 +904,11 @@ export default function App() {
           )}
 
           {/* Sticky Bottom Navigation Bar for Agents */}
-          <nav className="fixed bottom-0 inset-x-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 shadow-2xl py-1.5 px-3 pb-safe flex items-center justify-around max-w-lg mx-auto">
+          <nav className="fixed bottom-0 inset-x-0 z-40 bg-[#070B1C]/95 backdrop-blur-md border-t border-[#1E2945] shadow-2xl py-1.5 px-3 pb-safe flex items-center justify-around max-w-lg mx-auto">
             <button
               onClick={() => setMobileTab('home')}
               className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
-                mobileTab === 'home' ? 'text-orange-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+                mobileTab === 'home' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA] hover:text-[#F5F7FF]'
               }`}
             >
               <Home className="w-5 h-5" />
@@ -914,7 +918,7 @@ export default function App() {
             <button
               onClick={() => setMobileTab('sites')}
               className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
-                mobileTab === 'sites' ? 'text-orange-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+                mobileTab === 'sites' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA] hover:text-[#F5F7FF]'
               }`}
             >
               <Building2 className="w-5 h-5" />
@@ -924,7 +928,7 @@ export default function App() {
             {/* Quick Action: Start Visit In Bottom Bar */}
             <button
               onClick={() => handleOpenNewVisit()}
-              className="flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-full bg-gradient-to-tr from-orange-600 to-red-600 text-white shadow-xl shadow-orange-950/80 border-2 border-slate-900 hover:scale-105 active:scale-95 transition"
+              className="flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-full bg-[#20A9FF] text-[#070B1C] shadow-lg shadow-[#20A9FF]/30 border-2 border-[#070B1C] hover:scale-105 active:scale-95 transition"
               title="بدء زيارة جديدة"
             >
               <PlusCircle className="w-7 h-7" />
@@ -933,13 +937,13 @@ export default function App() {
             <button
               onClick={() => setMobileTab('alerts')}
               className={`relative flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
-                mobileTab === 'alerts' ? 'text-orange-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+                mobileTab === 'alerts' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA] hover:text-[#F5F7FF]'
               }`}
             >
               <Bell className="w-5 h-5" />
               <span className="text-[10px]">التنبيهات</span>
               {totalAlertsCount > 0 && (
-                <span className="absolute top-0 right-1.5 w-4 h-4 rounded-full bg-red-600 text-white text-[9px] font-bold flex items-center justify-center">
+                <span className="absolute top-0 right-1.5 w-4 h-4 rounded-full bg-[#EF3340] text-white text-[9px] font-bold flex items-center justify-center">
                   {totalAlertsCount}
                 </span>
               )}
@@ -948,7 +952,7 @@ export default function App() {
             <button
               onClick={() => setMobileTab('profile')}
               className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
-                mobileTab === 'profile' ? 'text-orange-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+                mobileTab === 'profile' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA] hover:text-[#F5F7FF]'
               }`}
             >
               <Award className="w-5 h-5" />
@@ -984,26 +988,26 @@ export default function App() {
 
       {/* VIEW MODE 3: ADMIN / SUPERVISOR DASHBOARD (Exclusively for Admin) */}
       {(currentUser.role === 'admin' || currentUser.role === 'supervisor') && (
-        <div className="flex-1 max-w-7xl mx-auto w-full px-2.5 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-20">
+        <div className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-28 md:pb-20">
           
-          {/* Admin Navigation Tabs */}
-          <div className="flex bg-slate-900 p-1 sm:p-1.5 rounded-2xl border border-slate-800 text-xs overflow-x-auto gap-1 no-scrollbar scroll-smooth">
+          {/* Admin Navigation Tabs (Desktop & Tablet) */}
+          <div className="hidden md:flex bg-[#10172B] p-1.5 rounded-2xl border border-[#1E2945] text-xs overflow-x-auto gap-1 no-scrollbar scroll-smooth">
             {[
-              { id: 'dashboard', label: 'لوحة المؤشرات والخريطة', icon: LayoutDashboard },
+              { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
               { 
                 id: 'alerts', 
                 label: urgentClientTicketsCount > 0 
-                  ? `🚨 مركز الإشعارات والطوارئ (${urgentClientTicketsCount})` 
-                  : `مركز الإشعارات (${totalAlertsCount})`, 
+                  ? `🚨 الطوارئ (${urgentClientTicketsCount})` 
+                  : `الإشعارات (${totalAlertsCount})`, 
                 icon: Bell, 
                 isEmergency: urgentClientTicketsCount > 0 
               },
-              { id: 'sites', label: `سجل المواقع المركزي CRM (${sites.length})`, icon: Building2 },
-              { id: 'extinguishers', label: `صيانة طفايات المواقع المعتمدة (${sites.filter(s => s.approvalStatus === 'approved').length})`, icon: Flame },
-              { id: 'clients', label: `بوابة وطلبات العملاء (${users.filter(u => u.role === 'client').length})`, icon: Users },
-              { id: 'agents', label: `فريق المبيعات والمندوبين (${users.filter(u => u.role === 'agent').length})`, icon: Users },
-              { id: 'incentives', label: `نظام الحوافز والاعتمادات (${settings.ratePerApprovedSiteSAR} ر.س)`, icon: Award },
-              { id: 'reports', label: 'التقارير المتقدمة وتصدير Excel', icon: FileSpreadsheet },
+              { id: 'sites', label: `سجل المواقع CRM (${sites.length})`, icon: Building2 },
+              { id: 'extinguishers', label: `صيانة الطفايات (${sites.filter(s => s.approvalStatus === 'approved').length})`, icon: Flame },
+              { id: 'clients', label: `بوابة العملاء (${users.filter(u => u.role === 'client').length})`, icon: Users },
+              { id: 'agents', label: `فريق المندوبين (${users.filter(u => u.role === 'agent').length})`, icon: Users },
+              { id: 'incentives', label: `الحوافز والاعتماد (${settings.ratePerApprovedSiteSAR} ر.س)`, icon: Award },
+              { id: 'reports', label: 'التقارير وتصدير Excel', icon: FileSpreadsheet },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = adminTab === tab.id;
@@ -1012,22 +1016,177 @@ export default function App() {
                 <button
                   key={tab.id}
                   onClick={() => setAdminTab(tab.id as any)}
-                  className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold whitespace-nowrap transition shrink-0 ${
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-medium whitespace-nowrap transition shrink-0 ${
                     isActive
                       ? isUrgentTab
-                        ? 'bg-red-600 text-white shadow-xl shadow-red-950/60 ring-2 ring-red-400'
-                        : 'bg-orange-600 text-white shadow-lg shadow-orange-950/40'
+                        ? 'bg-[#EF3340] text-white shadow-sm'
+                        : 'bg-[#20A9FF] text-[#070B1C] font-bold shadow-sm'
                       : isUrgentTab
-                      ? 'text-red-400 bg-red-950/60 border border-red-700/80 animate-pulse hover:bg-red-900/60 hover:text-white'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-850'
+                      ? 'text-[#EF3340] bg-[#EF3340]/10 border border-[#EF3340]/30 hover:bg-[#EF3340]/20'
+                      : 'text-[#8992AA] hover:text-[#F5F7FF] hover:bg-[#1E2945]/40'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isUrgentTab && !isActive ? 'text-red-400' : ''}`} />
+                  <Icon className={`w-4 h-4 ${isUrgentTab && !isActive ? 'text-[#EF3340]' : ''}`} />
                   <span>{tab.label}</span>
                 </button>
               );
             })}
           </div>
+
+          {/* Fixed Mobile Bottom Navigation for Admin & Supervisor (Requirement #9) */}
+          <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#070B1C]/95 backdrop-blur-md border-t border-[#1E2945] shadow-2xl py-1.5 px-2 pb-safe flex items-center justify-around">
+            <button
+              onClick={() => {
+                setAdminTab('dashboard');
+                setIsAdminMoreOpen(false);
+              }}
+              className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
+                adminTab === 'dashboard' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA]'
+              }`}
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              <span className="text-[10px]">الرئيسية</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setAdminTab('agents');
+                setIsAdminMoreOpen(false);
+              }}
+              className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
+                adminTab === 'agents' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA]'
+              }`}
+            >
+              <Users className="w-5 h-5" />
+              <span className="text-[10px]">المندوبون</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setAdminTab('sites');
+                setIsAdminMoreOpen(false);
+              }}
+              className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
+                adminTab === 'sites' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA]'
+              }`}
+            >
+              <Clock className="w-5 h-5" />
+              <span className="text-[10px]">الزيارات</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setAdminTab('alerts');
+                setIsAdminMoreOpen(false);
+              }}
+              className={`relative flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
+                adminTab === 'alerts' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA]'
+              }`}
+            >
+              <Bell className="w-5 h-5" />
+              <span className="text-[10px]">الطوارئ</span>
+              {urgentClientTicketsCount > 0 && (
+                <span className="absolute top-0 right-2 w-4 h-4 rounded-full bg-[#EF3340] text-white text-[9px] font-bold flex items-center justify-center">
+                  {urgentClientTicketsCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setIsAdminMoreOpen((prev) => !prev)}
+              className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
+                ['extinguishers', 'clients', 'incentives', 'reports'].includes(adminTab) || isAdminMoreOpen ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA]'
+              }`}
+            >
+              <Layers className="w-5 h-5" />
+              <span className="text-[10px]">المزيد</span>
+            </button>
+          </nav>
+
+          {/* Mobile "المزيد" Drawer */}
+          {isAdminMoreOpen && (
+            <div 
+              className="md:hidden fixed inset-0 z-30 bg-[#070B1C]/80 backdrop-blur-sm flex flex-col justify-end"
+              onClick={() => setIsAdminMoreOpen(false)}
+            >
+              <div 
+                className="bg-[#10172B] border-t border-[#1E2945] rounded-t-3xl p-5 space-y-3 pb-24 shadow-2xl animate-fadeIn"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between border-b border-[#1E2945] pb-2.5">
+                  <h3 className="font-bold text-sm text-[#F5F7FF]">أقسام المنظومة الإضافية</h3>
+                  <button 
+                    onClick={() => setIsAdminMoreOpen(false)}
+                    className="p-1 rounded-lg text-[#8992AA] hover:text-[#F5F7FF]"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <button
+                    onClick={() => {
+                      setAdminTab('extinguishers');
+                      setIsAdminMoreOpen(false);
+                    }}
+                    className={`p-3 rounded-xl border text-right transition flex items-center gap-2 ${
+                      adminTab === 'extinguishers' 
+                        ? 'bg-[#20A9FF]/15 border-[#20A9FF] text-[#20A9FF] font-bold' 
+                        : 'bg-[#070B1C] border-[#1E2945] text-[#F5F7FF]'
+                    }`}
+                  >
+                    <Flame className="w-4 h-4 text-[#EF3340] shrink-0" />
+                    <span>صيانة الطفايات</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setAdminTab('clients');
+                      setIsAdminMoreOpen(false);
+                    }}
+                    className={`p-3 rounded-xl border text-right transition flex items-center gap-2 ${
+                      adminTab === 'clients' 
+                        ? 'bg-[#20A9FF]/15 border-[#20A9FF] text-[#20A9FF] font-bold' 
+                        : 'bg-[#070B1C] border-[#1E2945] text-[#F5F7FF]'
+                    }`}
+                  >
+                    <Users className="w-4 h-4 text-[#20A9FF] shrink-0" />
+                    <span>بوابة العملاء</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setAdminTab('incentives');
+                      setIsAdminMoreOpen(false);
+                    }}
+                    className={`p-3 rounded-xl border text-right transition flex items-center gap-2 ${
+                      adminTab === 'incentives' 
+                        ? 'bg-[#20A9FF]/15 border-[#20A9FF] text-[#20A9FF] font-bold' 
+                        : 'bg-[#070B1C] border-[#1E2945] text-[#F5F7FF]'
+                    }`}
+                  >
+                    <Award className="w-4 h-4 text-[#FFB020] shrink-0" />
+                    <span>نظام الحوافز</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setAdminTab('reports');
+                      setIsAdminMoreOpen(false);
+                    }}
+                    className={`p-3 rounded-xl border text-right transition flex items-center gap-2 ${
+                      adminTab === 'reports' 
+                        ? 'bg-[#20A9FF]/15 border-[#20A9FF] text-[#20A9FF] font-bold' 
+                        : 'bg-[#070B1C] border-[#1E2945] text-[#F5F7FF]'
+                    }`}
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-[#19C7A0] shrink-0" />
+                    <span>التقارير والتصدير</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Admin Tab Content */}
           {adminTab === 'dashboard' && (

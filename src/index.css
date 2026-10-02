@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+:root {
+  --bg-main: #070B1C;
+  --bg-card: #10172B;
+  --border-subtle: #1E2945;
+  --text-primary: #F5F7FF;
+  --text-secondary: #8992AA;
+  --color-primary: #20A9FF;
+  --color-success: #19C7A0;
+  --color-warning: #FFB020;
+  --color-emergency: #EF3340;
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -17,6 +29,9 @@
     text-align: right;
     margin: 0;
     padding: 0;
+    background-color: #070B1C;
+    color: #F5F7FF;
+    font-family: 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

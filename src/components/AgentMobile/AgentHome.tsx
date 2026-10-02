@@ -105,24 +105,22 @@ export const AgentHome: React.FC<AgentHomeProps> = ({
     <div className="space-y-4 max-w-md mx-auto pb-6">
       
       {/* Top Banner Card: Oriket & Greeting */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-orange-950/40 p-5 rounded-3xl border border-slate-850 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-36 h-36 bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
-        
-        <div className="flex items-center justify-between relative z-10 mb-3">
+      <div className="bg-[#10172B] p-4 sm:p-5 rounded-2xl border border-[#1E2945] shadow-md relative overflow-hidden">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-orange-600/30 text-orange-400 border border-orange-500/30 flex items-center justify-center font-bold text-base shadow">
+            <div className="w-8 h-8 rounded-lg bg-[#20A9FF]/15 text-[#20A9FF] flex items-center justify-center font-bold text-sm">
               🛡️
             </div>
             <div>
-              <span className="text-[11px] font-bold text-orange-400 uppercase tracking-wider block">
+              <span className="text-[10px] text-[#8992AA] block">
                 شركة أوريكيت للسلامة
               </span>
-              <h2 className="text-xl font-black text-white">
+              <h2 className="text-base sm:text-lg font-bold text-[#F5F7FF]">
                 مرحباً، {currentUser.name} 👋
               </h2>
             </div>
           </div>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-medium">
+          <span className="text-[11px] px-2.5 py-0.5 rounded-lg bg-[#070B1C] text-[#8992AA] border border-[#1E2945]">
             {currentUser.assignedCity}
           </span>
         </div>
@@ -130,24 +128,24 @@ export const AgentHome: React.FC<AgentHomeProps> = ({
         {/* Big Start New Visit Button */}
         <button
           onClick={() => onOpenNewVisit()}
-          className="w-full mt-2 py-4 px-5 rounded-2xl bg-gradient-to-r from-orange-600 via-red-600 to-amber-600 hover:from-orange-500 hover:to-red-500 text-white font-black text-base shadow-xl shadow-orange-950/60 flex items-center justify-center gap-2.5 transition transform active:scale-98 border border-orange-400/30 group"
+          className="w-full mt-1 py-3 px-4 rounded-xl bg-[#20A9FF] hover:bg-[#1E9BEB] text-[#070B1C] font-bold text-sm shadow-md shadow-[#20A9FF]/20 flex items-center justify-center gap-2 transition active:scale-98"
         >
-          <PlusCircle className="w-6 h-6 transition-transform group-hover:rotate-90 duration-200" />
-          <span>+ زيارة جديدة (بدء الزيارة الميدانية)</span>
+          <PlusCircle className="w-5 h-5" />
+          <span>+ بدء زيارة ميدانية جديدة</span>
         </button>
       </div>
 
       {/* 3 Main Quick Stats: Sites, Visits, Incentive */}
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
         
         {/* Sites */}
         <div 
           onClick={() => onNavigateTab('sites')}
-          className="bg-slate-900/90 hover:bg-slate-850 p-3 rounded-2xl border border-slate-800 text-center cursor-pointer transition shadow-md"
+          className="bg-[#10172B] hover:bg-[#151F38] p-3 rounded-xl border border-[#1E2945] text-center cursor-pointer transition"
         >
-          <span className="text-[11px] font-semibold text-slate-400 block mb-1">المواقع</span>
-          <div className="text-2xl font-black text-white">{inc.approvedCount + inc.pendingCount}</div>
-          <span className="text-[10px] text-emerald-400 block font-medium">
+          <span className="text-[11px] font-medium text-[#8992AA] block mb-1">المواقع</span>
+          <div className="text-xl font-bold text-[#F5F7FF] font-mono">{inc.approvedCount + inc.pendingCount}</div>
+          <span className="text-[10px] text-[#19C7A0] block font-medium">
             {inc.approvedCount} معتمد
           </span>
         </div>
@@ -155,47 +153,47 @@ export const AgentHome: React.FC<AgentHomeProps> = ({
         {/* Visits */}
         <div 
           onClick={() => onNavigateTab('sites')}
-          className="bg-slate-900/90 hover:bg-slate-850 p-3 rounded-2xl border border-slate-800 text-center cursor-pointer transition shadow-md"
+          className="bg-[#10172B] hover:bg-[#151F38] p-3 rounded-xl border border-[#1E2945] text-center cursor-pointer transition"
         >
-          <span className="text-[11px] font-semibold text-slate-400 block mb-1">الزيارات</span>
-          <div className="text-2xl font-black text-white">{agentVisits.length}</div>
-          <span className="text-[10px] text-sky-400 block font-medium">زيارة موثقة</span>
+          <span className="text-[11px] font-medium text-[#8992AA] block mb-1">الزيارات</span>
+          <div className="text-xl font-bold text-[#F5F7FF] font-mono">{agentVisits.length}</div>
+          <span className="text-[10px] text-[#20A9FF] block font-medium">موثقة GPS</span>
         </div>
 
         {/* Incentive */}
         <div 
           onClick={() => onNavigateTab('profile')}
-          className="bg-gradient-to-b from-orange-950/40 to-slate-900/90 hover:bg-slate-850 p-3 rounded-2xl border border-orange-600/40 text-center cursor-pointer transition shadow-md"
+          className="bg-[#10172B] hover:bg-[#151F38] p-3 rounded-xl border border-[#1E2945] text-center cursor-pointer transition"
         >
-          <span className="text-[11px] font-semibold text-orange-300 block mb-1">الحافز</span>
-          <div className="text-2xl font-black text-orange-400">{inc.grandTotalSAR}</div>
-          <span className="text-[10px] text-orange-300/80 block font-medium">ريال سعودي</span>
+          <span className="text-[11px] font-medium text-[#8992AA] block mb-1">الحافز</span>
+          <div className="text-xl font-bold text-[#FFB020] font-mono">{inc.grandTotalSAR}</div>
+          <span className="text-[10px] text-[#8992AA] block font-medium">ر.س</span>
         </div>
       </div>
 
       {/* Target Progress Bar */}
-      <div className="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+      <div className="bg-[#10172B] p-3.5 rounded-xl border border-[#1E2945] space-y-2">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-slate-300 flex items-center gap-1.5">
-            <Award className="w-4 h-4 text-amber-400" />
+          <span className="font-semibold text-[#F5F7FF] flex items-center gap-1.5">
+            <Award className="w-4 h-4 text-[#FFB020]" />
             المستهدف الشهري (300 موقع)
           </span>
-          <span className="text-amber-400 font-bold font-mono">
+          <span className="text-[#20A9FF] font-bold font-mono">
             {inc.approvedCount} / {settings.minTargetSites} موقع ({inc.progressPercent}%)
           </span>
         </div>
-        <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+        <div className="w-full bg-[#070B1C] h-2 rounded-full overflow-hidden border border-[#1E2945]">
           <div 
-            className="bg-gradient-to-r from-orange-500 to-amber-400 h-full rounded-full transition-all duration-500"
+            className="bg-[#20A9FF] h-full rounded-full transition-all duration-500"
             style={{ width: `${Math.min(100, inc.progressPercent)}%` }}
           />
         </div>
-        <div className="flex justify-between items-center text-[10px] text-slate-400">
+        <div className="flex justify-between items-center text-[10px] text-[#8992AA]">
           <span>قيمة الموقع المعتمد: {settings.ratePerApprovedSiteSAR} ر.س</span>
           {inc.approvedCount >= settings.minTargetSites ? (
-            <span className="text-emerald-400 font-bold">🎉 حققت المستهدف! (+{settings.targetBonusSAR} ر.س مكافأة)</span>
+            <span className="text-[#19C7A0] font-bold">🎉 حققت المستهدف! (+{settings.targetBonusSAR} ر.س)</span>
           ) : (
-            <span>متبقٍ {settings.minTargetSites - inc.approvedCount} موقع لتحقيق البونص</span>
+            <span>متبقٍ {settings.minTargetSites - inc.approvedCount} موقع للبونص</span>
           )}
         </div>
       </div>

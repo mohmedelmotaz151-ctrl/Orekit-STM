@@ -48,43 +48,40 @@ export const Header: React.FC<HeaderProps> = ({
   const currentRoleInfo = getRoleLabel(currentUser.role);
 
   return (
-    <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-xl transition-all">
-      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-1.5 sm:gap-4">
+    <header className="sticky top-0 z-50 bg-[#070B1C]/95 backdrop-blur-md border-b border-[#1E2945] shadow-lg transition-all">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
         
         {/* Logo & Company Name (Clickable to open Navigation Hub) */}
         <button
           type="button"
           onClick={onOpenHub}
-          className={`flex items-center gap-2 sm:gap-3 text-right p-1 rounded-2xl transition group focus:outline-none focus:ring-2 focus:ring-orange-500/50 shrink-0 ${
-            isHubActive ? 'bg-orange-950/50 ring-1 ring-orange-500/60 shadow-lg shadow-orange-950/40' : 'hover:bg-slate-800/70'
+          className={`flex items-center gap-2.5 sm:gap-3 text-right p-1 rounded-xl transition group focus:outline-none focus:ring-2 focus:ring-[#20A9FF]/40 shrink-0 ${
+            isHubActive ? 'bg-[#10172B] ring-1 ring-[#20A9FF]/50 shadow-md' : 'hover:bg-[#10172B]/60'
           }`}
           title="اضغط هنا لفتح بوابة وتطبيقات وأقسام المنظومة (Hub)"
           aria-label="بوابة أقسام منظومة أوريكيت"
         >
-          <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-red-600 via-orange-600 to-amber-600 flex items-center justify-center text-white shadow-lg shadow-orange-950/50 group-hover:scale-105 group-active:scale-95 transition-transform shrink-0">
-            <Flame className="w-4 h-4 sm:w-6 sm:h-6 animate-pulse" />
-            <span className="absolute -bottom-0.5 -left-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 bg-slate-900 rounded-full flex items-center justify-center border border-slate-700">
-              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-orange-400 animate-ping" />
-            </span>
+          <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#20A9FF] to-[#0D6EFD] flex items-center justify-center text-white shadow-md shadow-[#20A9FF]/20 group-hover:scale-105 group-active:scale-95 transition-transform shrink-0">
+            <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="font-black text-sm sm:text-xl tracking-tight text-white flex items-center gap-1 group-hover:text-orange-400 transition-colors">
-                أوريكيت <span className="hidden sm:inline text-orange-500 font-bold text-sm sm:text-base">ORIKET</span>
+              <span className="font-bold text-sm sm:text-base tracking-tight text-[#F5F7FF] flex items-center gap-1 group-hover:text-[#20A9FF] transition-colors">
+                أوريكيت <span className="hidden sm:inline text-[#20A9FF] text-xs font-semibold">ORIKET</span>
               </span>
-              <span className="hidden md:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-medium group-hover:border-orange-500/50 group-hover:text-white transition">
+              <span className="hidden md:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-[#10172B] text-[#8992AA] border border-[#1E2945] font-medium group-hover:text-[#F5F7FF] transition">
                 <span>أقسام المنظومة</span>
-                <span className="text-orange-400 text-xs">▾</span>
+                <span className="text-[#20A9FF] text-xs">▾</span>
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 hidden md:block group-hover:text-slate-300 transition-colors">
-              المنظومة الميدانية لإدارة المواقع وعقود الصيانة
+            <p className="text-[10px] text-[#8992AA] hidden md:block group-hover:text-[#F5F7FF]/80 transition-colors">
+              منظومة السلامة الميدانية وإدارة العقود
             </p>
           </div>
         </button>
 
         {/* Right side: Alerts & User Profile & Logout */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* In-App PWA Install Prompt */}
           <div className="hidden xs:block">
             <PWAInstallButton />
@@ -98,24 +95,24 @@ export const Header: React.FC<HeaderProps> = ({
             )}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-emerald-950/70 hover:bg-emerald-900 text-emerald-400 border border-emerald-700/60 transition flex items-center gap-1.5 text-xs font-bold shadow-sm"
+            className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-[#10172B] hover:bg-[#151F38] text-[#19C7A0] border border-[#1E2945] transition flex items-center gap-1.5 text-xs font-medium"
             title={`واتساب إدارة شركة أوريكيت (${ORIKET_COMPANY_PHONE})`}
           >
             <MessageCircle className="w-4 h-4 fill-current shrink-0" />
             <span className="hidden md:inline font-mono text-[11px]">0555334577</span>
-            <span className="hidden lg:inline text-[11px] text-emerald-300 font-normal">(واتساب الإدارة)</span>
+            <span className="hidden lg:inline text-[11px] text-[#8992AA]">(الدعم)</span>
           </a>
 
           {/* Alerts notification icon */}
           {onOpenAlerts && (
             <button
               onClick={onOpenAlerts}
-              className="relative p-1.5 sm:p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition"
-              title="التنبيهات والتذكيرات الذكية"
+              className="relative p-2 rounded-xl bg-[#10172B] hover:bg-[#151F38] text-[#8992AA] hover:text-[#F5F7FF] border border-[#1E2945] transition"
+              title="التنبيهات والإشعارات"
             >
               <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
               {alertsCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-red-600 text-white rounded-full text-[9px] sm:text-[10px] font-bold flex items-center justify-center border-2 border-slate-900 shadow">
+                <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-4.5 sm:h-4.5 bg-[#EF3340] text-white rounded-full text-[9px] font-bold flex items-center justify-center shadow">
                   {alertsCount}
                 </span>
               )}
@@ -123,25 +120,24 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* User profile info badge */}
-          <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-slate-850 border border-slate-700/80 text-right" title={`${currentUser.name} (${currentRoleInfo.label})`}>
-            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-orange-600/20 text-orange-400 flex items-center justify-center font-bold text-[11px] sm:text-xs border border-orange-500/30 shrink-0">
+          <div className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-[#10172B] border border-[#1E2945] text-right" title={`${currentUser.name} (${currentRoleInfo.label})`}>
+            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#20A9FF]/15 text-[#20A9FF] flex items-center justify-center font-bold text-xs shrink-0">
               {currentUser.name.charAt(0)}
             </div>
             <div className="hidden sm:block text-right">
-              <div className="text-xs font-bold text-slate-100 flex items-center gap-1">
-                <span className="truncate max-w-[100px]">{currentUser.name}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded border ${currentRoleInfo.color}`}>
-                  {currentRoleInfo.label}
+              <div className="text-xs font-semibold text-[#F5F7FF] flex items-center gap-1.5">
+                <span className="truncate max-w-[110px]">{currentUser.name}</span>
+                <span className="text-[10px] text-[#8992AA]">
+                  {currentUser.role === 'admin' ? 'المدير' : currentUser.role === 'agent' ? 'مندوب' : 'عميل'}
                 </span>
               </div>
-              <div className="text-[10px] text-slate-400 font-mono" dir="ltr">{currentUser.phone}</div>
             </div>
           </div>
 
           {/* Logout Button */}
           <button
             onClick={onLogout}
-            className="flex items-center gap-1 p-1.5 sm:px-3 sm:py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 hover:text-rose-100 border border-rose-800/50 text-xs font-bold transition"
+            className="flex items-center gap-1 p-2 sm:px-3 sm:py-1.5 rounded-xl bg-[#10172B] hover:bg-[#151F38] text-[#8992AA] hover:text-[#EF3340] border border-[#1E2945] text-xs font-medium transition"
             title="تسجيل الخروج من الحساب"
           >
             <LogOut className="w-4 h-4" />

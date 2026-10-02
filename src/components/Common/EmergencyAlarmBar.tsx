@@ -125,25 +125,25 @@ export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
       {/* 2. Emergency Alarm Bar */}
       {totalCriticalCount > 0 ? (
         /* ACTIVE ALARM: Triggers and displays ONLY with real critical alerts */
-        <div className="bg-gradient-to-r from-red-950/90 via-slate-900 to-amber-950/80 border-b border-red-700/70 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs text-slate-200 shadow-md">
+        <div className="bg-[#10172B] border-b border-[#EF3340]/50 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs text-[#F5F7FF] shadow-sm">
           {/* Left: Alert Badges Breakdown */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="flex items-center gap-1.5 font-black text-rose-300 text-xs shrink-0">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+            <span className="flex items-center gap-1.5 font-bold text-[#EF3340] text-xs shrink-0">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#EF3340] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#EF3340]"></span>
               </span>
-              <span>إنذار الحالات الحرجة ({totalCriticalCount}):</span>
+              <span>الحالات الحرجة ({totalCriticalCount}):</span>
             </span>
 
             {/* Urgent Maintenance Badge */}
             {urgentMaintenanceCount > 0 && (
               <button
                 onClick={() => onOpenAlerts?.('maintenance')}
-                className="px-2.5 py-1 rounded-xl bg-rose-950/90 text-rose-300 border border-rose-700/80 font-bold text-[11px] flex items-center gap-1 hover:bg-rose-900 transition active:scale-95 shadow-sm"
+                className="px-2.5 py-1 rounded-lg bg-[#EF3340]/15 text-[#EF3340] border border-[#EF3340]/30 font-semibold text-[11px] flex items-center gap-1 hover:bg-[#EF3340]/25 transition"
                 title="عرض مواقع وبلاغات الصيانة العاجلة"
               >
-                <Flame className="w-3.5 h-3.5 text-rose-400 animate-bounce" />
+                <Flame className="w-3.5 h-3.5 text-[#EF3340]" />
                 <span>{urgentMaintenanceCount} صيانة عاجلة</span>
               </button>
             )}
@@ -152,10 +152,10 @@ export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
             {expiringContractsCount > 0 && (
               <button
                 onClick={() => onOpenAlerts?.('contracts')}
-                className="px-2.5 py-1 rounded-xl bg-amber-950/90 text-amber-300 border border-amber-700/80 font-bold text-[11px] flex items-center gap-1 hover:bg-amber-900 transition active:scale-95 shadow-sm"
+                className="px-2.5 py-1 rounded-lg bg-[#FFB020]/15 text-[#FFB020] border border-[#FFB020]/30 font-semibold text-[11px] flex items-center gap-1 hover:bg-[#FFB020]/25 transition"
                 title="عرض العقود التي قاربت على الانتهاء"
               >
-                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <Clock className="w-3.5 h-3.5 text-[#FFB020]" />
                 <span>{expiringContractsCount} عقود قاربت على الانتهاء</span>
               </button>
             )}
@@ -164,10 +164,10 @@ export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
             {civilDefenseVisitsCount > 0 && (
               <button
                 onClick={() => onOpenAlerts?.('civil_defense')}
-                className="px-2.5 py-1 rounded-xl bg-blue-950/90 text-blue-300 border border-blue-700/80 font-bold text-[11px] flex items-center gap-1 hover:bg-blue-900 transition active:scale-95 shadow-sm"
+                className="px-2.5 py-1 rounded-lg bg-[#20A9FF]/15 text-[#20A9FF] border border-[#20A9FF]/30 font-semibold text-[11px] flex items-center gap-1 hover:bg-[#20A9FF]/25 transition"
                 title="عرض مواعيد زيارات وتفتيش الدفاع المدني"
               >
-                <ShieldAlert className="w-3.5 h-3.5 text-blue-400" />
+                <ShieldAlert className="w-3.5 h-3.5 text-[#20A9FF]" />
                 <span>{civilDefenseVisitsCount} زيارات دفاع مدني</span>
               </button>
             )}
@@ -175,25 +175,13 @@ export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
 
           {/* Right: Sound Trigger for Real Critical Alerts & Sound Mute Toggle */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Trigger siren for real critical alerts (Hidden as requested) */}
-            <button
-              onClick={handleTriggerAlarmForRealAlerts}
-              disabled={isPlayingSiren}
-              className="hidden"
-              style={{ display: 'none' }}
-              title="إطلاق صفارة إنذار الطوارئ لهذه الحالات الميدانية الحرجة"
-            >
-              <Radio className="w-3.5 h-3.5 shrink-0" />
-              <span>{isPlayingSiren ? 'صفارة الإنذار نشطة 🔊' : 'تشغيل صفارة الإنذار 🚨'}</span>
-            </button>
-
             {/* Mute / Unmute Toggle */}
             <button
               onClick={handleToggleSound}
-              className={`p-1.5 rounded-xl border transition flex items-center gap-1 text-[11px] font-bold ${
+              className={`p-1.5 rounded-lg border transition flex items-center gap-1 text-[11px] font-medium ${
                 soundEnabled
-                  ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/80 hover:bg-emerald-900'
-                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                  ? 'bg-[#10172B] text-[#19C7A0] border-[#1E2945] hover:border-[#19C7A0]/40'
+                  : 'bg-[#10172B] text-[#8992AA] border-[#1E2945] hover:text-[#F5F7FF]'
               }`}
               title={soundEnabled ? 'كتم الصوت' : 'تشغيل الصوت'}
             >

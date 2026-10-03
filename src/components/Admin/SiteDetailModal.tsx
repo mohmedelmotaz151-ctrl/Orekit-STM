@@ -106,112 +106,128 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
-      <div className="w-full max-w-3xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#070B1C]/85 backdrop-blur-md overflow-y-auto">
+      <div className="w-full max-w-3xl bg-[#0B1224] border border-[#1E2945] rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92dvh] animate-slideUp">
         
         {/* Top Header Card */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-b border-slate-700/80 flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3.5">
-            <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 shrink-0">
-              <img
-                src={site.sitePhoto || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=400&q=80'}
-                alt={site.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-base sm:text-xl font-black text-white">{site.name}</h2>
-                <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${statusInfo.bgClass}`}>
-                  {statusInfo.icon} {statusInfo.label}
-                </span>
-                <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${
-                  site.approvalStatus === 'approved'
-                    ? 'bg-emerald-950/70 text-emerald-300 border-emerald-700'
-                    : site.approvalStatus === 'pending'
-                    ? 'bg-amber-950/70 text-amber-300 border-amber-700'
-                    : 'bg-rose-950/70 text-rose-300 border-rose-700'
-                }`}>
-                  {site.approvalStatus === 'approved' ? '✓ معتمد بالحافز (+1.50 ر.س)' : site.approvalStatus === 'pending' ? '⏳ قيد المراجعة الإدارية' : 'مرفوض'}
-                </span>
-                {site.extinguisherMaintenance?.expiryDate && (
-                  <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${extExpiryBadge?.badgeClass || 'bg-slate-800 text-slate-300'}`}>
-                    🧯 صلاحية الطفايات: {site.extinguisherMaintenance.expiryDate}
-                  </span>
-                )}
+        <div className="p-4 sm:p-5 bg-gradient-to-br from-[#10172B] via-[#0D1C3D] to-[#070B1C] border-b border-[#1E2945] space-y-3 relative">
+          
+          {/* Top Row: Photo, Name, Badges & Close Button */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl overflow-hidden bg-[#070B1C] border-2 border-[#1E2945] shrink-0 shadow-lg">
+                <img
+                  src={site.sitePhoto || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=400&q=80'}
+                  alt={site.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <p className="text-xs text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
-                <span>📍 {site.city} - {site.district}</span>
-                <span>•</span>
-                <span>النشاط: {site.type}</span>
-                <span>•</span>
-                <span>المندوب المسؤول: {site.createdByAgentName}</span>
-              </p>
+              <div className="space-y-1">
+                <h2 className="text-base sm:text-xl font-black text-[#F5F7FF] leading-snug">{site.name}</h2>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${statusInfo.bgClass}`}>
+                    {statusInfo.icon} {statusInfo.label}
+                  </span>
+                  <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${
+                    site.approvalStatus === 'approved'
+                      ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700'
+                      : site.approvalStatus === 'pending'
+                      ? 'bg-amber-950/80 text-amber-300 border-amber-700'
+                      : 'bg-rose-950/80 text-rose-300 border-rose-700'
+                  }`}>
+                    {site.approvalStatus === 'approved' ? '✓ معتمد (+1.50 ر.س)' : site.approvalStatus === 'pending' ? '⏳ قيد المراجعة الإدارية' : 'مرفوض'}
+                  </span>
+                  {site.extinguisherMaintenance?.expiryDate && (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${extExpiryBadge?.badgeClass || 'bg-slate-800 text-slate-300'}`}>
+                      🧯 طفايات: {site.extinguisherMaintenance.expiryDate}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
+
+            {/* Pinned Close Button */}
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-xl bg-[#070B1C] text-[#8992AA] hover:text-[#F5F7FF] border border-[#1E2945] flex items-center justify-center transition active:scale-95 shrink-0"
+              aria-label="إغلاق"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Subtitle / Metadata */}
+          <div className="text-xs text-[#8992AA] flex items-center gap-2 flex-wrap pt-0.5">
+            <span className="flex items-center gap-1 text-[#F5F7FF] font-medium">
+              <MapPin className="w-3.5 h-3.5 text-[#20A9FF]" />
+              {site.city} - {site.district}
+            </span>
+            <span>•</span>
+            <span>النشاط: <strong className="text-slate-200">{site.type}</strong></span>
+            <span>•</span>
+            <span>المندوب: <strong className="text-[#20A9FF]">{site.createdByAgentName}</strong></span>
+          </div>
+
+          {/* Two prominent action buttons: WhatsApp & Google Maps */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
             <button
               type="button"
               onClick={() => setIsWhatsAppOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-emerald-950/50 transition border border-emerald-400/30"
-              title="تواصل عبر واتساب (مسؤول الموقع + إدارة الشركة)"
+              className="w-full bg-[#19C7A0] hover:bg-[#16B591] text-[#070B1C] font-black py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-[#19C7A0]/20 transition active:scale-[0.98] min-h-[42px]"
             >
-              <MessageCircle className="w-3.5 h-3.5 fill-current" />
+              <MessageCircle className="w-4 h-4 fill-current shrink-0" />
               <span>تواصل عبر واتساب</span>
             </button>
 
-            {site.latitude && site.longitude && (
+            {site.latitude && site.longitude ? (
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${site.latitude},${site.longitude}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shadow-md transition"
-                title="فتح في خرائط جوجل"
+                className="w-full bg-[#10172B] hover:bg-[#151F38] text-[#20A9FF] font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-2 border border-[#1E2945] hover:border-[#20A9FF]/50 shadow-md transition active:scale-[0.98] min-h-[42px]"
               >
-                <MapPin className="w-3.5 h-3.5" />
+                <MapPin className="w-4 h-4 text-[#20A9FF] shrink-0" />
                 <span>خرائط جوجل</span>
-                <ExternalLink className="w-3 h-3" />
+                <ExternalLink className="w-3 h-3 opacity-70" />
               </a>
+            ) : (
+              <div className="w-full bg-[#10172B] text-slate-500 py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1 border border-[#1E2945]">
+                <span>الموقع غير محدد</span>
+              </div>
             )}
-
-            <button
-              onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
+
         </div>
 
-        {/* Tab Navigation */}
-        <div className="px-4 sm:px-6 bg-slate-950/70 border-b border-slate-800 flex gap-2 text-xs overflow-x-auto">
+        {/* Tab Navigation (Pill buttons that never collapse) */}
+        <div className="px-3 py-2.5 bg-[#070B1C] border-b border-[#1E2945] flex items-center gap-2 text-xs overflow-x-auto no-scrollbar shrink-0 select-none">
           {[
-            { id: 'profile', label: 'ملف المنشأة والمسؤول' },
+            { id: 'profile', label: 'ملف المنشأة والمسؤول', icon: '👤' },
             { 
               id: 'extinguishers_maintenance', 
               label: site.approvalStatus === 'approved' 
-                ? '🧯 صيانة الطفايات وتاريخ الانتهاء (معتمد)' 
-                : '🧯 صيانة الطفايات وتاريخ الانتهاء',
+                ? 'صيانة الطفايات وتاريخ الانتهاء' 
+                : 'صيانة الطفايات',
+              icon: '🧯',
               isSpecial: true,
             },
-            { id: 'equipment', label: 'حصر أجهزة السلامة' },
-            { id: 'contract', label: 'العقد والتراخيص' },
-            { id: 'visits', label: `سجل الزيارات (${siteVisits.length})` },
-            { id: 'followup', label: `سجل المتابعات CRM (${siteFollowups.length})` },
+            { id: 'equipment', label: 'حصر أجهزة السلامة', icon: '🛡️' },
+            { id: 'contract', label: 'العقد والتراخيص', icon: '📄' },
+            { id: 'visits', label: `سجل الزيارات (${siteVisits.length})`, icon: '📍' },
+            { id: 'followup', label: `سجل المتابعات CRM (${siteFollowups.length})`, icon: '💬' },
           ].map((t) => (
             <button
               key={t.id}
+              type="button"
               onClick={() => setActiveTab(t.id as any)}
-              className={`py-3 px-3 border-b-2 font-bold whitespace-nowrap transition flex items-center gap-1.5 ${
+              className={`py-2 px-3 rounded-xl font-bold whitespace-nowrap transition-all duration-150 flex items-center gap-1.5 shrink-0 text-xs active:scale-95 ${
                 activeTab === t.id
-                  ? 'border-orange-500 text-orange-400'
-                  : t.isSpecial && site.approvalStatus === 'approved'
-                  ? 'border-transparent text-emerald-400 hover:text-emerald-300'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
+                  ? 'bg-[#20A9FF] text-[#070B1C] shadow-md shadow-[#20A9FF]/20 font-black'
+                  : 'bg-[#10172B] text-[#8992AA] hover:text-[#F5F7FF] border border-[#1E2945]'
               }`}
             >
-              {t.label}
+              <span>{t.icon}</span>
+              <span>{t.label}</span>
             </button>
           ))}
         </div>
@@ -237,121 +253,157 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
           {activeTab === 'profile' && (
             <div className="space-y-4">
               
-              {/* Quick Contacts */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="bg-slate-950/70 p-3 rounded-2xl border border-slate-800">
-                  <span className="text-[11px] text-slate-400 block mb-1">اسم المسؤول</span>
-                  <div className="text-sm font-bold text-white flex items-center gap-1.5">
-                    <UserIcon className="w-4 h-4 text-orange-400" />
-                    <span>{site.managerName}</span>
+              {/* Section 1: Quick Contacts & Manager */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-[#F5F7FF] px-1">
+                  <span className="text-[#20A9FF]">👤</span>
+                  <span>مسؤول المنشأة وبيانات الاتصال</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div className="bg-[#10172B] p-4 rounded-2xl border border-[#1E2945] shadow-sm space-y-1">
+                    <span className="text-[11px] text-[#8992AA] font-bold block">اسم المسؤول</span>
+                    <div className="text-sm sm:text-base font-black text-[#F5F7FF] flex items-center gap-2">
+                      <UserIcon className="w-4 h-4 text-[#FFB020] shrink-0" />
+                      <span className="truncate">{site.managerName || 'غير مسجل'}</span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="bg-slate-950/70 p-3 rounded-2xl border border-slate-800">
-                  <span className="text-[11px] text-slate-400 block mb-1">رقم هاتف التواصل</span>
-                  <a
-                    href={`tel:${site.phone}`}
-                    className="text-sm font-bold text-emerald-400 flex items-center gap-1.5 hover:underline font-mono"
-                    dir="ltr"
-                  >
-                    <Phone className="w-4 h-4" />
-                    <span>{site.phone}</span>
-                  </a>
-                </div>
+                  <div className="bg-[#10172B] p-4 rounded-2xl border border-[#1E2945] shadow-sm space-y-1">
+                    <span className="text-[11px] text-[#8992AA] font-bold block">رقم هاتف التواصل</span>
+                    <div className="flex items-center justify-between">
+                      <a
+                        href={`tel:${site.phone}`}
+                        className="text-sm sm:text-base font-black text-[#19C7A0] flex items-center gap-2 hover:underline font-mono"
+                        dir="ltr"
+                      >
+                        <Phone className="w-4 h-4 shrink-0" />
+                        <span>{site.phone}</span>
+                      </a>
+                      <a
+                        href={`tel:${site.phone}`}
+                        className="p-1.5 rounded-lg bg-[#19C7A0]/15 text-[#19C7A0] hover:bg-[#19C7A0] hover:text-[#070B1C] transition text-[11px] font-bold"
+                        title="اتصال هاتفي"
+                      >
+                        اتصال
+                      </a>
+                    </div>
+                  </div>
 
-                <div className="bg-slate-950/70 p-3 rounded-2xl border border-slate-800">
-                  <span className="text-[11px] text-slate-400 block mb-1">رقم إضافي / بديل</span>
-                  <span className="text-sm text-slate-200 font-mono" dir="ltr">
-                    {site.altPhone || 'غير مسجل'}
-                  </span>
+                  <div className="bg-[#10172B] p-4 rounded-2xl border border-[#1E2945] shadow-sm space-y-1">
+                    <span className="text-[11px] text-[#8992AA] font-bold block">رقم إضافي / بديل</span>
+                    <div className="text-sm font-medium text-slate-300 font-mono pt-0.5" dir="ltr">
+                      {site.altPhone || 'لا يوجد رقم بديل'}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Ready WhatsApp Contact Action Row */}
-              <div className="p-3.5 bg-gradient-to-r from-emerald-950/60 to-slate-950/90 rounded-2xl border border-emerald-800/50 flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 shrink-0">
-                    <MessageCircle className="w-4 h-4 fill-current" />
+              {/* Section 2: Ready WhatsApp Contact Action Row */}
+              <div className="p-4 bg-gradient-to-r from-emerald-950/70 via-[#10172B] to-[#10172B] rounded-2xl border border-emerald-700/60 shadow-md space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#19C7A0]/20 text-[#19C7A0] flex items-center justify-center border border-[#19C7A0]/30 shrink-0">
+                      <MessageCircle className="w-5 h-5 fill-current" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-white">تواصل فوري عبر WhatsApp</h4>
+                      <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                        محادثة جاهزة مع <span className="text-emerald-400 font-bold font-mono" dir="ltr">{site.phone}</span> أو إرسال تقرير المعاينة لإدارة أوريكيت
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">تواصل فوري عبر WhatsApp</h4>
-                    <p className="text-[11px] text-slate-400">
-                      محادثة جاهزة مع <span className="text-emerald-400 font-medium">رقم الموقع ({site.phone})</span> أو إرسال التقرير لـ <span className="text-amber-400 font-medium">إدارة أوريكيت ({ORIKET_COMPANY_PHONE})</span>
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setIsWhatsAppOpen(true)}
-                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition"
+                    className="px-4 py-2.5 rounded-xl bg-[#19C7A0] hover:bg-[#16B591] text-[#070B1C] font-black text-xs flex items-center gap-1.5 shadow-md shadow-[#19C7A0]/20 transition active:scale-95 shrink-0"
                   >
-                    <MessageCircle className="w-3.5 h-3.5 fill-current" />
-                    <span>فتح نماذج المراسلة والتقرير</span>
+                    <MessageCircle className="w-4 h-4 fill-current" />
+                    <span>مراسلة واتساب</span>
                   </button>
                 </div>
               </div>
 
-              {/* Address & GPS */}
-              <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between text-xs flex-wrap gap-2">
-                  <span className="font-bold text-slate-300 flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4 text-orange-400" />
-                    العنوان والموقع الجغرافي:
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-slate-400 dir-ltr">{site.latitude}, {site.longitude}</span>
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${site.latitude},${site.longitude}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-blue-600/90 hover:bg-blue-500 text-white font-bold px-2.5 py-1 rounded-lg text-xs flex items-center gap-1 shadow transition"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      <span>فتح في خرائط جوجل</span>
-                    </a>
+              {/* Section 3: Address & GPS */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-[#F5F7FF] px-1">
+                  <span className="text-[#20A9FF]">📍</span>
+                  <span>العنوان والموقع الجغرافي</span>
+                </div>
+
+                <div className="bg-[#10172B] p-4 rounded-2xl border border-[#1E2945] space-y-3">
+                  <div className="flex items-center justify-between text-xs flex-wrap gap-2">
+                    <span className="font-bold text-slate-200">
+                      {site.address || `${site.city} - ${site.district}`}
+                    </span>
+                    {site.latitude && site.longitude && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-slate-400 text-[11px]" dir="ltr">{site.latitude.toFixed(4)}, {site.longitude.toFixed(4)}</span>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${site.latitude},${site.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-[#20A9FF] hover:bg-[#1E9BEB] text-[#070B1C] font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow transition"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>فتح في الخرائط</span>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Interactive Map */}
+                  <LeafletMap
+                    center={[site.latitude, site.longitude]}
+                    zoom={16}
+                    pickedLocation={{ lat: site.latitude, lon: site.longitude }}
+                    highlightProximityRadius={{ lat: site.latitude, lon: site.longitude, meters: 50 }}
+                    className="w-full h-52 rounded-xl border border-[#1E2945] mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* Section 4: Status Update Dropdown */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-[#F5F7FF] px-1">
+                  <span className="text-[#20A9FF]">🏷️</span>
+                  <span>تصنيف وحالة العميل في المنظومة (CRM)</span>
+                </div>
+
+                <div className="bg-[#10172B] p-4 rounded-2xl border border-[#1E2945] flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <span className="block text-xs font-bold text-white mb-0.5">تحديث تصنيف العميل الحالي:</span>
+                    <p className="text-[11px] text-[#8992AA]">يساعد التحديث الفوري على توجيه مسؤولي المبيعات والزيارات</p>
+                  </div>
+                  <select
+                    value={site.status}
+                    onChange={(e) => onUpdateStatus(site.id, e.target.value as SiteStatus)}
+                    className="bg-[#070B1C] border border-[#1E2945] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#20A9FF] font-bold"
+                  >
+                    <option value="new_opportunity">🟢 فرصة جديدة</option>
+                    <option value="needs_followup">🟡 يحتاج متابعة</option>
+                    <option value="competitor_contract">🔵 لديه عقد مع شركة أخرى</option>
+                    <option value="expiring_soon">🟠 العقد قريب الانتهاء</option>
+                    <option value="urgent_maintenance">🔴 يحتاج صيانة عاجلة</option>
+                    <option value="no_opportunity">⚫ لا توجد فرصة حاليًا</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Section 5: Notes */}
+              {site.notes && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#F5F7FF] px-1">
+                    <span className="text-[#20A9FF]">📝</span>
+                    <span>ملاحظات وتفاصيل المنشأة</span>
+                  </div>
+                  <div className="bg-[#10172B] p-4 rounded-2xl border border-[#1E2945] text-xs text-slate-300 leading-relaxed">
+                    {site.notes}
                   </div>
                 </div>
-                <p className="text-xs text-slate-300">{site.address}</p>
-
-                {/* Map */}
-                <LeafletMap
-                  center={[site.latitude, site.longitude]}
-                  zoom={16}
-                  pickedLocation={{ lat: site.latitude, lon: site.longitude }}
-                  highlightProximityRadius={{ lat: site.latitude, lon: site.longitude, meters: 50 }}
-                  className="w-full h-52 rounded-xl border border-slate-800 mt-2"
-                />
-              </div>
-
-              {/* Status Update Dropdown */}
-              <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 flex items-center justify-between gap-3 flex-wrap">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">تحديث تصنيف العميل:</label>
-                  <p className="text-[11px] text-slate-400">تغيير الحالة يساعد الإدارة على توجيه المتابعة</p>
-                </div>
-                <select
-                  value={site.status}
-                  onChange={(e) => onUpdateStatus(site.id, e.target.value as SiteStatus)}
-                  className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500 font-bold"
-                >
-                  <option value="new_opportunity">🟢 فرصة جديدة</option>
-                  <option value="needs_followup">🟡 يحتاج متابعة</option>
-                  <option value="competitor_contract">🔵 لديه عقد مع شركة أخرى</option>
-                  <option value="expiring_soon">🟠 العقد قريب الانتهاء</option>
-                  <option value="urgent_maintenance">🔴 يحتاج صيانة عاجلة</option>
-                  <option value="no_opportunity">⚫ لا توجد فرصة حاليًا</option>
-                </select>
-              </div>
-
-              {/* Notes */}
-              {site.notes && (
-                <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-1">
-                  <span className="text-xs font-bold text-amber-400">ملاحظات وتوصيات المندوب:</span>
-                  <p className="text-xs text-slate-300 leading-relaxed">{site.notes}</p>
-                </div>
               )}
+
             </div>
           )}
 
@@ -360,43 +412,47 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
             <div className="space-y-4">
               
               {/* 1. Extinguishers */}
-              <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div className="bg-[#10172B] p-4 rounded-2xl border border-[#1E2945] shadow-sm space-y-3">
+                <div className="flex items-center justify-between border-b border-[#1E2945] pb-2.5">
                   <div className="flex items-center gap-2">
                     <Flame className="w-5 h-5 text-red-500" />
                     <h4 className="font-bold text-sm text-white">طفايات الحريق اليدوية</h4>
                   </div>
-                  <span className="text-base font-black text-amber-400">
+                  <span className="text-base font-black text-[#FFB020] font-mono">
                     {site.equipment?.extinguishers?.totalCount || 0} طفاية
                   </span>
                 </div>
 
-                <div className="text-xs text-slate-300 space-y-1.5">
-                  <div>
-                    <strong>الأنواع المتوفرة:</strong>{' '}
-                    {site.equipment?.extinguishers?.types?.length
-                      ? site.equipment.extinguishers.types.map((t) => (t === 'powder' ? 'بودرة جافة' : t === 'co2' ? 'CO2' : t === 'foam' ? 'رغوة' : 'مائية/رطبة')).join('، ')
-                      : 'غير محدد'}
+                <div className="text-xs text-slate-300 space-y-2">
+                  <div className="bg-[#070B1C] p-3 rounded-xl border border-[#1E2945]">
+                    <span className="text-[#8992AA] block text-[11px] mb-0.5">الأنواع المتوفرة:</span>
+                    <strong className="text-white text-xs">
+                      {site.equipment?.extinguishers?.types?.length
+                        ? site.equipment.extinguishers.types.map((t) => (t === 'powder' ? 'بودرة جافة' : t === 'co2' ? 'CO2' : t === 'foam' ? 'رغوة' : 'مائية/رطبة')).join('، ')
+                        : 'غير محدد'}
+                    </strong>
                   </div>
+
                   <div className="flex gap-2 flex-wrap pt-1">
                     {site.equipment?.extinguishers?.needsMaintenance && (
-                      <span className="bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded text-[11px]">
+                      <span className="bg-amber-950/80 text-amber-300 border border-amber-800 px-2.5 py-1 rounded-xl text-[11px] font-bold">
                         ⚠️ بحاجة صيانة وتعبئة
                       </span>
                     )}
                     {site.equipment?.extinguishers?.needsReplacement && (
-                      <span className="bg-red-950 text-red-300 border border-red-800 px-2 py-0.5 rounded text-[11px]">
+                      <span className="bg-red-950/80 text-red-300 border border-red-800 px-2.5 py-1 rounded-xl text-[11px] font-bold">
                         🔴 بحاجة استبدال تالف
                       </span>
                     )}
                     {site.equipment?.extinguishers?.needsNewInstall && (
-                      <span className="bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded text-[11px]">
+                      <span className="bg-emerald-950/80 text-emerald-300 border border-emerald-800 px-2.5 py-1 rounded-xl text-[11px] font-bold">
                         🟢 فرصة تركيب جديد
                       </span>
                     )}
                   </div>
+
                   {site.equipment?.extinguishers?.notes && (
-                    <p className="text-[11px] text-slate-400 pt-1">
+                    <p className="text-[11px] text-slate-400 pt-1 bg-[#070B1C] p-2.5 rounded-xl border border-[#1E2945]">
                       ملاحظة: {site.equipment.extinguishers.notes}
                     </p>
                   )}
@@ -404,53 +460,53 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
               </div>
 
               {/* 2. Alarm System */}
-              <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div className="bg-[#10172B] p-4 rounded-2xl border border-[#1E2945] shadow-sm space-y-3">
+                <div className="flex items-center justify-between border-b border-[#1E2945] pb-2.5">
                   <div className="flex items-center gap-2">
                     <Bell className="w-5 h-5 text-amber-500" />
                     <h4 className="font-bold text-sm text-white">نظام الإنذار المبكر</h4>
                   </div>
-                  <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
                     site.equipment?.alarmSystem?.exists && site.equipment?.alarmSystem?.working
-                      ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                      ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
                       : site.equipment?.alarmSystem?.exists
-                      ? 'bg-red-950 text-red-300 border-red-800'
+                      ? 'bg-red-950/80 text-red-300 border-red-800'
                       : 'bg-slate-800 text-slate-400 border-slate-700'
                   }`}>
                     {site.equipment?.alarmSystem?.exists
-                      ? site.equipment?.alarmSystem?.working ? 'يعمل بسلاسة' : '⚠️ معطل بحاجة إصلاح'
+                      ? site.equipment?.alarmSystem?.working ? '✓ يعمل بسلاسة' : '⚠️ معطل بحاجة إصلاح'
                       : 'غير متوفر (فرصة توريد)'}
                   </span>
                 </div>
 
                 {site.equipment?.alarmSystem?.exists && (
                   <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="bg-slate-900 p-2 rounded-xl">
-                      <span className="text-[10px] text-slate-400 block">نوع اللوحة</span>
+                    <div className="bg-[#070B1C] p-2.5 rounded-xl border border-[#1E2945]">
+                      <span className="text-[10px] text-slate-400 block mb-0.5">نوع اللوحة</span>
                       <strong className="text-white text-xs">{site.equipment.alarmSystem.panelType || 'معنون Addressable'}</strong>
                     </div>
-                    <div className="bg-slate-900 p-2 rounded-xl">
-                      <span className="text-[10px] text-slate-400 block">عدد الكواشف</span>
-                      <strong className="text-amber-400 text-sm">{site.equipment.alarmSystem.detectorCount || 0}</strong>
+                    <div className="bg-[#070B1C] p-2.5 rounded-xl border border-[#1E2945]">
+                      <span className="text-[10px] text-slate-400 block mb-0.5">عدد الكواشف</span>
+                      <strong className="text-amber-400 text-sm font-mono">{site.equipment.alarmSystem.detectorCount || 0}</strong>
                     </div>
-                    <div className="bg-slate-900 p-2 rounded-xl">
-                      <span className="text-[10px] text-slate-400 block">كواسر الإنذار</span>
-                      <strong className="text-amber-400 text-sm">{site.equipment.alarmSystem.callPointCount || 0}</strong>
+                    <div className="bg-[#070B1C] p-2.5 rounded-xl border border-[#1E2945]">
+                      <span className="text-[10px] text-slate-400 block mb-0.5">كواسر الإنذار</span>
+                      <strong className="text-amber-400 text-sm font-mono">{site.equipment.alarmSystem.callPointCount || 0}</strong>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* 3. Water & Special Systems */}
-              <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-3">
-                <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+              <div className="bg-[#10172B] p-4 rounded-2xl border border-[#1E2945] shadow-sm space-y-3">
+                <div className="flex items-center gap-2 border-b border-[#1E2945] pb-2.5">
                   <Shield className="w-5 h-5 text-sky-400" />
                   <h4 className="font-bold text-sm text-white">الرشاشات والمضخات والأنظمة الخاصة</h4>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-300">
-                  <div className="bg-slate-900 p-3 rounded-xl space-y-1">
-                    <span className="text-[11px] text-slate-400 block">شبكة الرشاشات (Sprinklers):</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-slate-300">
+                  <div className="bg-[#070B1C] p-3 rounded-xl border border-[#1E2945] space-y-1">
+                    <span className="text-[11px] text-[#8992AA] block">شبكة الرشاشات (Sprinklers):</span>
                     <strong className="text-white block">
                       {site.equipment?.waterAndPumps?.sprinklersExist
                         ? `متوفرة (${site.equipment.waterAndPumps.sprinklersCount || 0} رأس رشاش)`
@@ -458,8 +514,8 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                     </strong>
                   </div>
 
-                  <div className="bg-slate-900 p-3 rounded-xl space-y-1">
-                    <span className="text-[11px] text-slate-400 block">محطة مضخات الحريق:</span>
+                  <div className="bg-[#070B1C] p-3 rounded-xl border border-[#1E2945] space-y-1">
+                    <span className="text-[11px] text-[#8992AA] block">محطة مضخات الحريق:</span>
                     <strong className="text-white block">
                       {site.equipment?.waterAndPumps?.pumpsExist
                         ? site.equipment.waterAndPumps.pumpsType || 'متوفرة'
@@ -467,8 +523,8 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                     </strong>
                   </div>
 
-                  <div className="sm:col-span-2 bg-slate-900 p-3 rounded-xl space-y-1">
-                    <span className="text-[11px] text-slate-400 block">أنظمة الإخماد الخاصة (كيتشن هود / FM200):</span>
+                  <div className="sm:col-span-2 bg-[#070B1C] p-3 rounded-xl border border-[#1E2945] space-y-1">
+                    <span className="text-[11px] text-[#8992AA] block">أنظمة الإخماد الخاصة (كيتشن هود / FM200):</span>
                     <strong className="text-amber-300 block">
                       {site.equipment?.waterAndPumps?.specialSuppressionSystem || 'لا يوجد'}
                     </strong>
@@ -484,8 +540,8 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
             <div className="space-y-4">
               
               {/* Contract Status Card */}
-              <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div className="bg-[#10172B] p-4 rounded-2xl border border-[#1E2945] shadow-sm space-y-3">
+                <div className="flex items-center justify-between border-b border-[#1E2945] pb-2.5">
                   <div className="flex items-center gap-2">
                     <FileText className="w-5 h-5 text-sky-400" />
                     <h4 className="font-bold text-sm text-white">عقد الصيانة السنوي</h4>
@@ -497,68 +553,68 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-300">
-                  <div>
-                    <span className="text-slate-400 block">هل يوجد عقد صيانة حالي؟</span>
-                    <strong className="text-white">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-slate-300">
+                  <div className="bg-[#070B1C] p-3 rounded-xl border border-[#1E2945]">
+                    <span className="text-[#8992AA] block text-[11px]">هل يوجد عقد صيانة حالي؟</span>
+                    <strong className="text-white block mt-0.5">
                       {site.contract?.hasContract === 'yes' ? 'نعم مرتبط بعقد' : site.contract?.hasContract === 'no' ? 'لا يوجد عقد حالي' : 'غير معروف'}
                     </strong>
                   </div>
 
-                  <div>
-                    <span className="text-slate-400 block">اسم شركة الصيانة:</span>
-                    <strong className="text-amber-300">{site.contract?.companyName || 'لا يوجد'}</strong>
+                  <div className="bg-[#070B1C] p-3 rounded-xl border border-[#1E2945]">
+                    <span className="text-[#8992AA] block text-[11px]">اسم شركة الصيانة:</span>
+                    <strong className="text-amber-300 block mt-0.5">{site.contract?.companyName || 'لا يوجد'}</strong>
                   </div>
 
-                  <div>
-                    <span className="text-slate-400 block">تاريخ بداية العقد:</span>
-                    <strong className="text-white">{site.contract?.startDate || 'غير مسجل'}</strong>
+                  <div className="bg-[#070B1C] p-3 rounded-xl border border-[#1E2945]">
+                    <span className="text-[#8992AA] block text-[11px]">تاريخ بداية العقد:</span>
+                    <strong className="text-white font-mono block mt-0.5">{site.contract?.startDate || 'غير مسجل'}</strong>
                   </div>
 
-                  <div>
-                    <span className="text-slate-400 block">تاريخ انتهاء العقد:</span>
-                    <strong className="text-rose-400 font-bold">{site.contract?.endDate || 'غير مسجل'}</strong>
+                  <div className="bg-[#070B1C] p-3 rounded-xl border border-[#1E2945]">
+                    <span className="text-[#8992AA] block text-[11px]">تاريخ انتهاء العقد:</span>
+                    <strong className="text-rose-400 font-bold font-mono block mt-0.5">{site.contract?.endDate || 'غير مسجل'}</strong>
                   </div>
 
                   {site.contract?.annualValue && (
-                    <div>
-                      <span className="text-slate-400 block">قيمة العقد التقريبية:</span>
-                      <strong className="text-emerald-400 font-bold">{site.contract.annualValue} ر.س / سنوياً</strong>
+                    <div className="sm:col-span-2 bg-[#070B1C] p-3 rounded-xl border border-[#1E2945]">
+                      <span className="text-[#8992AA] block text-[11px]">قيمة العقد التقريبية:</span>
+                      <strong className="text-emerald-400 font-bold font-mono block mt-0.5">{site.contract.annualValue} ر.س / سنوياً</strong>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Civil Defense Inspection */}
-              <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs">
-                <div className="flex items-center gap-2 border-b border-slate-800 pb-2 font-bold text-white">
+              <div className="bg-[#10172B] p-4 rounded-2xl border border-[#1E2945] space-y-2.5 text-xs shadow-sm">
+                <div className="flex items-center gap-2 border-b border-[#1E2945] pb-2 font-bold text-white">
                   <Shield className="w-4 h-4 text-amber-400" />
                   <span>سجل الدفاع المدني ومنصة سلامة</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-1">
-                  <div>آخر زيارة: {site.civilDefense?.lastVisitDate || 'غير مسجلة'}</div>
-                  <div>الزيارة القادمة: <strong className="text-amber-400">{site.civilDefense?.nextVisitDate || 'غير محددة'}</strong></div>
-                  <div>رقم المحضر: {site.civilDefense?.reportNumber || 'لا يوجد'}</div>
-                  <div>المفتش: {site.civilDefense?.inspectorName || 'غير مسجل'}</div>
+                  <div className="bg-[#070B1C] p-2.5 rounded-xl border border-[#1E2945]">آخر زيارة: {site.civilDefense?.lastVisitDate || 'غير مسجلة'}</div>
+                  <div className="bg-[#070B1C] p-2.5 rounded-xl border border-[#1E2945]">الزيارة القادمة: <strong className="text-amber-400">{site.civilDefense?.nextVisitDate || 'غير محددة'}</strong></div>
+                  <div className="bg-[#070B1C] p-2.5 rounded-xl border border-[#1E2945]">رقم المحضر: {site.civilDefense?.reportNumber || 'لا يوجد'}</div>
+                  <div className="bg-[#070B1C] p-2.5 rounded-xl border border-[#1E2945]">المفتش: {site.civilDefense?.inspectorName || 'غير مسجل'}</div>
                 </div>
                 {site.civilDefense?.notes && (
-                  <div className="p-2.5 rounded-xl bg-slate-900 text-amber-200 mt-2">
+                  <div className="p-2.5 rounded-xl bg-[#070B1C] border border-[#1E2945] text-amber-200 mt-2">
                     توصيات الدفاع المدني: {site.civilDefense.notes}
                   </div>
                 )}
               </div>
 
               {/* Licenses */}
-              <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs">
-                <div className="flex items-center gap-2 border-b border-slate-800 pb-2 font-bold text-white">
+              <div className="bg-[#10172B] p-4 rounded-2xl border border-[#1E2945] space-y-2.5 text-xs shadow-sm">
+                <div className="flex items-center gap-2 border-b border-[#1E2945] pb-2 font-bold text-white">
                   <FileText className="w-4 h-4 text-emerald-400" />
                   <span>بيانات التراخيص الحكومية</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-1">
-                  <div>حالة الترخيص: {site.license?.hasLicense === 'yes' ? 'مرخص سارٍ' : 'غير مرخص'}</div>
-                  <div>نوع الترخيص: {site.license?.licenseType || 'غير محدد'}</div>
-                  <div>رقم الترخيص: {site.license?.licenseNumber || 'غير محدد'}</div>
-                  <div>تاريخ الانتهاء: {site.license?.expiryDate || 'غير محدد'}</div>
+                  <div className="bg-[#070B1C] p-2.5 rounded-xl border border-[#1E2945]">حالة الترخيص: <strong className="text-[#19C7A0]">{site.license?.hasLicense === 'yes' ? 'مرخص سارٍ' : 'غير مرخص'}</strong></div>
+                  <div className="bg-[#070B1C] p-2.5 rounded-xl border border-[#1E2945]">نوع الترخيص: {site.license?.licenseType || 'غير محدد'}</div>
+                  <div className="bg-[#070B1C] p-2.5 rounded-xl border border-[#1E2945]">رقم الترخيص: {site.license?.licenseNumber || 'غير محدد'}</div>
+                  <div className="bg-[#070B1C] p-2.5 rounded-xl border border-[#1E2945]">تاريخ الانتهاء: <strong className="text-amber-300 font-mono">{site.license?.expiryDate || 'غير محدد'}</strong></div>
                 </div>
               </div>
 
@@ -679,63 +735,66 @@ export const SiteDetailModal: React.FC<SiteDetailModalProps> = ({
 
         </div>
 
-        {/* Modal Bottom Bar: Approval Workflow & Quick Actions */}
-        <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between gap-3 flex-wrap">
+        {/* Modal Bottom Bar: Clear Actions & Approval */}
+        <div className="p-3.5 sm:p-4 bg-[#070B1C] border-t border-[#1E2945] flex flex-col gap-2 shrink-0">
           
           {/* Approval Controls for Admin/Supervisor */}
           {canApprove && site.approvalStatus === 'pending' && (
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
               <button
                 type="button"
                 onClick={() => onApproveSite(site.id, true)}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-950/50 transition"
+                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/50 transition active:scale-[0.98] min-h-[46px]"
               >
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>اعتماد الموقع وإضافة {site.incentiveAmount || 1.50} ر.س للحافز</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowRejectBox(!showRejectBox)}
-                className="px-3 py-2 rounded-xl bg-rose-600/20 text-rose-300 hover:bg-rose-600 hover:text-white border border-rose-500/40 text-xs font-bold transition"
+                className="w-full py-3 px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/50 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-[0.98] min-h-[46px]"
               >
-                رفض / طلب تعديل
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>رفض / طلب تعديل البيانات</span>
               </button>
             </div>
           )}
 
           {canApprove && showRejectBox && (
-            <div className="w-full flex gap-2 pt-2">
+            <div className="w-full flex gap-2 pt-1 animate-fadeIn">
               <input
                 type="text"
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="سبب الرفض (مثلاً: موقع مكرر، صور غير واضحة، أرقام خاطئة...)"
-                className="flex-1 bg-slate-900 border border-rose-700/60 rounded-xl px-3 py-1.5 text-xs text-white"
+                placeholder="اكتب سبب الرفض هنا (مثلاً: موقع مكرر، صور غير واضحة، أرقام خاطئة...)"
+                className="flex-1 bg-[#10172B] border border-rose-600/60 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
               />
               <button
+                type="button"
                 onClick={() => {
                   onApproveSite(site.id, false, rejectionReason || 'موقع مكرر أو بيانات غير مكتملة');
                   setShowRejectBox(false);
                 }}
-                className="px-4 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-bold"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black shrink-0 transition"
               >
                 تأكيد الرفض
               </button>
             </div>
           )}
 
-          {/* Quick Action for Agent: Start Visit */}
-          <div className="flex items-center gap-2 mr-auto">
+          {/* Quick Action for Field Visit */}
+          <div className="w-full">
             <button
+              type="button"
               onClick={() => {
                 onClose();
                 onOpenNewVisitForSite(site);
               }}
-              className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold flex items-center gap-1.5 transition"
+              className="w-full py-3 px-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-lg shadow-orange-950/50 transition active:scale-[0.98] min-h-[46px]"
             >
-              <Plus className="w-4 h-4" />
-              <span>زيارة الموقع الآن</span>
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>زيارة الموقع الآن (+ توثيق الزيارة الميدانية)</span>
             </button>
           </div>
 

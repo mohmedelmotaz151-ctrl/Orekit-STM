@@ -182,32 +182,34 @@ export const ExtinguisherMaintenanceTab: React.FC<ExtinguisherMaintenanceTabProp
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
             <button
               type="button"
               onClick={() => setIsWhatsAppOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-950/50 transition border border-emerald-400/30"
-              title="تواصل عبر واتساب (مسؤول الموقع + إدارة أوريكيت)"
+              className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-md shadow-emerald-950/50 transition border border-emerald-400/30"
+              title="تواصل عبر واتساب"
             >
-              <MessageCircle className="w-4 h-4 fill-current" />
-              <span>تواصل عبر واتساب</span>
+              <MessageCircle className="w-4 h-4 fill-current shrink-0" />
+              <span>تواصل واتساب</span>
             </button>
 
             <button
-              onClick={() => setIsUpdateModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-orange-950/50 transition"
-            >
-              <Wrench className="w-4 h-4" />
-              <span>تحديث وتوثيق صيانة جديدة</span>
-            </button>
-
-            <button
+              type="button"
               onClick={handlePrintCertificate}
-              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition"
+              className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-700 transition"
               title="طباعة شهادة الصيانة"
             >
-              <Printer className="w-4 h-4 text-sky-400" />
-              <span className="hidden sm:inline">طباعة</span>
+              <Printer className="w-4 h-4 text-sky-400 shrink-0" />
+              <span>طباعة الشهادة</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsUpdateModalOpen(true)}
+              className="col-span-2 sm:col-span-1 py-2.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-lg shadow-orange-950/50 transition min-h-[42px]"
+            >
+              <Wrench className="w-4 h-4 shrink-0" />
+              <span>توثيق صيانة جديدة</span>
             </button>
           </div>
         </div>

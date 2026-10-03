@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Oriket Safety",
-  "short_name": "Oriket",
-  "description": "منصة Oriket لخدمات السلامة والحماية من الحريق",
+  "name": "ORKEIT",
+  "short_name": "ORKEIT",
+  "description": "أوريكيت للمقاولات",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -11,8 +11,8 @@
     "window-controls-overlay"
   ],
   "orientation": "portrait",
-  "background_color": "#020617",
-  "theme_color": "#0f172a",
+  "background_color": "#070B1C",
+  "theme_color": "#070B1C",
   "icons": [
     {
       "src": "/pwa-192x192.png",
@@ -28,6 +28,24 @@
     },
     {
       "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

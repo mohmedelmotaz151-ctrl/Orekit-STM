@@ -61,13 +61,18 @@ export const Header: React.FC<HeaderProps> = ({
           title="اضغط هنا لفتح بوابة وتطبيقات وأقسام المنظومة (Hub)"
           aria-label="بوابة أقسام منظومة أوريكيت"
         >
-          <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#20A9FF] to-[#0D6EFD] flex items-center justify-center text-white shadow-md shadow-[#20A9FF]/20 group-hover:scale-105 group-active:scale-95 transition-transform shrink-0">
-            <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl overflow-hidden shadow-md group-hover:scale-105 group-active:scale-95 transition-transform shrink-0 border border-[#1E2945]">
+            <img 
+              src="/pwa-192x192.png" 
+              alt="ORKEIT" 
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <div>
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="font-bold text-sm sm:text-base tracking-tight text-[#F5F7FF] flex items-center gap-1 group-hover:text-[#20A9FF] transition-colors">
-                أوريكيت <span className="hidden sm:inline text-[#20A9FF] text-xs font-semibold">ORIKET</span>
+              <span className="font-bold text-sm sm:text-base tracking-tight text-[#F5F7FF] flex items-center gap-1.5 group-hover:text-[#20A9FF] transition-colors">
+                ORKEIT <span className="text-xs text-[#8992AA] font-normal">أوريكيت للمقاولات</span>
               </span>
               <span className="hidden md:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-[#10172B] text-[#8992AA] border border-[#1E2945] font-medium group-hover:text-[#F5F7FF] transition">
                 <span>أقسام المنظومة</span>
@@ -75,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
             <p className="text-[10px] text-[#8992AA] hidden md:block group-hover:text-[#F5F7FF]/80 transition-colors">
-              منظومة السلامة الميدانية وإدارة العقود
+              منظومة أوريكيت الميدانية وإدارة العقود
             </p>
           </div>
         </button>

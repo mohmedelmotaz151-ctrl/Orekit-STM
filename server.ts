@@ -25,7 +25,7 @@ app.get(['/manifest.json', '/manifest.webmanifest'], (req, res) => {
   const manifestPath = path.resolve(process.cwd(), 'public', 'manifest.json');
   res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.setHeader('Cache-Control', 'no-cache, must-revalidate');
   res.sendFile(manifestPath);
 });
 

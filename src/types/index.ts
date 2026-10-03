@@ -329,3 +329,23 @@ export interface CivilDefenseInspectionAlert {
   updatedAt: string;
 }
 
+// Android App: Unified Service Order & Tracking Model
+export type OrderTrackingStep = 'received' | 'review' | 'pricing' | 'quote_sent' | 'in_progress' | 'completed';
+
+export interface OrkeitServiceOrder {
+  id: string;
+  orderNumber: string; // e.g. ORKEIT-2026-1042
+  serviceType: string; // e.g. عقد صيانة، تمديد شهادة الدفاع المدني، فحص أنظمة الإنذار، فحص أنظمة الإطفاء، زيارة فنية، طلب عرض سعر، طوارئ 24/7
+  serviceCategory: 'contract' | 'civil_defense' | 'alarm' | 'fire_fighting' | 'visit' | 'quotation' | 'emergency';
+  siteName: string;
+  clientName: string;
+  clientPhone: string;
+  date: string;
+  status: OrderTrackingStep;
+  statusLabel: string;
+  estimatedCompletion?: string;
+  notes?: string;
+  costSAR?: number;
+  assignedTechnician?: string;
+  urgent?: boolean;
+}

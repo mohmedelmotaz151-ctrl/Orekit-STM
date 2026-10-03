@@ -34,7 +34,7 @@ export const AgentIncentives: React.FC<AgentIncentivesProps> = ({
   );
 
   return (
-    <div className="space-y-4 max-w-md mx-auto pb-6">
+    <div className="space-y-4 w-full max-w-5xl mx-auto pb-6">
       
       {/* Top Header Card */}
       <div className="bg-gradient-to-br from-orange-950/60 via-slate-900 to-slate-900 p-5 rounded-3xl border border-orange-500/40 shadow-xl space-y-4">

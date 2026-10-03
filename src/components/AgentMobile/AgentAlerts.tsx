@@ -169,7 +169,7 @@ export const AgentAlerts: React.FC<AgentAlertsProps> = ({
   };
 
   return (
-    <div className="space-y-5 max-w-md mx-auto pb-6">
+    <div className="space-y-5 w-full max-w-5xl mx-auto pb-6">
       
       {/* Top Banner with Emergency Siren Button */}
       <div className="bg-gradient-to-r from-red-950/60 via-slate-900 to-amber-950/50 p-4 rounded-3xl border border-red-500/40 shadow-xl space-y-3">

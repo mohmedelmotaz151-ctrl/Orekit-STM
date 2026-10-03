@@ -65,7 +65,7 @@ export const AgentSitesList: React.FC<AgentSitesListProps> = ({
   });
 
   return (
-    <div className="space-y-4 max-w-md mx-auto pb-6">
+    <div className="space-y-4 w-full max-w-5xl mx-auto pb-6">
       
       {/* Top Header */}
       <div className="flex items-center justify-between">

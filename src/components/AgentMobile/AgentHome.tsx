@@ -102,7 +102,7 @@ export const AgentHome: React.FC<AgentHomeProps> = ({
     .sort((a, b) => a.days - b.days);
 
   return (
-    <div className="space-y-4 max-w-md mx-auto pb-6">
+    <div className="space-y-4 w-full max-w-5xl mx-auto pb-6">
       
       {/* Top Banner Card: Oriket & Greeting */}
       <div className="bg-[#10172B] p-4 sm:p-5 rounded-2xl border border-[#1E2945] shadow-md relative overflow-hidden">

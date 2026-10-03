@@ -202,8 +202,130 @@ export const SitesManagement: React.FC<SitesManagementProps> = ({
         </div>
       </div>
 
-      {/* Sites CRM Table */}
-      <div className="bg-slate-900/90 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+      {/* Mobile Card List (Visible on phones: < md) */}
+      <div className="md:hidden space-y-3">
+        {filteredSites.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 bg-slate-900/90 rounded-2xl border border-slate-800">
+            لا توجد منشآت مطابقة للبحث
+          </div>
+        ) : (
+          filteredSites.map((site) => {
+            const statusInfo = SITE_STATUS_MAP[site.status] || SITE_STATUS_MAP.new_opportunity;
+            const expiryBadge = site.contract?.endDate ? getContractExpiryBadge(site.contract.endDate) : null;
+
+            return (
+              <div
+                key={site.id}
+                onClick={() => onSelectSite(site)}
+                className="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 shadow-md space-y-3 cursor-pointer active:bg-slate-800/80 transition"
+              >
+                {/* Header: Photo & Name & Status */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-800 shrink-0 border border-slate-700">
+                      <img
+                        src={site.sitePhoto || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80'}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-white text-sm">{site.name}</h3>
+                      <p className="text-xs text-slate-400">{site.type} · {site.city} ({site.district})</p>
+                    </div>
+                  </div>
+
+                  <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold border shrink-0 ${statusInfo.bgClass}`}>
+                    {statusInfo.icon} {statusInfo.label}
+                  </span>
+                </div>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-2 text-xs bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">المسؤول والهاتف</span>
+                    <span className="text-white font-medium block truncate">{site.managerName || 'غير مسجل'}</span>
+                    <span className="text-emerald-400 font-mono text-[11px]" dir="ltr">{site.phone}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">أجهزة السلامة والعقد</span>
+                    <span className="text-white font-medium block">{site.equipment?.extinguishers?.totalCount || 0} طفاية</span>
+                    {expiryBadge ? (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold inline-block mt-0.5 ${expiryBadge.badgeClass}`}>
+                        {expiryBadge.days <= 0 ? 'عقد منتهي' : `عقد: ${expiryBadge.days} يوم`}
+                      </span>
+                    ) : (
+                      <span className="text-slate-500 text-[10px]">لا يوجد عقد</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer: Agent & Actions */}
+                <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-400">
+                      بواسطة: <strong className="text-slate-200">{site.createdByAgentName}</strong>
+                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                      site.approvalStatus === 'approved'
+                        ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                        : site.approvalStatus === 'pending'
+                        ? 'bg-amber-950 text-amber-300 border-amber-800'
+                        : 'bg-rose-950 text-rose-300 border-rose-800'
+                    }`}>
+                      {site.approvalStatus === 'approved' ? `معتمد (+${site.incentiveAmount || 1.50} ر.س)` : site.approvalStatus === 'pending' ? 'قيد التدقيق' : 'مرفوض'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedWhatsAppSite(site)}
+                      className="p-2 rounded-xl bg-emerald-950/70 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-700/60 transition"
+                      title="واتساب"
+                    >
+                      <MessageCircle className="w-4 h-4 fill-current" />
+                    </button>
+                    {site.phone && (
+                      <a
+                        href={`tel:${site.phone}`}
+                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700"
+                        title="اتصال"
+                      >
+                        <Phone className="w-4 h-4" />
+                      </a>
+                    )}
+                    {site.latitude && site.longitude && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${site.latitude},${site.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-xl bg-blue-950/70 hover:bg-blue-900 text-blue-400 border border-blue-800/60"
+                        title="خرائط Google"
+                      >
+                        <MapPin className="w-4 h-4" />
+                      </a>
+                    )}
+                    {site.approvalStatus === 'pending' && (
+                      <button
+                        onClick={() => onApproveSite(site.id, true)}
+                        className="py-1 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1"
+                        title="اعتماد الحافز"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>اعتماد</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Sites CRM Table (Visible on md and larger) */}
+      <div className="hidden md:block bg-slate-900/90 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-xs">
             <thead className="bg-slate-950 text-slate-400 border-b border-slate-800 font-bold">

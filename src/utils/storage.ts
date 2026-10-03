@@ -502,3 +502,90 @@ export function exportToCSV(filename: string, rows: Record<string, any>[]): void
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+// =================== SERVICE ORDERS STORAGE ===================
+const ORDERS_KEY = 'orkeit_service_orders_v1';
+
+export const INITIAL_ORDERS: import('../types').OrkeitServiceOrder[] = [
+  {
+    id: 'ord_1042',
+    orderNumber: 'ORKEIT-2026-1042',
+    serviceType: 'زيارة فحص ومعاينة أنظمة السلامة',
+    serviceCategory: 'visit',
+    siteName: 'مطعم شواية الخليج الحديث',
+    clientName: 'سلمان العتيبي',
+    clientPhone: '0555334577',
+    date: '03 أكتوبر 2026',
+    status: 'review',
+    statusLabel: 'المراجعة والتدقيق',
+    estimatedCompletion: 'خلال 24 ساعة',
+    notes: 'مطلوب فحص مضخات الحريق وشبكة الرش الآلي وإصدار تقرير كفاءة لمنصة سلامة.',
+    urgent: false,
+  },
+  {
+    id: 'ord_1038',
+    orderNumber: 'ORKEIT-2026-1038',
+    serviceType: 'عقد صيانة سنوي معتمد للدفاع المدني',
+    serviceCategory: 'contract',
+    siteName: 'مستودعات السلي اللوجستية',
+    clientName: 'عبدالرحمن الشهري',
+    clientPhone: '0501234567',
+    date: '01 أكتوبر 2026',
+    status: 'in_progress',
+    statusLabel: 'قيد التنفيذ والتركيب',
+    estimatedCompletion: 'غداً الساعة 2:00 م',
+    notes: 'تجديد العقد الإلكتروني وربطه بنظام سلامة مع صيانة 48 طفاية بودرة وCO2.',
+    urgent: false,
+  },
+  {
+    id: 'ord_1015',
+    orderNumber: 'ORKEIT-2026-1015',
+    serviceType: 'تمديد وتجديد شهادة الدفاع المدني وبلدي',
+    serviceCategory: 'civil_defense',
+    siteName: 'مركز الأندلس الطبي',
+    clientName: 'د. خالد الزهراني',
+    clientPhone: '0544998877',
+    date: '28 سبتمبر 2026',
+    status: 'completed',
+    statusLabel: 'مكتمل وتسليم التقرير',
+    estimatedCompletion: 'مكتمل ومسلّم',
+    notes: 'تمت الزيارة واختبار أجهزة الإنذار وتسليم التقرير المعتمد وتمديد الرخصة بنجاح.',
+    urgent: false,
+  },
+  {
+    id: 'ord_1009',
+    orderNumber: 'ORKEIT-2026-1009',
+    serviceType: 'فحص وصيانة وتعبئة طفايات الحريق',
+    serviceCategory: 'fire_fighting',
+    siteName: 'مدارس الرواد النموذجية',
+    clientName: 'أ. فهد التميمي',
+    clientPhone: '0533221100',
+    date: '25 سبتمبر 2026',
+    status: 'completed',
+    statusLabel: 'مكتمل وتسليم التقرير',
+    estimatedCompletion: 'مكتمل',
+    notes: 'تعبئة واختبار ضغط لـ 26 طفاية وتركيب كروت الصيانة المعتمدة برقم الملصق.',
+    urgent: false,
+  },
+];
+
+export function getStoredOrders(): import('../types').OrkeitServiceOrder[] {
+  try {
+    const raw = localStorage.getItem(ORDERS_KEY);
+    if (!raw) {
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(INITIAL_ORDERS));
+      return INITIAL_ORDERS;
+    }
+    return JSON.parse(raw);
+  } catch {
+    return INITIAL_ORDERS;
+  }
+}
+
+export function saveStoredOrders(orders: import('../types').OrkeitServiceOrder[]): void {
+  try {
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  } catch (e) {
+    console.error('Failed to save service orders', e);
+  }
+}

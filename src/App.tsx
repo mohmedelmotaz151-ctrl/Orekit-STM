@@ -57,6 +57,16 @@ import { EmergencyAlarmBar } from './components/Common/EmergencyAlarmBar';
 import { MobileAppModeBanner } from './components/Common/MobileAppModeBanner';
 import { OfflineIndicator } from './components/Common/OfflineIndicator';
 import { AppModulesHub } from './components/NavigationHub/AppModulesHub';
+import { AndroidTopBar } from './components/AndroidApp/AndroidTopBar';
+import { AndroidBottomNav, AndroidTabType } from './components/AndroidApp/AndroidBottomNav';
+import { AndroidHomeScreen } from './components/AndroidApp/AndroidHomeScreen';
+import { AndroidServicesScreen } from './components/AndroidApp/AndroidServicesScreen';
+import { AndroidOrdersScreen } from './components/AndroidApp/AndroidOrdersScreen';
+import { AndroidNotificationsScreen } from './components/AndroidApp/AndroidNotificationsScreen';
+import { AndroidProfileScreen } from './components/AndroidApp/AndroidProfileScreen';
+import { AndroidTrackingModal } from './components/AndroidApp/AndroidTrackingModal';
+import { getStoredOrders, saveStoredOrders } from './utils/storage';
+import { OrkeitServiceOrder } from './types';
 import { soundNotifier } from './utils/soundNotifications';
 import { getDaysRemaining } from './utils/date';
 import { 
@@ -125,6 +135,12 @@ export default function App() {
 
   // Mobile navigation tabs
   const [mobileTab, setMobileTab] = useState<'home' | 'sites' | 'map' | 'alerts' | 'profile'>('home');
+
+  // Unified Android Mobile App Navigation & Orders State
+  const [activeAndroidTab, setActiveAndroidTab] = useState<AndroidTabType>('home');
+  const [orders, setOrders] = useState<OrkeitServiceOrder[]>(getStoredOrders);
+  const [showAdminCRM, setShowAdminCRM] = useState(false);
+  const [trackingModalOrder, setTrackingModalOrder] = useState<OrkeitServiceOrder | null>(null);
 
   // Admin dashboard navigation tabs
   const [adminTab, setAdminTab] = useState<'dashboard' | 'sites' | 'extinguishers' | 'agents' | 'clients' | 'incentives' | 'reports' | 'alerts'>('dashboard');
@@ -607,6 +623,14 @@ export default function App() {
     apiSaveFollowUp(newFol);
   };
 
+  const handleOrderCreated = (newOrder: OrkeitServiceOrder) => {
+    setOrders((prev) => {
+      const updated = [newOrder, ...prev];
+      saveStoredOrders(updated);
+      return updated;
+    });
+  };
+
   const handleAddFollowUp = (
     siteId: string,
     note: string,
@@ -775,52 +799,45 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070B1C] text-[#F5F7FF] flex flex-col font-['Cairo',sans-serif]">
+    <div className="min-h-[100dvh] w-full max-w-full m-0 p-0 bg-[#070B1C] text-[#F5F7FF] flex flex-col font-['Cairo',sans-serif] overflow-x-hidden selection:bg-[#20A9FF] selection:text-[#070B1C]">
       
-      {/* Top Header - Clicking logo opens AppModulesHub */}
-      <Header
+      {/* Android Top App Bar */}
+      <AndroidTopBar
         currentUser={currentUser}
-        onLogout={handleLogout}
-        alertsCount={totalAlertsCount}
-        onOpenHub={() => setIsHubOpen((prev) => !prev)}
-        isHubActive={isHubOpen}
-        onOpenAlerts={() => {
+        activeTab={activeAndroidTab}
+        onNavigateTab={(tab) => {
+          setShowAdminCRM(false);
           setIsHubOpen(false);
-          if (currentUser.role === 'admin' || currentUser.role === 'supervisor') {
-            setAdminTab('alerts');
-          } else {
-            setMobileTab('alerts');
-          }
+          setActiveAndroidTab(tab);
         }}
+        unreadNotificationsCount={totalAlertsCount}
+        onOpenHub={() => setIsHubOpen((prev) => !prev)}
       />
 
-      {/* Emergency Alarm & Outside Notification Strip: Active ONLY on contracts nearing expiration, urgent maintenance, or civil defense visits */}
+      {/* Emergency Alarm & Outside Notification Strip */}
       <EmergencyAlarmBar
         expiringContractsCount={expiringContractsCount}
         urgentMaintenanceCount={urgentMaintenanceCount}
         civilDefenseVisitsCount={civilDefenseVisitsCount}
-        onOpenAlerts={(target) => {
+        onOpenAlerts={() => {
           setIsHubOpen(false);
-          if (currentUser.role === 'admin' || currentUser.role === 'supervisor') {
-            setAdminTab('alerts');
-          } else {
-            setMobileTab('alerts');
-          }
+          setShowAdminCRM(false);
+          setActiveAndroidTab('notifications');
         }}
       />
 
       {/* Mobile App Standalone & Fullscreen Mode Prompt */}
-      <div className="max-w-md sm:max-w-lg mx-auto w-full sm:border-x sm:border-[#1E2945]/30">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <MobileAppModeBanner />
       </div>
 
       {/* APP MODULES NAVIGATION HUB (When clicking on company logo) */}
       {isHubOpen ? (
-        <main className="flex-1 w-full max-w-md sm:max-w-lg mx-auto sm:border-x sm:border-[#1E2945]/30 pb-16">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pb-24">
           <AppModulesHub
             currentUser={currentUser}
             onClose={() => setIsHubOpen(false)}
-            onNavigate={({ view, adminTab: targetAdminTab, mobileTab: targetMobileTab, openNewVisit }) => {
+            onNavigate={({ view, adminTab: targetAdminTab, openNewVisit }) => {
               setIsHubOpen(false);
               if (openNewVisit) {
                 handleOpenNewVisit();
@@ -828,9 +845,7 @@ export default function App() {
               }
               if (targetAdminTab) {
                 setAdminTab(targetAdminTab);
-              }
-              if (targetMobileTab) {
-                setMobileTab(targetMobileTab);
+                setShowAdminCRM(true);
               }
             }}
             sitesCount={visibleSites.length}
@@ -838,318 +853,54 @@ export default function App() {
             expiringContractsCount={expiringContractsCount}
           />
         </main>
-      ) : (
-        <>
-          {/* VIEW MODE 1: MOBILE AGENT APPLICATION (For field sales agents) */}
-          {currentUser.role === 'agent' && (
-        <div className="flex-1 flex flex-col justify-between max-w-md sm:max-w-lg mx-auto w-full px-3 py-3 pb-28 sm:border-x sm:border-[#1E2945]/30 sm:shadow-2xl">
-          
-          {/* Main Mobile Screen Tabs */}
-          {mobileTab === 'home' && (
-            <AgentHome
-              currentUser={currentUser}
-              sites={visibleSites}
-              visits={visits}
-              settings={settings}
-              onOpenNewVisit={handleOpenNewVisit}
-              onNavigateTab={(tab) => setMobileTab(tab)}
-              onSelectSite={(site) => setSelectedSiteForDetail(site)}
-            />
-          )}
+      ) : showAdminCRM && (currentUser.role === 'admin' || currentUser.role === 'supervisor') ? (
+        /* ADMIN CRM DRILLDOWN (Sites CRM, Extinguishers, Agents, Reports) */
+        <div className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 space-y-4 pb-28">
+          <div className="p-3 bg-[#10172B] border border-[#1E2945] rounded-2xl flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-base">💼</span>
+              <div>
+                <h3 className="font-bold text-xs sm:text-sm text-[#F5F7FF]">إدارة المنظومة الميدانية CRM</h3>
+                <span className="text-[10px] text-[#8992AA]">إدارة المواقع، المندوبين، الطفايات، والتقارير</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAdminCRM(false)}
+              className="py-1.5 px-3 rounded-xl bg-[#20A9FF] text-[#070B1C] font-bold text-xs flex items-center gap-1.5 active:scale-95"
+            >
+              <span>العودة للتطبيق</span>
+            </button>
+          </div>
 
-          {mobileTab === 'sites' && (
-            <AgentSitesList
-              currentUser={currentUser}
-              sites={visibleSites}
-              onSelectSite={(site) => setSelectedSiteForDetail(site)}
-              onOpenNewVisit={handleOpenNewVisit}
-            />
-          )}
-
-          {mobileTab === 'map' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-white">الخريطة الميدانية لمواقعي</h2>
-                  <p className="text-xs text-slate-400">استكشف مواقع منشآتك المسجلة ومسافات الأمان</p>
-                </div>
+          {/* Admin Navigation Tabs */}
+          <div className="flex bg-[#10172B] p-1.5 rounded-2xl border border-[#1E2945] text-xs overflow-x-auto gap-1 no-scrollbar scroll-smooth">
+            {[
+              { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
+              { id: 'sites', label: `سجل المواقع CRM (${sites.length})`, icon: Building2 },
+              { id: 'extinguishers', label: `صيانة الطفايات (${sites.filter(s => s.approvalStatus === 'approved').length})`, icon: Flame },
+              { id: 'clients', label: `بوابة العملاء (${users.filter(u => u.role === 'client').length})`, icon: Users },
+              { id: 'agents', label: `فريق المندوبين (${users.filter(u => u.role === 'agent').length})`, icon: Users },
+              { id: 'incentives', label: `الحوافز (${settings.ratePerApprovedSiteSAR} ر.س)`, icon: Award },
+              { id: 'reports', label: 'التقارير وExcel', icon: FileSpreadsheet },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = adminTab === tab.id;
+              return (
                 <button
-                  onClick={() => handleOpenNewVisit()}
-                  className="px-3 py-2 rounded-xl bg-orange-600 text-white text-xs font-bold"
+                  key={tab.id}
+                  onClick={() => setAdminTab(tab.id as any)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-medium whitespace-nowrap transition shrink-0 ${
+                    isActive
+                      ? 'bg-[#20A9FF] text-[#070B1C] font-bold shadow-sm'
+                      : 'text-[#8992AA] hover:text-[#F5F7FF] hover:bg-[#1E2945]/40'
+                  }`}
                 >
-                  + تسجيل موقع
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
                 </button>
-              </div>
-
-              <LeafletMap
-                sites={visibleSites}
-                onSelectSite={(site) => setSelectedSiteForDetail(site)}
-                center={[24.7136, 46.6753]}
-                zoom={13}
-                className="w-full h-[65vh] rounded-3xl border border-slate-700 shadow-xl"
-              />
-            </div>
-          )}
-
-          {mobileTab === 'alerts' && (
-            <AgentAlerts
-              currentUser={currentUser}
-              sites={visibleSites}
-              onSelectSite={(site) => setSelectedSiteForDetail(site)}
-              onOpenNewVisit={handleOpenNewVisit}
-            />
-          )}
-
-          {mobileTab === 'profile' && (
-            <AgentIncentives
-              currentUser={currentUser}
-              sites={visibleSites}
-              settings={settings}
-              onSelectSite={(site) => setSelectedSiteForDetail(site)}
-            />
-          )}
-
-          {/* Sticky Bottom Navigation Bar for Agents */}
-          <nav className="fixed bottom-0 inset-x-0 z-40 bg-[#070B1C]/95 backdrop-blur-md border-t border-[#1E2945] shadow-2xl py-1.5 px-3 pb-safe flex items-center justify-around max-w-lg mx-auto">
-            <button
-              onClick={() => setMobileTab('home')}
-              className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
-                mobileTab === 'home' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA] hover:text-[#F5F7FF]'
-              }`}
-            >
-              <Home className="w-5 h-5" />
-              <span className="text-[10px]">الرئيسية</span>
-            </button>
-
-            <button
-              onClick={() => setMobileTab('sites')}
-              className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
-                mobileTab === 'sites' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA] hover:text-[#F5F7FF]'
-              }`}
-            >
-              <Building2 className="w-5 h-5" />
-              <span className="text-[10px]">المواقع</span>
-            </button>
-
-            {/* Quick Action: Start Visit In Bottom Bar */}
-            <button
-              onClick={() => handleOpenNewVisit()}
-              className="flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-full bg-[#20A9FF] text-[#070B1C] shadow-lg shadow-[#20A9FF]/30 border-2 border-[#070B1C] hover:scale-105 active:scale-95 transition"
-              title="بدء زيارة جديدة"
-            >
-              <PlusCircle className="w-7 h-7" />
-            </button>
-
-            <button
-              onClick={() => setMobileTab('alerts')}
-              className={`relative flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
-                mobileTab === 'alerts' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA] hover:text-[#F5F7FF]'
-              }`}
-            >
-              <Bell className="w-5 h-5" />
-              <span className="text-[10px]">التنبيهات</span>
-              {totalAlertsCount > 0 && (
-                <span className="absolute top-0 right-1.5 w-4 h-4 rounded-full bg-[#EF3340] text-white text-[9px] font-bold flex items-center justify-center">
-                  {totalAlertsCount}
-                </span>
-              )}
-            </button>
-
-            <button
-              onClick={() => setMobileTab('profile')}
-              className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
-                mobileTab === 'profile' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA] hover:text-[#F5F7FF]'
-              }`}
-            >
-              <Award className="w-5 h-5" />
-              <span className="text-[10px]">الحوافز</span>
-            </button>
-          </nav>
-
-        </div>
-      )}
-
-      {/* VIEW MODE 2: CLIENT PORTAL (For facility owners & clients) */}
-      {currentUser.role === 'client' && (
-        <div className="flex-1 max-w-md sm:max-w-lg mx-auto w-full px-3 py-3 pb-28 sm:border-x sm:border-[#1E2945]/30 sm:shadow-2xl">
-          <ClientPortal
-            currentUser={currentUser}
-            linkedSite={sites.find(
-              (s) =>
-                s.id === currentUser.siteId ||
-                (currentUser.facilityName &&
-                  s.name.toLowerCase().includes(currentUser.facilityName.toLowerCase()))
-            )}
-            incidents={incidents}
-            inquiries={inquiries}
-            renewals={renewals}
-            civilDefenseAlerts={civilDefenseAlerts}
-            onSaveIncident={handleSaveIncident}
-            onSaveInquiry={handleSaveInquiry}
-            onSaveRenewal={handleSaveRenewal}
-            onSaveCDAlert={handleSaveCDAlert}
-          />
-        </div>
-      )}
-
-      {/* VIEW MODE 3: ADMIN / SUPERVISOR DASHBOARD (Exclusively for Admin) */}
-      {(currentUser.role === 'admin' || currentUser.role === 'supervisor') && (
-        <div className="flex-1 max-w-md sm:max-w-lg mx-auto w-full px-3 py-3 space-y-4 pb-28 sm:border-x sm:border-[#1E2945]/30 sm:shadow-2xl">
-          
-          {/* Fixed Mobile Bottom Navigation for Admin & Supervisor (Always Active in Mobile Mode) */}
-          <nav className="fixed bottom-0 inset-x-0 z-40 bg-[#070B1C]/95 backdrop-blur-md border-t border-[#1E2945] shadow-2xl py-1.5 px-2 pb-safe flex items-center justify-around max-w-md sm:max-w-lg mx-auto">
-            <button
-              onClick={() => {
-                setAdminTab('dashboard');
-                setIsAdminMoreOpen(false);
-              }}
-              className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
-                adminTab === 'dashboard' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA]'
-              }`}
-            >
-              <LayoutDashboard className="w-5 h-5" />
-              <span className="text-[10px]">الرئيسية</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setAdminTab('agents');
-                setIsAdminMoreOpen(false);
-              }}
-              className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
-                adminTab === 'agents' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA]'
-              }`}
-            >
-              <Users className="w-5 h-5" />
-              <span className="text-[10px]">المندوبون</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setAdminTab('sites');
-                setIsAdminMoreOpen(false);
-              }}
-              className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
-                adminTab === 'sites' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA]'
-              }`}
-            >
-              <Clock className="w-5 h-5" />
-              <span className="text-[10px]">الزيارات</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setAdminTab('alerts');
-                setIsAdminMoreOpen(false);
-              }}
-              className={`relative flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
-                adminTab === 'alerts' ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA]'
-              }`}
-            >
-              <Bell className="w-5 h-5" />
-              <span className="text-[10px]">الطوارئ</span>
-              {urgentClientTicketsCount > 0 && (
-                <span className="absolute top-0 right-2 w-4 h-4 rounded-full bg-[#EF3340] text-white text-[9px] font-bold flex items-center justify-center">
-                  {urgentClientTicketsCount}
-                </span>
-              )}
-            </button>
-
-            <button
-              onClick={() => setIsAdminMoreOpen((prev) => !prev)}
-              className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition ${
-                ['extinguishers', 'clients', 'incentives', 'reports'].includes(adminTab) || isAdminMoreOpen ? 'text-[#20A9FF] font-bold' : 'text-[#8992AA]'
-              }`}
-            >
-              <Layers className="w-5 h-5" />
-              <span className="text-[10px]">المزيد</span>
-            </button>
-          </nav>
-
-          {/* Mobile "المزيد" Drawer */}
-          {isAdminMoreOpen && (
-            <div 
-              className="fixed inset-0 z-30 bg-[#070B1C]/80 backdrop-blur-sm flex flex-col justify-end"
-              onClick={() => setIsAdminMoreOpen(false)}
-            >
-              <div 
-                className="bg-[#10172B] border-t border-[#1E2945] rounded-t-3xl p-5 space-y-3 pb-24 shadow-2xl animate-fadeIn max-w-md sm:max-w-lg mx-auto w-full"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between border-b border-[#1E2945] pb-2.5">
-                  <h3 className="font-bold text-sm text-[#F5F7FF]">أقسام المنظومة الإضافية</h3>
-                  <button 
-                    onClick={() => setIsAdminMoreOpen(false)}
-                    className="p-1 rounded-lg text-[#8992AA] hover:text-[#F5F7FF]"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <button
-                    onClick={() => {
-                      setAdminTab('extinguishers');
-                      setIsAdminMoreOpen(false);
-                    }}
-                    className={`p-3 rounded-xl border text-right transition flex items-center gap-2 ${
-                      adminTab === 'extinguishers' 
-                        ? 'bg-[#20A9FF]/15 border-[#20A9FF] text-[#20A9FF] font-bold' 
-                        : 'bg-[#070B1C] border-[#1E2945] text-[#F5F7FF]'
-                    }`}
-                  >
-                    <Flame className="w-4 h-4 text-[#EF3340] shrink-0" />
-                    <span>صيانة الطفايات</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setAdminTab('clients');
-                      setIsAdminMoreOpen(false);
-                    }}
-                    className={`p-3 rounded-xl border text-right transition flex items-center gap-2 ${
-                      adminTab === 'clients' 
-                        ? 'bg-[#20A9FF]/15 border-[#20A9FF] text-[#20A9FF] font-bold' 
-                        : 'bg-[#070B1C] border-[#1E2945] text-[#F5F7FF]'
-                    }`}
-                  >
-                    <Users className="w-4 h-4 text-[#20A9FF] shrink-0" />
-                    <span>بوابة العملاء</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setAdminTab('incentives');
-                      setIsAdminMoreOpen(false);
-                    }}
-                    className={`p-3 rounded-xl border text-right transition flex items-center gap-2 ${
-                      adminTab === 'incentives' 
-                        ? 'bg-[#20A9FF]/15 border-[#20A9FF] text-[#20A9FF] font-bold' 
-                        : 'bg-[#070B1C] border-[#1E2945] text-[#F5F7FF]'
-                    }`}
-                  >
-                    <Award className="w-4 h-4 text-[#FFB020] shrink-0" />
-                    <span>نظام الحوافز</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setAdminTab('reports');
-                      setIsAdminMoreOpen(false);
-                    }}
-                    className={`p-3 rounded-xl border text-right transition flex items-center gap-2 ${
-                      adminTab === 'reports' 
-                        ? 'bg-[#20A9FF]/15 border-[#20A9FF] text-[#20A9FF] font-bold' 
-                        : 'bg-[#070B1C] border-[#1E2945] text-[#F5F7FF]'
-                    }`}
-                  >
-                    <FileSpreadsheet className="w-4 h-4 text-[#19C7A0] shrink-0" />
-                    <span>التقارير والتصدير</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+              );
+            })}
+          </div>
 
           {/* Admin Tab Content */}
           {adminTab === 'dashboard' && (
@@ -1166,20 +917,6 @@ export default function App() {
               onOpenNewVisit={handleOpenNewVisit}
               onNavigateTab={(tab) => setAdminTab(tab)}
               onApproveSite={handleApproveSite}
-            />
-          )}
-
-          {adminTab === 'alerts' && (
-            <AdminNotifications
-              currentUser={currentUser}
-              sites={sites}
-              incidents={incidents}
-              civilDefenseAlerts={civilDefenseAlerts}
-              renewals={renewals}
-              inquiries={inquiries}
-              onSelectSite={(site) => setSelectedSiteForDetail(site)}
-              onUpdateIncident={handleUpdateIncident}
-              onUpdateSiteStatus={handleUpdateStatus}
             />
           )}
 
@@ -1224,7 +961,7 @@ export default function App() {
           {adminTab === 'agents' && (
             <AgentsManagement
               currentUser={currentUser}
-              agents={users.filter(u => u.role === 'agent')}
+              agents={users.filter((u) => u.role === 'agent')}
               sites={sites}
               visits={visits}
               settings={settings}
@@ -1260,11 +997,100 @@ export default function App() {
               settings={settings}
             />
           )}
-
         </div>
+      ) : (
+        /* NATIVE ANDROID APP MAIN VIEWS (100% Mobile First, Full Screen) */
+        <main 
+          className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 pb-24"
+          style={{ minHeight: 'calc(100dvh - 3.5rem)', boxSizing: 'border-box' }}
+        >
+          {activeAndroidTab === 'home' && (
+            <AndroidHomeScreen
+              currentUser={currentUser}
+              sites={visibleSites}
+              visits={visits}
+              orders={orders}
+              incidents={incidents}
+              onNavigateTab={(tab) => {
+                setShowAdminCRM(false);
+                setActiveAndroidTab(tab);
+              }}
+              onOpenNewVisit={handleOpenNewVisit}
+              onOpenTracking={(order) => setTrackingModalOrder(order)}
+            />
+          )}
+
+          {activeAndroidTab === 'services' && (
+            <AndroidServicesScreen
+              currentUser={currentUser}
+              sites={visibleSites}
+              onOrderCreated={handleOrderCreated}
+              onOpenNewVisit={handleOpenNewVisit}
+              onNavigateTab={(tab) => {
+                setShowAdminCRM(false);
+                setActiveAndroidTab(tab);
+              }}
+            />
+          )}
+
+          {activeAndroidTab === 'orders' && (
+            <AndroidOrdersScreen
+              currentUser={currentUser}
+              orders={orders}
+              onNavigateTab={(tab) => {
+                setShowAdminCRM(false);
+                setActiveAndroidTab(tab);
+              }}
+              onOpenTracking={(order) => setTrackingModalOrder(order)}
+            />
+          )}
+
+          {activeAndroidTab === 'notifications' && (
+            <AndroidNotificationsScreen
+              currentUser={currentUser}
+              incidents={incidents}
+              civilDefenseAlerts={civilDefenseAlerts}
+              renewals={renewals}
+              onNavigateTab={(tab) => {
+                setShowAdminCRM(false);
+                setActiveAndroidTab(tab);
+              }}
+            />
+          )}
+
+          {activeAndroidTab === 'profile' && (
+            <AndroidProfileScreen
+              currentUser={currentUser}
+              sites={visibleSites}
+              onLogout={handleLogout}
+              onNavigateTab={(tab) => {
+                setShowAdminCRM(false);
+                setActiveAndroidTab(tab);
+              }}
+              onOpenAdminCRM={() => setShowAdminCRM(true)}
+            />
+          )}
+        </main>
       )}
-        </>
-      )}
+
+      {/* Fixed Android Bottom Navigation (5 items) */}
+      <AndroidBottomNav
+        activeTab={activeAndroidTab}
+        onSelectTab={(tab) => {
+          setShowAdminCRM(false);
+          setIsHubOpen(false);
+          setActiveAndroidTab(tab);
+        }}
+        urgentAlertsCount={totalAlertsCount}
+        activeOrdersCount={orders.filter((o) => o.status !== 'completed').length}
+      />
+
+      {/* Interactive Android Order Tracking Modal */}
+      <AndroidTrackingModal
+        order={trackingModalOrder}
+        isOpen={Boolean(trackingModalOrder)}
+        onClose={() => setTrackingModalOrder(null)}
+      />
 
       {/* MULTI-STEP NEW VISIT & REGISTRATION MODAL */}
       {currentUser && (

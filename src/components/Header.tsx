@@ -48,20 +48,20 @@ export const Header: React.FC<HeaderProps> = ({
   const currentRoleInfo = getRoleLabel(currentUser.role);
 
   return (
-    <header className="sticky top-0 z-50 bg-[#070B1C]/95 backdrop-blur-md border-b border-[#1E2945] shadow-lg transition-all">
-      <div className="max-w-md sm:max-w-lg mx-auto px-3 h-14 flex items-center justify-between gap-2">
+    <header className="sticky top-0 z-50 bg-[#070B1C]/95 backdrop-blur-md border-b border-[#1E2945] shadow-lg transition-all w-full">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
         
         {/* Logo & Company Name (Clickable to open Navigation Hub) */}
         <button
           type="button"
           onClick={onOpenHub}
-          className={`flex items-center gap-2 text-right p-1 rounded-xl transition group focus:outline-none focus:ring-2 focus:ring-[#20A9FF]/40 shrink-0 ${
+          className={`flex items-center gap-2 sm:gap-2.5 text-right p-1 rounded-xl transition group focus:outline-none focus:ring-2 focus:ring-[#20A9FF]/40 shrink-0 ${
             isHubActive ? 'bg-[#10172B] ring-1 ring-[#20A9FF]/50 shadow-md' : 'hover:bg-[#10172B]/60'
           }`}
           title="اضغط هنا لفتح بوابة وتطبيقات وأقسام المنظومة (Hub)"
           aria-label="بوابة أقسام منظومة أوريكيت"
         >
-          <div className="relative w-8 h-8 rounded-xl overflow-hidden shadow-md group-hover:scale-105 group-active:scale-95 transition-transform shrink-0 border border-[#1E2945]">
+          <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl overflow-hidden shadow-md group-hover:scale-105 group-active:scale-95 transition-transform shrink-0 border border-[#1E2945]">
             <img 
               src="/pwa-192x192.png" 
               alt="ORKEIT" 
@@ -70,23 +70,23 @@ export const Header: React.FC<HeaderProps> = ({
             />
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-sm tracking-tight text-[#F5F7FF] flex items-center gap-1 group-hover:text-[#20A9FF] transition-colors">
-                ORKEIT <span className="text-[11px] text-[#8992AA] font-normal">أوريكيت</span>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="font-bold text-sm sm:text-base tracking-tight text-[#F5F7FF] flex items-center gap-1 group-hover:text-[#20A9FF] transition-colors">
+                ORKEIT <span className="text-[11px] sm:text-xs text-[#8992AA] font-normal">أوريكيت للمقاولات</span>
               </span>
-              <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-md bg-[#10172B] text-[#8992AA] border border-[#1E2945] font-medium group-hover:text-[#F5F7FF] transition">
+              <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-md bg-[#10172B] text-[#8992AA] border border-[#1E2945] font-medium group-hover:text-[#F5F7FF] transition">
                 <span>الأقسام</span>
                 <span className="text-[#20A9FF] text-[10px]">▾</span>
               </span>
             </div>
-            <p className="text-[9px] text-[#8992AA] leading-none group-hover:text-[#F5F7FF]/80 transition-colors">
-              منظومة العمليات الميدانية
+            <p className="text-[9px] sm:text-[10px] text-[#8992AA] leading-none group-hover:text-[#F5F7FF]/80 transition-colors">
+              منظومة العمليات الميدانية وإدارة العقود
             </p>
           </div>
         </button>
 
         {/* Right side: Alerts & User Profile & Logout */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {/* In-App PWA Install Prompt */}
           <div className="hidden xs:block">
             <PWAInstallButton />

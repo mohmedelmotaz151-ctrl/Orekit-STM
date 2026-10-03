@@ -125,9 +125,10 @@ export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
       {/* 2. Emergency Alarm Bar */}
       {totalCriticalCount > 0 ? (
         /* ACTIVE ALARM: Triggers and displays ONLY with real critical alerts */
-        <div className="bg-[#10172B] border-b border-[#EF3340]/50 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs text-[#F5F7FF] shadow-sm">
-          {/* Left: Alert Badges Breakdown */}
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="bg-[#10172B] border-b border-[#EF3340]/50 shadow-sm">
+          <div className="max-w-md sm:max-w-lg mx-auto px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[#F5F7FF]">
+            {/* Left: Alert Badges Breakdown */}
+            <div className="flex items-center gap-2 flex-wrap">
             <span className="flex items-center gap-1.5 font-bold text-[#EF3340] text-xs shrink-0">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#EF3340] opacity-75"></span>
@@ -197,6 +198,7 @@ export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
                 </>
               )}
             </button>
+          </div>
           </div>
         </div>
       ) : (

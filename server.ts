@@ -915,7 +915,10 @@ async function startServer() {
 
   if (!isProd) {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { 
+        middlewareMode: true,
+        hmr: false
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
@@ -927,9 +930,27 @@ async function startServer() {
     });
   }
 
+  let retryCount = 0;
+  const maxRetries = 5;
+
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`[Oriket Server] Running on http://localhost:${PORT}`);
     console.log(`[Oriket Database] Stored at: ${DB_FILE}`);
+  });
+
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE' && retryCount < maxRetries) {
+      retryCount++;
+      console.warn(`[Oriket Server] Port ${PORT} busy, retrying (${retryCount}/${maxRetries}) in 1s...`);
+      setTimeout(() => {
+        try {
+          server.close();
+        } catch (_) {}
+        server.listen(PORT, '0.0.0.0');
+      }, 1000);
+    } else {
+      console.error('[Oriket Server] Server listen error:', err);
+    }
   });
 
   const shutdown = () => {

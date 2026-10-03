@@ -54,6 +54,7 @@ import { SiteDetailModal } from './components/Admin/SiteDetailModal';
 import { ClientPortal } from './components/ClientPortal/ClientPortal';
 import { LeafletMap } from './components/Common/LeafletMap';
 import { EmergencyAlarmBar } from './components/Common/EmergencyAlarmBar';
+import { MobileAppModeBanner } from './components/Common/MobileAppModeBanner';
 import { OfflineIndicator } from './components/Common/OfflineIndicator';
 import { AppModulesHub } from './components/NavigationHub/AppModulesHub';
 import { soundNotifier } from './utils/soundNotifications';
@@ -808,9 +809,14 @@ export default function App() {
         }}
       />
 
+      {/* Mobile App Standalone & Fullscreen Mode Prompt */}
+      <div className="max-w-md sm:max-w-lg mx-auto w-full sm:border-x sm:border-[#1E2945]/30">
+        <MobileAppModeBanner />
+      </div>
+
       {/* APP MODULES NAVIGATION HUB (When clicking on company logo) */}
       {isHubOpen ? (
-        <main className="flex-1 w-full pb-16">
+        <main className="flex-1 w-full max-w-md sm:max-w-lg mx-auto sm:border-x sm:border-[#1E2945]/30 pb-16">
           <AppModulesHub
             currentUser={currentUser}
             onClose={() => setIsHubOpen(false)}
@@ -836,7 +842,7 @@ export default function App() {
         <>
           {/* VIEW MODE 1: MOBILE AGENT APPLICATION (For field sales agents) */}
           {currentUser.role === 'agent' && (
-        <div className="flex-1 flex flex-col justify-between max-w-lg mx-auto w-full px-3 py-4 pb-24">
+        <div className="flex-1 flex flex-col justify-between max-w-md sm:max-w-lg mx-auto w-full px-3 py-3 pb-28 sm:border-x sm:border-[#1E2945]/30 sm:shadow-2xl">
           
           {/* Main Mobile Screen Tabs */}
           {mobileTab === 'home' && (
@@ -965,7 +971,7 @@ export default function App() {
 
       {/* VIEW MODE 2: CLIENT PORTAL (For facility owners & clients) */}
       {currentUser.role === 'client' && (
-        <div className="flex-1 max-w-6xl mx-auto w-full px-2.5 sm:px-6 py-4 sm:py-6 pb-20">
+        <div className="flex-1 max-w-md sm:max-w-lg mx-auto w-full px-3 py-3 pb-28 sm:border-x sm:border-[#1E2945]/30 sm:shadow-2xl">
           <ClientPortal
             currentUser={currentUser}
             linkedSite={sites.find(
@@ -988,53 +994,10 @@ export default function App() {
 
       {/* VIEW MODE 3: ADMIN / SUPERVISOR DASHBOARD (Exclusively for Admin) */}
       {(currentUser.role === 'admin' || currentUser.role === 'supervisor') && (
-        <div className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-28 md:pb-20">
+        <div className="flex-1 max-w-md sm:max-w-lg mx-auto w-full px-3 py-3 space-y-4 pb-28 sm:border-x sm:border-[#1E2945]/30 sm:shadow-2xl">
           
-          {/* Admin Navigation Tabs (Desktop & Tablet) */}
-          <div className="hidden md:flex bg-[#10172B] p-1.5 rounded-2xl border border-[#1E2945] text-xs overflow-x-auto gap-1 no-scrollbar scroll-smooth">
-            {[
-              { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
-              { 
-                id: 'alerts', 
-                label: urgentClientTicketsCount > 0 
-                  ? `🚨 الطوارئ (${urgentClientTicketsCount})` 
-                  : `الإشعارات (${totalAlertsCount})`, 
-                icon: Bell, 
-                isEmergency: urgentClientTicketsCount > 0 
-              },
-              { id: 'sites', label: `سجل المواقع CRM (${sites.length})`, icon: Building2 },
-              { id: 'extinguishers', label: `صيانة الطفايات (${sites.filter(s => s.approvalStatus === 'approved').length})`, icon: Flame },
-              { id: 'clients', label: `بوابة العملاء (${users.filter(u => u.role === 'client').length})`, icon: Users },
-              { id: 'agents', label: `فريق المندوبين (${users.filter(u => u.role === 'agent').length})`, icon: Users },
-              { id: 'incentives', label: `الحوافز والاعتماد (${settings.ratePerApprovedSiteSAR} ر.س)`, icon: Award },
-              { id: 'reports', label: 'التقارير وتصدير Excel', icon: FileSpreadsheet },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = adminTab === tab.id;
-              const isUrgentTab = tab.id === 'alerts' && (tab as any).isEmergency;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setAdminTab(tab.id as any)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-medium whitespace-nowrap transition shrink-0 ${
-                    isActive
-                      ? isUrgentTab
-                        ? 'bg-[#EF3340] text-white shadow-sm'
-                        : 'bg-[#20A9FF] text-[#070B1C] font-bold shadow-sm'
-                      : isUrgentTab
-                      ? 'text-[#EF3340] bg-[#EF3340]/10 border border-[#EF3340]/30 hover:bg-[#EF3340]/20'
-                      : 'text-[#8992AA] hover:text-[#F5F7FF] hover:bg-[#1E2945]/40'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isUrgentTab && !isActive ? 'text-[#EF3340]' : ''}`} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Fixed Mobile Bottom Navigation for Admin & Supervisor (Requirement #9) */}
-          <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#070B1C]/95 backdrop-blur-md border-t border-[#1E2945] shadow-2xl py-1.5 px-2 pb-safe flex items-center justify-around">
+          {/* Fixed Mobile Bottom Navigation for Admin & Supervisor (Always Active in Mobile Mode) */}
+          <nav className="fixed bottom-0 inset-x-0 z-40 bg-[#070B1C]/95 backdrop-blur-md border-t border-[#1E2945] shadow-2xl py-1.5 px-2 pb-safe flex items-center justify-around max-w-md sm:max-w-lg mx-auto">
             <button
               onClick={() => {
                 setAdminTab('dashboard');
@@ -1106,11 +1069,11 @@ export default function App() {
           {/* Mobile "المزيد" Drawer */}
           {isAdminMoreOpen && (
             <div 
-              className="md:hidden fixed inset-0 z-30 bg-[#070B1C]/80 backdrop-blur-sm flex flex-col justify-end"
+              className="fixed inset-0 z-30 bg-[#070B1C]/80 backdrop-blur-sm flex flex-col justify-end"
               onClick={() => setIsAdminMoreOpen(false)}
             >
               <div 
-                className="bg-[#10172B] border-t border-[#1E2945] rounded-t-3xl p-5 space-y-3 pb-24 shadow-2xl animate-fadeIn"
+                className="bg-[#10172B] border-t border-[#1E2945] rounded-t-3xl p-5 space-y-3 pb-24 shadow-2xl animate-fadeIn max-w-md sm:max-w-lg mx-auto w-full"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between border-b border-[#1E2945] pb-2.5">

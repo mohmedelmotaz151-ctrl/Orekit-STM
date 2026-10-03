@@ -57,6 +57,7 @@ import { EmergencyAlarmBar } from './components/Common/EmergencyAlarmBar';
 import { MobileAppModeBanner } from './components/Common/MobileAppModeBanner';
 import { OfflineIndicator } from './components/Common/OfflineIndicator';
 import { AppModulesHub } from './components/NavigationHub/AppModulesHub';
+import { VerticalScrollControl } from './components/Common/VerticalScrollControl';
 import { AndroidTopBar } from './components/AndroidApp/AndroidTopBar';
 import { AndroidBottomNav, AndroidTabType } from './components/AndroidApp/AndroidBottomNav';
 import { AndroidHomeScreen } from './components/AndroidApp/AndroidHomeScreen';
@@ -279,6 +280,11 @@ export default function App() {
   useEffect(() => {
     saveStoredIncidents(incidents);
   }, [incidents]);
+
+  // Ensure seamless vertical scroll position resetting on tab navigation
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeAndroidTab, showAdminCRM, isHubOpen]);
 
   // Real-time Emergency Audio Alarm for System Administrator on incoming client emergency visits & urgent maintenance
   useEffect(() => {
@@ -799,7 +805,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full max-w-full m-0 p-0 bg-[#070B1C] text-[#F5F7FF] flex flex-col font-['Cairo',sans-serif] overflow-x-hidden selection:bg-[#20A9FF] selection:text-[#070B1C]">
+    <div className="min-h-[100dvh] w-full max-w-full m-0 p-0 bg-[#070B1C] text-[#F5F7FF] flex flex-col font-['Cairo',sans-serif] selection:bg-[#20A9FF] selection:text-[#070B1C]">
       
       {/* Android Top App Bar */}
       <AndroidTopBar
@@ -1125,6 +1131,9 @@ export default function App() {
 
       {/* Real-time Offline Connectivity Banner */}
       <OfflineIndicator />
+
+      {/* Floating Smooth Vertical Scroll Control (Top & Bottom quick movement) */}
+      <VerticalScrollControl />
 
     </div>
   );

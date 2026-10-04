@@ -153,12 +153,15 @@ export const AndroidServicesScreen: React.FC<AndroidServicesScreenProps> = ({
       siteName: facilityName.trim() || 'منشأة معتمدة',
       clientName: currentUser.name,
       clientPhone: phone.trim() || '0555334577',
+      clientUserId: currentUser.id,
       date: new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' }),
+      createdAt: new Date().toISOString(),
       status: selectedService.isEmergency ? 'in_progress' : 'received',
       statusLabel: selectedService.isEmergency ? 'قيد المعالجة الفورية' : 'تم استلام الطلب',
       notes: notes.trim() || (selectedService.isEmergency ? 'طلب طوارئ عاجل' : 'طلب خدمة معتمد'),
       estimatedCompletion: selectedService.isEmergency ? 'استجابة فورية' : 'خلال 24-48 ساعة',
       urgent: selectedService.isEmergency,
+      isReadByAdmin: false,
     };
 
     onOrderCreated(newOrder);

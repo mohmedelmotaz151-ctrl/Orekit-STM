@@ -144,6 +144,9 @@ export interface ExtinguisherMaintenanceInfo {
   co2Count?: number;               // عدد طفايات CO2
   foamCount?: number;              // عدد طفايات الرغوة
   waterCount?: number;             // عدد طفايات الماء / مواد رطبة
+  wetChemicalCount?: number;       // طفايات مواد كيميائية رطبة للمطابخ K-Class
+  cleanAgentCount?: number;        // كفايات غاز نظيف FM-200
+  reminder10DaysNotified?: boolean; // تم إرسال تزكير قبل 10 أيام
   notes?: string;
   logs?: ExtinguisherMaintenanceLog[]; // سجل دورات الصيانة السابقة
 }
@@ -340,7 +343,9 @@ export interface OrkeitServiceOrder {
   siteName: string;
   clientName: string;
   clientPhone: string;
+  clientUserId?: string;
   date: string;
+  createdAt?: string;
   status: OrderTrackingStep;
   statusLabel: string;
   estimatedCompletion?: string;
@@ -348,4 +353,5 @@ export interface OrkeitServiceOrder {
   costSAR?: number;
   assignedTechnician?: string;
   urgent?: boolean;
+  isReadByAdmin?: boolean;
 }

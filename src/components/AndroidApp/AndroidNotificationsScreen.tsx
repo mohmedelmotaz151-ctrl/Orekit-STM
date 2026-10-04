@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, ClientIncident, CivilDefenseInspectionAlert, ContractRenewalRequest } from '../../types';
+import { User, ClientIncident, CivilDefenseInspectionAlert, ContractRenewalRequest, OrkeitServiceOrder } from '../../types';
 import { 
   Bell, 
   AlertTriangle, 
@@ -11,7 +11,11 @@ import {
   FileText,
   Calendar,
   X,
-  MessageCircle
+  MessageCircle,
+  Wrench,
+  ArrowLeft,
+  Building2,
+  Check
 } from 'lucide-react';
 import { ORIKET_COMPANY_PHONE, createWhatsAppUrl } from '../../utils/whatsapp';
 
@@ -20,12 +24,15 @@ interface AndroidNotificationsScreenProps {
   incidents: ClientIncident[];
   civilDefenseAlerts: CivilDefenseInspectionAlert[];
   renewals: ContractRenewalRequest[];
+  orders?: OrkeitServiceOrder[];
   onNavigateTab: (tab: 'home' | 'services' | 'orders' | 'notifications' | 'profile') => void;
+  onOpenTracking?: (order: OrkeitServiceOrder) => void;
+  onUpdateOrder?: (orderId: string, updates: Partial<OrkeitServiceOrder>) => void;
 }
 
 interface NotificationItem {
   id: string;
-  type: 'emergency' | 'civil_defense' | 'renewal' | 'general';
+  type: 'emergency' | 'civil_defense' | 'renewal' | 'service_order' | 'general';
   title: string;
   description: string;
   timestamp: string;
@@ -33,6 +40,7 @@ interface NotificationItem {
   priority: 'urgent' | 'high' | 'normal';
   siteName?: string;
   phone?: string;
+  order?: OrkeitServiceOrder;
 }
 
 export const AndroidNotificationsScreen: React.FC<AndroidNotificationsScreenProps> = ({
@@ -40,14 +48,29 @@ export const AndroidNotificationsScreen: React.FC<AndroidNotificationsScreenProp
   incidents,
   civilDefenseAlerts,
   renewals,
+  orders = [],
   onNavigateTab,
+  onOpenTracking,
+  onUpdateOrder,
 }) => {
-  const [filter, setFilter] = useState<'all' | 'urgent' | 'cd' | 'contracts'>('all');
+  const [filter, setFilter] = useState<'all' | 'orders' | 'urgent' | 'cd' | 'contracts'>('all');
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [selectedNotif, setSelectedNotif] = useState<NotificationItem | null>(null);
 
-  // Synthesize notifications from incidents, renewals, and civil defense alerts
+  // Synthesize notifications from orders, incidents, renewals, and civil defense alerts
   const items: NotificationItem[] = [
+    ...orders.map((ord) => ({
+      id: `ord_${ord.id}`,
+      type: 'service_order' as const,
+      title: `⚡ طلب خدمة سريعة: ${ord.serviceType}`,
+      description: `${ord.siteName} — العميل: ${ord.clientName} (${ord.clientPhone}). الحالة: ${ord.statusLabel}.${ord.notes ? ' ملاحظات: ' + ord.notes : ''}`,
+      timestamp: ord.createdAt || ord.date || 'الآن',
+      isRead: Boolean(ord.isReadByAdmin) || readIds.has(`ord_${ord.id}`),
+      priority: ord.urgent ? ('urgent' as const) : ('high' as const),
+      siteName: ord.siteName,
+      phone: ord.clientPhone,
+      order: ord,
+    })),
     ...incidents.map((inc) => ({
       id: `inc_${inc.id}`,
       type: 'emergency' as const,
@@ -96,6 +119,7 @@ export const AndroidNotificationsScreen: React.FC<AndroidNotificationsScreenProp
   }
 
   const filteredItems = items.filter((item) => {
+    if (filter === 'orders') return item.type === 'service_order';
     if (filter === 'urgent') return item.priority === 'urgent';
     if (filter === 'cd') return item.type === 'civil_defense';
     if (filter === 'contracts') return item.type === 'renewal';
@@ -104,6 +128,10 @@ export const AndroidNotificationsScreen: React.FC<AndroidNotificationsScreenProp
 
   const handleMarkAsRead = (id: string) => {
     setReadIds((prev) => new Set([...prev, id]));
+    if (id.startsWith('ord_') && onUpdateOrder) {
+      const actualOrderId = id.replace('ord_', '');
+      onUpdateOrder(actualOrderId, { isReadByAdmin: true });
+    }
   };
 
   const getNotificationIcon = (type: NotificationItem['type'], priority: NotificationItem['priority']) => {
@@ -111,6 +139,12 @@ export const AndroidNotificationsScreen: React.FC<AndroidNotificationsScreenProp
       return {
         icon: AlertTriangle,
         bg: 'bg-[#EF3340]/20 text-[#EF3340] border-[#EF3340]/50',
+      };
+    }
+    if (type === 'service_order') {
+      return {
+        icon: Wrench,
+        bg: 'bg-[#20A9FF]/20 text-[#20A9FF] border-[#20A9FF]/50',
       };
     }
     if (type === 'civil_defense') {
@@ -161,6 +195,7 @@ export const AndroidNotificationsScreen: React.FC<AndroidNotificationsScreenProp
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
         {[
           { id: 'all', label: `الكل (${items.length})` },
+          { id: 'orders', label: `⚡ طلبات الخدمات (${items.filter(i => i.type === 'service_order').length})` },
           { id: 'urgent', label: `🚨 الطوارئ (${items.filter(i => i.priority === 'urgent').length})` },
           { id: 'cd', label: `الدفاع المدني (${items.filter(i => i.type === 'civil_defense').length})` },
           { id: 'contracts', label: `العقود (${items.filter(i => i.type === 'renewal').length})` },
@@ -271,6 +306,36 @@ export const AndroidNotificationsScreen: React.FC<AndroidNotificationsScreenProp
                 {selectedNotif.description}
               </p>
             </div>
+
+            {/* Order specific details and action buttons */}
+            {selectedNotif.order && (
+              <div className="space-y-3 pt-1">
+                <div className="p-3 bg-[#070B1C] rounded-2xl border border-[#1E2945] text-xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#8992AA]">رقم الطلب:</span>
+                    <span className="font-mono font-bold text-[#20A9FF]">{selectedNotif.order.orderNumber}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#8992AA]">حالة الطلب:</span>
+                    <span className="font-bold text-[#19C7A0]">{selectedNotif.order.statusLabel}</span>
+                  </div>
+                </div>
+
+                {onOpenTracking && (
+                  <button
+                    onClick={() => {
+                      const ord = selectedNotif.order!;
+                      setSelectedNotif(null);
+                      onOpenTracking(ord);
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#20A9FF] hover:bg-[#1E9BEB] text-[#070B1C] text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-[#20A9FF]/20"
+                  >
+                    <span>متابعة مراحل التنفيذ (Timeline)</span>
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Direct Action Buttons */}
             <div className="pt-2 flex items-center gap-2">

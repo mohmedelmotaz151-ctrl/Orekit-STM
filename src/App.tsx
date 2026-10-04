@@ -400,8 +400,23 @@ export default function App() {
     return upcomingVisits + cdAlerts;
   }, [visibleSites, civilDefenseAlerts, currentUser]);
 
-  // Total alert count for header badges
-  const totalAlertsCount = expiringContractsCount + urgentMaintenanceCount + civilDefenseVisitsCount;
+  // Unread quick service orders count (requests from client account)
+  const unreadOrdersCount = useMemo(() => {
+    return orders.filter((o) => !o.isReadByAdmin || o.status === 'received').length;
+  }, [orders]);
+
+  // 5. تنبيهات وتزكير صيانة الكفايات والطفايات (أقل من 10 أيام أو منتهية)
+  const extinguishers10DaysCount = useMemo(() => {
+    return visibleSites.filter((s) => {
+      const ext = s.extinguisherMaintenance;
+      if (!ext?.expiryDate) return false;
+      const days = getDaysRemaining(ext.expiryDate);
+      return days !== null && days <= 10;
+    }).length;
+  }, [visibleSites]);
+
+  // Total alert count for header badges and notification centers
+  const totalAlertsCount = expiringContractsCount + urgentMaintenanceCount + civilDefenseVisitsCount + unreadOrdersCount + extinguishers10DaysCount;
 
   // Urgent client tickets count specifically (Emergency visits & urgent maintenance)
   const urgentClientTicketsCount = useMemo(() => {
@@ -623,15 +638,50 @@ export default function App() {
       agentName: currentUser?.name || 'الإدارة',
       date: new Date().toISOString().split('T')[0],
       action: 'note',
-      summary: `تم تحديث صيانة طفايات الحريق - تاريخ الانتهاء المعتمد: ${maintenance.expiryDate} (ملصق رقم: ${maintenance.certificateOrTagNumber})`,
+      summary: `تم تحديث صيانة كفايات وطفايات الحريق - تاريخ الانتهاء المعتمد: ${maintenance.expiryDate} (ملصق رقم: ${maintenance.certificateOrTagNumber})`,
     };
     setFollowups((prev) => [newFol, ...prev]);
     apiSaveFollowUp(newFol);
   };
 
+  const handleSaveNewExtinguisherSite = (newSite: Site) => {
+    const cleanSite = normalizeSite(newSite);
+    setSites((prev) => {
+      const existsIndex = prev.findIndex((s) => s.id === cleanSite.id);
+      if (existsIndex >= 0) {
+        const copy = [...prev];
+        copy[existsIndex] = cleanSite;
+        return copy;
+      }
+      return [cleanSite, ...prev];
+    });
+    apiSaveSite(cleanSite);
+  };
+
   const handleOrderCreated = (newOrder: OrkeitServiceOrder) => {
     setOrders((prev) => {
       const updated = [newOrder, ...prev];
+      saveStoredOrders(updated);
+      return updated;
+    });
+
+    // Notify administration with live sound & system notification
+    try {
+      soundNotifier.playChime();
+      soundNotifier.sendEmergencyNotification({
+        title: `⚡ طلب خدمة سريعة جديد: ${newOrder.serviceType}`,
+        body: `المنشأة: ${newOrder.siteName} • العميل: ${newOrder.clientName} (${newOrder.clientPhone})`,
+        urgent: Boolean(newOrder.urgent),
+        tag: `order_${newOrder.id}`,
+      });
+    } catch (e) {
+      console.log('Notification error', e);
+    }
+  };
+
+  const handleUpdateOrder = (orderId: string, updates: Partial<OrkeitServiceOrder>) => {
+    setOrders((prev) => {
+      const updated = prev.map((ord) => (ord.id === orderId ? { ...ord, ...updates } : ord));
       saveStoredOrders(updated);
       return updated;
     });
@@ -825,8 +875,15 @@ export default function App() {
         expiringContractsCount={expiringContractsCount}
         urgentMaintenanceCount={urgentMaintenanceCount}
         civilDefenseVisitsCount={civilDefenseVisitsCount}
-        onOpenAlerts={() => {
+        newServiceOrdersCount={unreadOrdersCount}
+        extinguishers10DaysAlertCount={extinguishers10DaysCount}
+        onOpenAlerts={(target) => {
           setIsHubOpen(false);
+          if (target === 'extinguishers') {
+            setAdminTab('extinguishers');
+            setShowAdminCRM(true);
+            return;
+          }
           setShowAdminCRM(false);
           setActiveAndroidTab('notifications');
         }}
@@ -882,8 +939,9 @@ export default function App() {
           <div className="flex bg-[#10172B] p-1.5 rounded-2xl border border-[#1E2945] text-xs overflow-x-auto gap-1 no-scrollbar scroll-smooth">
             {[
               { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
+              { id: 'alerts', label: `التنبيهات والإشعارات (${totalAlertsCount})`, icon: Bell },
               { id: 'sites', label: `سجل المواقع CRM (${sites.length})`, icon: Building2 },
-              { id: 'extinguishers', label: `صيانة الطفايات (${sites.filter(s => s.approvalStatus === 'approved').length})`, icon: Flame },
+              { id: 'extinguishers', label: `صيانة الكفاية والطفايات (${extinguishers10DaysCount > 0 ? `🔔 ${extinguishers10DaysCount}` : sites.filter(s => s.approvalStatus === 'approved').length})`, icon: Flame },
               { id: 'clients', label: `بوابة العملاء (${users.filter(u => u.role === 'client').length})`, icon: Users },
               { id: 'agents', label: `فريق المندوبين (${users.filter(u => u.role === 'agent').length})`, icon: Users },
               { id: 'incentives', label: `الحوافز (${settings.ratePerApprovedSiteSAR} ر.س)`, icon: Award },
@@ -919,10 +977,29 @@ export default function App() {
               incidents={incidents}
               inquiries={inquiries}
               renewals={renewals}
+              orders={orders}
               onSelectSite={(site) => setSelectedSiteForDetail(site)}
               onOpenNewVisit={handleOpenNewVisit}
               onNavigateTab={(tab) => setAdminTab(tab)}
               onApproveSite={handleApproveSite}
+              onUpdateOrder={handleUpdateOrder}
+              onOpenTracking={(order) => setTrackingModalOrder(order)}
+            />
+          )}
+
+          {adminTab === 'alerts' && (
+            <AdminNotifications
+              currentUser={currentUser}
+              sites={sites}
+              incidents={incidents}
+              civilDefenseAlerts={civilDefenseAlerts}
+              renewals={renewals}
+              inquiries={inquiries}
+              orders={orders}
+              onSelectSite={(site) => setSelectedSiteForDetail(site)}
+              onUpdateIncident={handleUpdateIncident}
+              onUpdateOrder={handleUpdateOrder}
+              onOpenTracking={(order) => setTrackingModalOrder(order)}
             />
           )}
 
@@ -943,6 +1020,7 @@ export default function App() {
               onSelectSite={(site) => setSelectedSiteForDetail(site)}
               onUpdateSiteMaintenance={handleUpdateSiteExtinguisherMaintenance}
               onOpenNewVisit={handleOpenNewVisit}
+              onSaveNewSite={handleSaveNewExtinguisherSite}
             />
           )}
 
@@ -1023,6 +1101,9 @@ export default function App() {
               }}
               onOpenNewVisit={handleOpenNewVisit}
               onOpenTracking={(order) => setTrackingModalOrder(order)}
+              onOrderCreated={handleOrderCreated}
+              onUpdateOrder={handleUpdateOrder}
+              onOpenAdminCRM={() => setShowAdminCRM(true)}
             />
           )}
 
@@ -1057,10 +1138,13 @@ export default function App() {
               incidents={incidents}
               civilDefenseAlerts={civilDefenseAlerts}
               renewals={renewals}
+              orders={orders}
               onNavigateTab={(tab) => {
                 setShowAdminCRM(false);
                 setActiveAndroidTab(tab);
               }}
+              onOpenTracking={(order) => setTrackingModalOrder(order)}
+              onUpdateOrder={handleUpdateOrder}
             />
           )}
 

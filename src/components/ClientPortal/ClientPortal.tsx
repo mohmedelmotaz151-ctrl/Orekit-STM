@@ -38,7 +38,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { createWhatsAppUrl, ORIKET_COMPANY_PHONE } from '../../utils/whatsapp';
-import { formatDateArabic, getDaysRemaining } from '../../utils/date';
+import { formatDateArabic, getDaysRemaining, getExtinguisher10DayReminder } from '../../utils/date';
 import { ClientRequestTimelineModal } from './ClientRequestTimelineModal';
 import { ClientLiveNotificationBanner } from './ClientLiveNotificationBanner';
 
@@ -67,7 +67,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
   onSaveRenewal,
   onSaveCDAlert,
 }) => {
-  const [activeTab, setActiveTab] = useState<'incidents' | 'inquiries' | 'renewal' | 'defense'>('incidents');
+  const [activeTab, setActiveTab] = useState<'incidents' | 'inquiries' | 'renewal' | 'defense' | 'extinguishers'>('incidents');
 
   // Filter client-specific records
   const myIncidents = incidents.filter(
@@ -716,6 +716,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
       <div className="flex bg-slate-900 p-1.5 rounded-2xl border border-slate-800 text-xs overflow-x-auto gap-1">
         {[
           { id: 'incidents', label: `بلاغات الأعطال والصيانة (${myIncidents.length})`, icon: AlertTriangle },
+          { id: 'extinguishers', label: 'صيانة الكفاية والطفايات (تزكير ١٠ أيام)', icon: Flame },
           { id: 'inquiries', label: `الاستفسارات والاستشارات (${myInquiries.length})`, icon: HelpCircle },
           { id: 'renewal', label: 'طلب تجديد العقد', icon: RefreshCw },
           { id: 'defense', label: 'تنبيهات زيارات الدفاع المدني', icon: ShieldCheck },
@@ -1243,6 +1244,190 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
 
           </div>
 
+        </div>
+      )}
+
+      {/* TAB 5: EXTINGUISHER MAINTENANCE & 10-DAY REMINDER (صيانة الكفاية والطفايات) */}
+      {activeTab === 'extinguishers' && (
+        <div className="space-y-4">
+          {(() => {
+            const ext = linkedSite?.extinguisherMaintenance;
+            const reminder = getExtinguisher10DayReminder(ext?.expiryDate);
+            const totalCount = 
+              (ext?.powderCount || 0) + 
+              (ext?.co2Count || 0) + 
+              (ext?.foamCount || 0) + 
+              (ext?.waterCount || 0) + 
+              (ext?.wetChemicalCount || 0) + 
+              (ext?.cleanAgentCount || 0) || 
+              linkedSite?.equipment?.extinguishers?.totalCount || 8;
+
+            return (
+              <div className="space-y-4">
+                {/* 10-Day Reminder Top Banner */}
+                {reminder.isExpiringIn10Days && (
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/80 via-[#1F170E] to-slate-900 border-2 border-amber-500 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3 animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shrink-0">
+                        <Flame className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-sm text-white">تزكير عاجل: اقترب موعد صيانة الكفايات والطفايات!</span>
+                          <span className="text-[10px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full font-black">
+                            متبقي {reminder.days} أيام فقط
+                          </span>
+                        </div>
+                        <p className="text-xs text-amber-200/90 mt-0.5">
+                          تاريخ انتهاء كفايات منشأتكم يحل خلال أقل من 10 أيام. تجنب مخالفات وتفتيش الدفاع المدني بطلب إعادة التعبئة والفحص الدوري فوراً.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setIncidentTitle('طلب صيانة وتعبئة عاجلة لكفايات المنشأة (تزكير 10 أيام)');
+                        setIncidentCategory('extinguisher');
+                        setIncidentPriority('high');
+                        setIncidentDescription(`طلب فحص دوري وإعادة تعبئة طفايات الحريق لمنشأة ${linkedSite?.name || currentUser.facilityName || 'منشأتي'}. تاريخ الانتهاء الحالي: ${ext?.expiryDate || 'الموعد وشيك'}.`);
+                        setShowNewIncidentModal(true);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-black text-xs hover:bg-amber-400 transition shadow-lg shrink-0 active:scale-95"
+                    >
+                      طلب فحص وتعبئة الكفايات الآن
+                    </button>
+                  </div>
+                )}
+
+                {/* Main Facility Extinguisher Details Card */}
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold">
+                        🧯
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-amber-400">قسم صيانة الكفاية وطفايات الحريق</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${reminder.badgeClass}`}>
+                            {reminder.text}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-black text-white mt-0.5">
+                          {linkedSite?.name || currentUser.facilityName || 'منشأتك المعتمدة'}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={createWhatsAppUrl(
+                          ORIKET_COMPANY_PHONE,
+                          `السلام عليكم، أود التنسيق لصيانة وتعبئة كفايات الحريق لمنشأة ${linkedSite?.name || currentUser.facilityName || 'منشأتي'}.`
+                        )}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        <span>تنسيق واتساب</span>
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* 4 Details Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                      <span className="text-slate-400 text-[11px] block mb-1">اسم المنشأة:</span>
+                      <span className="font-bold text-white block truncate">{linkedSite?.name || currentUser.facilityName || 'منشأتك'}</span>
+                      <span className="text-[10px] text-slate-500">{linkedSite?.city || 'الرياض'} - {linkedSite?.district || 'الملز'}</span>
+                    </div>
+
+                    <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                      <span className="text-slate-400 text-[11px] block mb-1">إجمالي الكفايات:</span>
+                      <span className="text-xl font-black text-amber-400 font-mono">{totalCount}</span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">طفاية معتمدة بالموقع</span>
+                    </div>
+
+                    <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                      <span className="text-slate-400 text-[11px] block mb-1">تاريخ آخر صيانة:</span>
+                      <span className="font-mono font-bold text-white text-xs block">
+                        {ext?.lastMaintenanceDate || '2025-10-10'}
+                      </span>
+                      <span className="text-[10px] text-slate-500">شركة أوريكيت للسلامة</span>
+                    </div>
+
+                    <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                      <span className="text-slate-400 text-[11px] block mb-1">تاريخ انتهاء الصلاحية:</span>
+                      <span className="font-mono font-bold text-rose-300 text-xs block">
+                        {ext?.expiryDate || '2026-10-10'}
+                      </span>
+                      <span className="text-[10px] text-amber-300 font-bold block">
+                        {reminder.days !== null ? (reminder.days < 0 ? `منتهية منذ ${Math.abs(reminder.days)} يوم` : `متبقي ${reminder.days} أيام`) : 'الموعد وشيك'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* عدد ونوع الكفايات Breakdown */}
+                  <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2">
+                    <span className="text-xs font-bold text-white block">
+                      تفصيل عدد ونوع الكفايات المفحوصة بموقعك:
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
+                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center">
+                        <span className="text-[10px] text-slate-400 block">بودرة ABC:</span>
+                        <span className="font-mono font-black text-amber-400 text-sm">
+                          {ext?.powderCount ?? linkedSite?.equipment?.extinguishers?.totalCount ?? 0}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center">
+                        <span className="text-[10px] text-slate-400 block">ثاني أكسيد CO2:</span>
+                        <span className="font-mono font-black text-cyan-400 text-sm">
+                          {ext?.co2Count ?? 0}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center">
+                        <span className="text-[10px] text-slate-400 block">رغوة Foam:</span>
+                        <span className="font-mono font-black text-purple-400 text-sm">
+                          {ext?.foamCount ?? 0}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center">
+                        <span className="text-[10px] text-slate-400 block">ماء مضغوط:</span>
+                        <span className="font-mono font-black text-blue-400 text-sm">
+                          {ext?.waterCount ?? 0}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center">
+                        <span className="text-[10px] text-slate-400 block">رطب K-Class:</span>
+                        <span className="font-mono font-black text-orange-400 text-sm">
+                          {ext?.wetChemicalCount ?? 0}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center">
+                        <span className="text-[10px] text-slate-400 block">غاز FM200:</span>
+                        <span className="font-mono font-black text-emerald-400 text-sm">
+                          {ext?.cleanAgentCount ?? 0}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tag number and safety guidance */}
+                  <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 text-xs text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      <span>رقم ملصق الصيانة المعتمد:</span>
+                      <strong className="text-amber-400 font-mono">{ext?.certificateOrTagNumber || 'EXT-ORIKET'}</strong>
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      الفني المسؤول: {ext?.technicianName || 'فني صيانة معتمد'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 

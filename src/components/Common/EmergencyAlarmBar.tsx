@@ -16,13 +16,17 @@ interface EmergencyAlarmBarProps {
   expiringContractsCount: number;
   urgentMaintenanceCount: number;
   civilDefenseVisitsCount: number;
-  onOpenAlerts?: (target?: 'contracts' | 'maintenance' | 'civil_defense') => void;
+  newServiceOrdersCount?: number;
+  extinguishers10DaysAlertCount?: number;
+  onOpenAlerts?: (target?: 'contracts' | 'maintenance' | 'civil_defense' | 'orders' | 'extinguishers') => void;
 }
 
 export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
   expiringContractsCount,
   urgentMaintenanceCount,
   civilDefenseVisitsCount,
+  newServiceOrdersCount = 0,
+  extinguishers10DaysAlertCount = 0,
   onOpenAlerts,
 }) => {
   const [soundEnabled, setSoundEnabled] = useState(soundNotifier.isSoundEnabled());
@@ -32,7 +36,7 @@ export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
   const [showPromptBanner, setShowPromptBanner] = useState(false);
   const [isPlayingSiren, setIsPlayingSiren] = useState(false);
 
-  const totalCriticalCount = expiringContractsCount + urgentMaintenanceCount + civilDefenseVisitsCount;
+  const totalCriticalCount = expiringContractsCount + urgentMaintenanceCount + civilDefenseVisitsCount + newServiceOrdersCount + extinguishers10DaysAlertCount;
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -170,6 +174,30 @@ export const EmergencyAlarmBar: React.FC<EmergencyAlarmBarProps> = ({
               >
                 <ShieldAlert className="w-3.5 h-3.5 text-[#20A9FF]" />
                 <span>{civilDefenseVisitsCount} زيارات دفاع مدني</span>
+              </button>
+            )}
+
+            {/* Quick Service Orders Notification Badge */}
+            {newServiceOrdersCount > 0 && (
+              <button
+                onClick={() => onOpenAlerts?.('orders')}
+                className="px-2.5 py-1 rounded-lg bg-[#20A9FF]/20 text-[#20A9FF] border border-[#20A9FF]/40 font-bold text-[11px] flex items-center gap-1 hover:bg-[#20A9FF]/30 transition animate-pulse"
+                title="عرض إشعارات طلبات الخدمات السريعة الجديدة"
+              >
+                <span>⚡</span>
+                <span>{newServiceOrdersCount} طلب خدمة جديد</span>
+              </button>
+            )}
+
+            {/* Extinguisher 10-Day Maintenance Reminder Badge */}
+            {extinguishers10DaysAlertCount > 0 && (
+              <button
+                onClick={() => onOpenAlerts?.('extinguishers')}
+                className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-[11px] flex items-center gap-1 hover:bg-amber-500/30 transition animate-pulse"
+                title="عرض قسم صيانة الكفاية والطفايات (تزكير قبل 10 أيام)"
+              >
+                <Flame className="w-3.5 h-3.5 text-amber-400" />
+                <span>{extinguishers10DaysAlertCount} تزكير صيانة كفايات (أقل من 10 أيام)</span>
               </button>
             )}
           </div>

@@ -29,7 +29,8 @@ import {
   ClientIncident, 
   CivilDefenseInspectionAlert, 
   ContractRenewalRequest, 
-  ClientInquiry 
+  ClientInquiry,
+  OrkeitServiceOrder
 } from '../../types';
 import { soundNotifier } from '../../utils/soundNotifications';
 import { createWhatsAppUrl } from '../../utils/whatsapp';
@@ -42,9 +43,12 @@ export interface AdminNotificationsProps {
   civilDefenseAlerts: CivilDefenseInspectionAlert[];
   renewals: ContractRenewalRequest[];
   inquiries: ClientInquiry[];
+  orders?: OrkeitServiceOrder[];
   onSelectSite: (site: Site) => void;
   onUpdateIncident: (incidentId: string, updates: Partial<ClientIncident>) => void;
   onUpdateSiteStatus?: (siteId: string, status: any) => void;
+  onUpdateOrder?: (orderId: string, updates: Partial<OrkeitServiceOrder>) => void;
+  onOpenTracking?: (order: OrkeitServiceOrder) => void;
 }
 
 export const AdminNotifications: React.FC<AdminNotificationsProps> = ({
@@ -54,13 +58,16 @@ export const AdminNotifications: React.FC<AdminNotificationsProps> = ({
   civilDefenseAlerts,
   renewals,
   inquiries,
+  orders = [],
   onSelectSite,
   onUpdateIncident,
   onUpdateSiteStatus,
+  onUpdateOrder,
+  onOpenTracking,
 }) => {
   const [filterType, setFilterType] = useState<
-    'all' | 'emergency' | 'civil_defense' | 'contracts' | 'inquiries'
-  >('emergency');
+    'all' | 'orders' | 'emergency' | 'civil_defense' | 'contracts' | 'inquiries'
+  >('orders');
   const [soundEnabled, setSoundEnabled] = useState(soundNotifier.isSoundEnabled());
   const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
@@ -111,6 +118,10 @@ export const AdminNotifications: React.FC<AdminNotificationsProps> = ({
   // 5. Pending renewals & inquiries
   const pendingRenewals = renewals.filter((r) => r.status === 'pending');
   const pendingInquiries = inquiries.filter((inq) => inq.status === 'pending');
+
+  // 6. Quick service orders from clients
+  const pendingOrders = orders.filter((o) => !o.isReadByAdmin || o.status === 'received' || o.status === 'review');
+  const unreadOrdersCount = orders.filter((o) => !o.isReadByAdmin).length;
 
   const totalEmergencyCount = urgentIncidents.length + urgentMaintenanceSites.length;
 
@@ -244,6 +255,24 @@ export const AdminNotifications: React.FC<AdminNotificationsProps> = ({
         {/* Filter Tabs */}
         <div className="mt-6 pt-5 border-t border-slate-800/80 flex items-center gap-2 overflow-x-auto pb-1 text-xs">
           <button
+            onClick={() => setFilterType('orders')}
+            className={`py-2 px-3.5 rounded-xl font-bold whitespace-nowrap transition flex items-center gap-1.5 ${
+              filterType === 'orders'
+                ? 'bg-[#20A9FF] text-[#070B1C] shadow-md shadow-[#20A9FF]/20'
+                : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'
+            }`}
+          >
+            <span>⚡ طلبات الخدمات السريعة</span>
+            {pendingOrders.length > 0 && (
+              <span className={`px-1.5 py-0.2 rounded-full font-mono text-[10px] font-bold ${
+                filterType === 'orders' ? 'bg-[#070B1C] text-[#20A9FF]' : 'bg-[#20A9FF] text-[#070B1C]'
+              }`}>
+                {pendingOrders.length}
+              </span>
+            )}
+          </button>
+
+          <button
             onClick={() => setFilterType('emergency')}
             className={`py-2 px-3.5 rounded-xl font-bold whitespace-nowrap transition flex items-center gap-1.5 ${
               filterType === 'emergency'
@@ -267,7 +296,7 @@ export const AdminNotifications: React.FC<AdminNotificationsProps> = ({
                 : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'
             }`}
           >
-            جميع الإشعارات ({incidents.length + civilDefenseAlerts.length + expiringContractsSites.length})
+            جميع الإشعارات ({incidents.length + civilDefenseAlerts.length + expiringContractsSites.length + pendingOrders.length})
           </button>
 
           <button
@@ -319,6 +348,141 @@ export const AdminNotifications: React.FC<AdminNotificationsProps> = ({
           </button>
         </div>
       </div>
+
+      {/* QUICK SERVICE ORDERS NOTIFICATIONS SECTION */}
+      {(filterType === 'orders' || filterType === 'all') && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+              <span className="text-[#20A9FF]">⚡</span>
+              <span>إشعارات طلبات الخدمات السريعة الواردة من حسابات العملاء</span>
+              <span className="text-xs font-mono text-[#20A9FF]">({pendingOrders.length})</span>
+            </h2>
+            <span className="text-xs text-[#20A9FF] font-bold">مباشرة فورية</span>
+          </div>
+
+          {pendingOrders.length === 0 ? (
+            <div className="p-8 rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
+              <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+              <h3 className="text-sm font-bold text-white">لا توجد طلبات خدمات سريعة معلقة حالياً</h3>
+              <p className="text-xs text-slate-400">
+                جميع طلبات العملاء تمت مراجعتها ومباشرتها بنجاح.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {pendingOrders.map((order) => {
+                const isUnread = !order.isReadByAdmin;
+                return (
+                  <div
+                    key={order.id}
+                    className={`bg-slate-900 border-2 rounded-3xl p-5 shadow-xl relative overflow-hidden flex flex-col justify-between gap-4 transition ${
+                      isUnread ? 'border-[#20A9FF] shadow-[#20A9FF]/10' : 'border-slate-800'
+                    }`}
+                  >
+                    <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#20A9FF] via-cyan-400 to-[#19C7A0]" />
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#20A9FF]/20 text-[#20A9FF] border border-[#20A9FF]/40 flex items-center gap-1.5 font-mono">
+                          {order.orderNumber}
+                        </span>
+                        <span className="text-xs text-slate-400 font-mono">
+                          {order.date}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h3 className="text-base font-bold text-white">
+                          {order.serviceType}
+                        </h3>
+                        <div className="flex items-center gap-2 text-xs text-slate-300 mt-1">
+                          <Building2 className="w-3.5 h-3.5 text-[#20A9FF]" />
+                          <span>{order.siteName}</span>
+                          <span className="text-slate-600">•</span>
+                          <span>العميل: <strong className="text-white">{order.clientName}</strong></span>
+                        </div>
+                      </div>
+
+                      {order.notes && (
+                        <div className="p-3 bg-slate-950/80 rounded-2xl border border-slate-800 text-xs text-slate-300">
+                          <span className="text-[#20A9FF] font-bold block mb-0.5">تفاصيل الطلب:</span>
+                          <p className="leading-relaxed">"{order.notes}"</p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-xs pt-1">
+                        <span className="text-slate-400">الحالة:</span>
+                        <span className="px-2.5 py-0.5 rounded-full font-bold bg-[#20A9FF]/15 text-[#20A9FF] border border-[#20A9FF]/30">
+                          {order.statusLabel}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-800/80 flex items-center gap-2 flex-wrap">
+                      {onOpenTracking && (
+                        <button
+                          onClick={() => onOpenTracking(order)}
+                          className="flex-1 py-2 px-3 rounded-xl bg-[#20A9FF] hover:bg-[#1E9BEB] text-[#070B1C] text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                        >
+                          <span>متابعة مراحل الطلب</span>
+                        </button>
+                      )}
+
+                      <a
+                        href={`tel:${order.clientPhone}`}
+                        className="py-2 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium transition flex items-center gap-1.5"
+                      >
+                        <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>اتصال</span>
+                      </a>
+
+                      <a
+                        href={createWhatsAppUrl(order.clientPhone, `مرحباً ${order.clientName}، بخصوص طلبكم رقم ${order.orderNumber} (${order.serviceType}) لدى شركة أوريكيت للسلامة.`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="py-2 px-3.5 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/80 text-xs font-medium transition flex items-center gap-1.5"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>واتساب</span>
+                      </a>
+
+                      {onUpdateOrder && (
+                        <>
+                          {order.status === 'received' && (
+                            <button
+                              onClick={() => onUpdateOrder(order.id, { status: 'in_progress', statusLabel: 'قيد التنفيذ والمتابعة', isReadByAdmin: true })}
+                              className="py-2 px-3 rounded-xl bg-cyan-950 text-cyan-300 border border-cyan-800 text-xs font-bold hover:bg-cyan-900 transition"
+                            >
+                              بدء التنفيذ
+                            </button>
+                          )}
+                          {order.status === 'in_progress' && (
+                            <button
+                              onClick={() => onUpdateOrder(order.id, { status: 'completed', statusLabel: 'مكتمل بنجاح', isReadByAdmin: true })}
+                              className="py-2 px-3 rounded-xl bg-emerald-950 text-emerald-300 border border-emerald-800 text-xs font-bold hover:bg-emerald-900 transition"
+                            >
+                              إكمال الطلب ✓
+                            </button>
+                          )}
+                          {isUnread && (
+                            <button
+                              onClick={() => onUpdateOrder(order.id, { isReadByAdmin: true })}
+                              className="py-2 px-3 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-medium transition"
+                            >
+                              استلام
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* EMERGENCY SECTION (Top Priority) */}
       {(filterType === 'emergency' || filterType === 'all') && (

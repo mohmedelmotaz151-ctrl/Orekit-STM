@@ -21,7 +21,9 @@ import {
   Calendar,
   Layers,
   Flame,
-  ArrowRight
+  ArrowRight,
+  Wrench,
+  MessageCircle
 } from 'lucide-react';
 import { 
   User, 
@@ -31,10 +33,12 @@ import {
   SAUDI_CITIES,
   ClientIncident,
   ClientInquiry,
-  ContractRenewalRequest
+  ContractRenewalRequest,
+  OrkeitServiceOrder
 } from '../../types';
 import { LeafletMap } from '../Common/LeafletMap';
 import { SITE_STATUS_MAP, getDaysRemaining, formatDateArabic } from '../../utils/date';
+import { createWhatsAppUrl } from '../../utils/whatsapp';
 
 interface AdminDashboardProps {
   currentUser: User;
@@ -45,10 +49,13 @@ interface AdminDashboardProps {
   incidents?: ClientIncident[];
   inquiries?: ClientInquiry[];
   renewals?: ContractRenewalRequest[];
+  orders?: OrkeitServiceOrder[];
   onSelectSite: (site: Site) => void;
   onOpenNewVisit: (site?: Site) => void;
   onNavigateTab: (tab: 'dashboard' | 'sites' | 'extinguishers' | 'clients' | 'agents' | 'incentives' | 'reports' | 'alerts') => void;
   onApproveSite: (siteId: string, approved: boolean, reason?: string) => void;
+  onUpdateOrder?: (orderId: string, updates: Partial<OrkeitServiceOrder>) => void;
+  onOpenTracking?: (order: OrkeitServiceOrder) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -60,20 +67,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   incidents = [],
   inquiries = [],
   renewals = [],
+  orders = [],
   onSelectSite,
   onOpenNewVisit,
   onNavigateTab,
   onApproveSite,
+  onUpdateOrder,
+  onOpenTracking,
 }) => {
   // Modal states for deep detail inspection (UX Rule #12: reveal details on tap)
   const [selectedEmergency, setSelectedEmergency] = useState<ClientIncident | null>(null);
   const [selectedVisitDetail, setSelectedVisitDetail] = useState<Visit | null>(null);
   const [showPendingModal, setShowPendingModal] = useState<boolean>(false);
   const [showMapSection, setShowMapSection] = useState<boolean>(false);
+  const [ordersFilter, setOrdersFilter] = useState<'pending' | 'unread' | 'all'>('pending');
 
   // Map filters
   const [mapFilterStatus, setMapFilterStatus] = useState<string>('all');
   const [selectedCity, setSelectedCity] = useState<string>('all');
+
+  // Service Orders & Notifications calculation
+  const pendingOrders = orders.filter((o) => !o.isReadByAdmin || o.status === 'received' || o.status === 'review');
+  const unreadOrdersCount = orders.filter((o) => !o.isReadByAdmin).length;
+  const urgentOrdersCount = orders.filter((o) => o.urgent && o.status !== 'completed').length;
 
   // Filtered dataset calculations
   const activeIncidents = incidents.filter(
@@ -161,7 +177,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* ==================================================== */}
       {/* 2. QUICK METRIC CARDS (Clean, compact 3-second overview) */}
       {/* ==================================================== */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
         
         {/* Metric 1: Active Agents */}
         <div 
@@ -199,7 +215,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </span>
         </div>
 
-        {/* Metric 3: Pending Approval Sites */}
+        {/* Metric 3: Quick Service Orders (Notifications from Client Account) */}
+        <div 
+          className={`p-3.5 rounded-2xl border transition flex flex-col justify-between cursor-pointer ${
+            unreadOrdersCount > 0
+              ? 'bg-[#10172B] border-[#20A9FF] shadow-md shadow-[#20A9FF]/10'
+              : pendingOrders.length > 0
+              ? 'bg-[#10172B] border-[#20A9FF]/50 hover:border-[#20A9FF]'
+              : 'bg-[#10172B] border-[#1E2945] hover:bg-[#151F38]'
+          }`}
+        >
+          <div className="text-[#8992AA] text-xs font-medium flex items-center justify-between">
+            <span className="flex items-center gap-1">
+              <span>طلبات الخدمات</span>
+              {unreadOrdersCount > 0 && (
+                <span className="w-2 h-2 rounded-full bg-[#20A9FF] animate-ping" />
+              )}
+            </span>
+            <Wrench className={`w-4 h-4 ${unreadOrdersCount > 0 ? 'text-[#20A9FF]' : 'text-[#8992AA]'}`} />
+          </div>
+          <div className={`text-2xl font-black mt-2 font-mono ${unreadOrdersCount > 0 ? 'text-[#20A9FF]' : 'text-[#F5F7FF]'}`}>
+            {pendingOrders.length}
+          </div>
+          <span className={`text-[10px] mt-1 block font-bold ${unreadOrdersCount > 0 ? 'text-[#20A9FF]' : 'text-[#8992AA]'}`}>
+            {unreadOrdersCount > 0 ? `${unreadOrdersCount} إشعار طلب جديد` : 'محدثة ومباشرة'}
+          </span>
+        </div>
+
+        {/* Metric 4: Pending Approval Sites */}
         <div 
           onClick={() => setShowPendingModal(true)}
           className={`p-3.5 rounded-2xl border cursor-pointer transition flex flex-col justify-between ${
@@ -220,10 +263,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </span>
         </div>
 
-        {/* Metric 4: Field Visits Today */}
+        {/* Metric 5: Field Visits Today */}
         <div 
           onClick={() => onNavigateTab('sites')}
-          className="bg-[#10172B] hover:bg-[#151F38] p-3.5 rounded-2xl border border-[#1E2945] cursor-pointer transition flex flex-col justify-between"
+          className="bg-[#10172B] hover:bg-[#151F38] p-3.5 rounded-2xl border border-[#1E2945] cursor-pointer transition flex flex-col justify-between col-span-2 sm:col-span-1"
         >
           <div className="text-[#8992AA] text-xs font-medium flex items-center justify-between">
             <span>زيارات اليوم</span>
@@ -234,6 +277,241 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
           <span className="text-[10px] text-[#8992AA] mt-1 block">زيارة GPS موثقة</span>
         </div>
+
+      </div>
+
+      {/* ==================================================== */}
+      {/* 2.5 CLIENT QUICK SERVICE ORDERS NOTIFICATIONS        */}
+      {/* ==================================================== */}
+      <div className="bg-[#10172B] border-2 border-[#20A9FF]/40 p-4 sm:p-5 rounded-2xl space-y-4 shadow-xl shadow-[#20A9FF]/5 relative overflow-hidden">
+        
+        {/* Subtle Background Glow */}
+        <div className="absolute top-0 right-0 w-64 h-32 bg-[#20A9FF]/5 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#20A9FF]/15 text-[#20A9FF] border border-[#20A9FF]/30 flex items-center justify-center font-bold shrink-0">
+              ⚡
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-bold text-[#F5F7FF]">
+                  إشعارات طلبات الخدمات السريعة من حسابات العملاء
+                </h2>
+                {unreadOrdersCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-[#20A9FF] text-[#070B1C] font-mono text-[11px] font-black animate-pulse">
+                    {unreadOrdersCount} إشعار جديد
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#8992AA]">
+                تصل هنا فوراً كافة الطلبات المقدمة عبر الخدمات السريعة بحسابات العملاء لمباشرتها ومتابعة مراحلها
+              </p>
+            </div>
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex items-center gap-1.5 bg-[#070B1C] p-1 rounded-xl border border-[#1E2945] text-xs shrink-0 self-start sm:self-auto">
+            <button
+              onClick={() => setOrdersFilter('pending')}
+              className={`px-3 py-1 rounded-lg font-bold transition ${
+                ordersFilter === 'pending'
+                  ? 'bg-[#20A9FF] text-[#070B1C]'
+                  : 'text-[#8992AA] hover:text-white'
+              }`}
+            >
+              قيد المراجعة ({pendingOrders.length})
+            </button>
+            <button
+              onClick={() => setOrdersFilter('unread')}
+              className={`px-3 py-1 rounded-lg font-bold transition ${
+                ordersFilter === 'unread'
+                  ? 'bg-[#20A9FF] text-[#070B1C]'
+                  : 'text-[#8992AA] hover:text-white'
+              }`}
+            >
+              غير مقروءة ({unreadOrdersCount})
+            </button>
+            <button
+              onClick={() => setOrdersFilter('all')}
+              className={`px-3 py-1 rounded-lg font-bold transition ${
+                ordersFilter === 'all'
+                  ? 'bg-[#20A9FF] text-[#070B1C]'
+                  : 'text-[#8992AA] hover:text-white'
+              }`}
+            >
+              الكل ({orders.length})
+            </button>
+          </div>
+        </div>
+
+        {/* Orders List / Cards */}
+        {(() => {
+          const displayOrders = 
+            ordersFilter === 'unread'
+              ? orders.filter((o) => !o.isReadByAdmin)
+              : ordersFilter === 'pending'
+              ? pendingOrders
+              : orders;
+
+          if (displayOrders.length === 0) {
+            return (
+              <div className="p-4 bg-[#070B1C] rounded-xl border border-[#1E2945] text-center text-xs text-[#8992AA] py-6 space-y-1">
+                <Check className="w-5 h-5 text-[#19C7A0] mx-auto mb-1" />
+                <span className="font-bold text-[#F5F7FF] block">
+                  لا توجد طلبات خدمات معلقة في هذا التصنيف
+                </span>
+                <span>جميع طلبات الخدمات السريعة تم الاطلاع عليها ومباشرتها من قبل الإدارة.</span>
+              </div>
+            );
+          }
+
+          return (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 relative z-10">
+              {displayOrders.map((order) => {
+                const isUnread = !order.isReadByAdmin;
+                return (
+                  <div
+                    key={order.id}
+                    className={`p-4 rounded-2xl bg-[#070B1C] border transition space-y-3 ${
+                      isUnread
+                        ? 'border-[#20A9FF]/70 shadow-lg shadow-[#20A9FF]/5'
+                        : 'border-[#1E2945] hover:border-[#1E2945]/90'
+                    }`}
+                  >
+                    {/* Card Top: Order Number, Badge & Time */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-[#20A9FF] bg-[#20A9FF]/10 px-2 py-0.5 rounded-md border border-[#20A9FF]/20">
+                            {order.orderNumber}
+                          </span>
+                          {isUnread && (
+                            <span className="px-2 py-0.5 rounded-full bg-[#20A9FF] text-[#070B1C] text-[10px] font-black animate-pulse">
+                              إشعار جديد
+                            </span>
+                          )}
+                          {order.urgent && (
+                            <span className="px-2 py-0.5 rounded-full bg-[#EF3340] text-white text-[10px] font-black animate-pulse">
+                              🚨 طارئ
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="font-bold text-sm text-[#F5F7FF] pt-1">
+                          {order.serviceType}
+                        </h3>
+                      </div>
+
+                      <span className="text-[10px] font-mono text-[#8992AA] shrink-0 bg-[#10172B] px-2 py-1 rounded-lg border border-[#1E2945]">
+                        {getRelativeTime(order.createdAt)}
+                      </span>
+                    </div>
+
+                    {/* Facility & Client Info */}
+                    <div className="p-2.5 rounded-xl bg-[#10172B] border border-[#1E2945]/70 space-y-1 text-xs">
+                      <div className="flex items-center justify-between text-[#8992AA]">
+                        <span className="text-[#F5F7FF] font-medium flex items-center gap-1.5">
+                          <Building2 className="w-3.5 h-3.5 text-[#20A9FF]" />
+                          <span>{order.siteName}</span>
+                        </span>
+                        <span className="font-mono text-[11px]">{order.date}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[#8992AA] pt-1 border-t border-[#1E2945]/50">
+                        <span>العميل: <strong className="text-[#F5F7FF]">{order.clientName}</strong></span>
+                        <span dir="ltr" className="font-mono text-[#20A9FF]">{order.clientPhone}</span>
+                      </div>
+                    </div>
+
+                    {/* Client Notes / Requirements */}
+                    {order.notes && (
+                      <div className="text-xs text-[#8992AA] bg-[#10172B]/60 p-2.5 rounded-xl border border-[#1E2945]/40 leading-relaxed">
+                        <span className="text-[#20A9FF] font-bold block mb-0.5">تفاصيل وملاحظات العميل:</span>
+                        <span className="text-[#F5F7FF]">"{order.notes}"</span>
+                      </div>
+                    )}
+
+                    {/* Status Pill */}
+                    <div className="flex items-center justify-between text-xs pt-1">
+                      <span className="text-[#8992AA]">حالة الطلب:</span>
+                      <span className="px-2.5 py-0.5 rounded-full font-bold bg-[#20A9FF]/15 text-[#20A9FF] border border-[#20A9FF]/30">
+                        {order.statusLabel}
+                      </span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-[#1E2945]/70 flex-wrap">
+                      {/* Tracking Timeline Modal */}
+                      {onOpenTracking && (
+                        <button
+                          onClick={() => onOpenTracking(order)}
+                          className="flex-1 py-1.5 px-3 rounded-xl bg-[#20A9FF] hover:bg-[#1E9BEB] text-[#070B1C] text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                        >
+                          <span>متابعة مراحل الطلب</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      )}
+
+                      {/* Direct Phone Call */}
+                      <a
+                        href={`tel:${order.clientPhone}`}
+                        className="py-1.5 px-3 rounded-xl bg-[#10172B] hover:bg-[#151F38] text-[#F5F7FF] text-xs font-medium transition flex items-center gap-1 border border-[#1E2945]"
+                        title="اتصال هاتفي بالعميل"
+                      >
+                        <Phone className="w-3.5 h-3.5 text-[#19C7A0]" />
+                        <span>اتصال</span>
+                      </a>
+
+                      {/* WhatsApp Chat */}
+                      <a
+                        href={createWhatsAppUrl(order.clientPhone, `مرحباً ${order.clientName}، بخصوص طلبكم رقم ${order.orderNumber} (${order.serviceType}) لدى شركة أوريكيت للسلامة.`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="py-1.5 px-3 rounded-xl bg-[#19C7A0]/15 hover:bg-[#19C7A0]/25 text-[#19C7A0] text-xs font-medium transition flex items-center gap-1 border border-[#19C7A0]/30"
+                        title="محادثة واتساب"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        <span>واتساب</span>
+                      </a>
+
+                      {/* Status Update Quick Triggers */}
+                      {onUpdateOrder && (
+                        <>
+                          {order.status === 'received' && (
+                            <button
+                              onClick={() => onUpdateOrder(order.id, { status: 'in_progress', statusLabel: 'قيد التنفيذ والمتابعة', isReadByAdmin: true })}
+                              className="py-1.5 px-2.5 rounded-xl bg-[#1E2945] hover:bg-[#253356] text-[#20A9FF] text-xs font-bold transition"
+                            >
+                              بدء التنفيذ
+                            </button>
+                          )}
+                          {order.status === 'in_progress' && (
+                            <button
+                              onClick={() => onUpdateOrder(order.id, { status: 'completed', statusLabel: 'مكتمل بنجاح', isReadByAdmin: true })}
+                              className="py-1.5 px-2.5 rounded-xl bg-[#19C7A0]/20 hover:bg-[#19C7A0]/30 text-[#19C7A0] text-xs font-bold transition"
+                            >
+                              إكمال الطلب ✓
+                            </button>
+                          )}
+                          {isUnread && (
+                            <button
+                              onClick={() => onUpdateOrder(order.id, { isReadByAdmin: true })}
+                              className="py-1.5 px-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-medium transition flex items-center gap-1"
+                              title="تأكيد الاطلاع واستلام الإشعار"
+                            >
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>استلام</span>
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
 
       </div>
 

@@ -143,6 +143,81 @@ export function getExtinguisherExpiryBadge(expiryDateStr?: string): ExpiryAlertB
 }
 
 /**
+ * 10-Day Extinguisher Maintenance Reminder System
+ * Provides precise reminders when 10 days or fewer remain before maintenance / expiry
+ */
+export interface Extinguisher10DayReminderInfo {
+  isExpiringIn10Days: boolean; // 0 <= days <= 10
+  isExpired: boolean;          // days < 0
+  days: number | null;
+  text: string;
+  badgeClass: string;
+  borderHighlightClass: string;
+  urgency: 'critical_10_days' | 'expired' | 'warning_30_days' | 'valid' | 'unknown';
+}
+
+export function getExtinguisher10DayReminder(expiryDateStr?: string): Extinguisher10DayReminderInfo {
+  const days = getDaysRemaining(expiryDateStr);
+  if (days === null) {
+    return {
+      isExpiringIn10Days: false,
+      isExpired: false,
+      days: null,
+      text: 'غير محدد',
+      badgeClass: 'bg-slate-800 text-slate-400 border border-slate-700',
+      borderHighlightClass: 'border-slate-800',
+      urgency: 'unknown'
+    };
+  }
+
+  if (days < 0) {
+    return {
+      isExpiringIn10Days: false,
+      isExpired: true,
+      days,
+      text: `منتهية الصلاحية منذ ${Math.abs(days)} يوم`,
+      badgeClass: 'bg-rose-950/90 text-rose-200 border border-rose-700 animate-pulse font-bold',
+      borderHighlightClass: 'border-rose-600/70 bg-rose-950/10 shadow-rose-950/30',
+      urgency: 'expired'
+    };
+  }
+
+  if (days <= 10) {
+    return {
+      isExpiringIn10Days: true,
+      isExpired: false,
+      days,
+      text: days === 0 ? '🔔 تزكير عاجل: موعد الصيانة اليوم!' : `🔔 تزكير قبل ${days} أيام: موعد الصيانة وشيك!`,
+      badgeClass: 'bg-amber-950/90 text-amber-200 border border-amber-500 font-black animate-pulse shadow-md shadow-amber-950/50',
+      borderHighlightClass: 'border-amber-500 bg-amber-950/20 shadow-lg shadow-amber-950/40 ring-1 ring-amber-500/40',
+      urgency: 'critical_10_days'
+    };
+  }
+
+  if (days <= 30) {
+    return {
+      isExpiringIn10Days: false,
+      isExpired: false,
+      days,
+      text: `متبقي ${days} يوماً (أقل من شهر)`,
+      badgeClass: 'bg-yellow-950/80 text-yellow-200 border border-yellow-700',
+      borderHighlightClass: 'border-yellow-800/60',
+      urgency: 'warning_30_days'
+    };
+  }
+
+  return {
+    isExpiringIn10Days: false,
+    isExpired: false,
+    days,
+    text: `سارية وصالحة (${days} يوم متبقٍ)`,
+    badgeClass: 'bg-emerald-950/70 text-emerald-300 border border-emerald-800',
+    borderHighlightClass: 'border-slate-800',
+    urgency: 'valid'
+  };
+}
+
+/**
  * Metadata for Site Status
  */
 export const SITE_STATUS_MAP: Record<

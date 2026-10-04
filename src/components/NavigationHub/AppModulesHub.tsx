@@ -109,16 +109,16 @@ export const AppModulesHub: React.FC<AppModulesHubProps> = ({
     },
     {
       id: 'extinguishers',
-      title: 'أجهزة ومعدات السلامة',
-      subtitle: 'Fire Extinguishers & Systems',
-      description: 'حصر ومتابعة طفايات الحريق، شبكات الإطفاء والإنذار، تواريخ الفحص والصيانة الدورية وتنبيهات التعبئة.',
+      title: 'قسم صيانة الكفاية وطفايات الحريق',
+      subtitle: 'Fire Extinguishers & 10-Day Reminder',
+      description: 'حصر ومتابعة صيانة الكفايات والطفايات (اسم المنشأة، عدد ونوع الكفايات، تاريخ الصيانة وتاريخ الانتهاء) مع نظام التزكير التلقائي قبل ١٠ أيام.',
       category: 'safety',
       categoryLabel: 'السلامة والوقاية',
       icon: Flame,
-      iconBg: 'bg-rose-500/10 border-rose-500/30 text-rose-400 group-hover:bg-rose-500 group-hover:text-white',
-      iconColor: 'text-rose-400',
-      badge: 'فحص دوري',
-      roles: ['admin', 'supervisor'],
+      iconBg: 'bg-amber-500/10 border-amber-500/30 text-amber-400 group-hover:bg-amber-500 group-hover:text-white',
+      iconColor: 'text-amber-400',
+      badge: 'تزكير ١٠ أيام',
+      roles: ['admin', 'supervisor', 'agent', 'client'],
       action: () => {
         onNavigate({ view: 'admin_dashboard', adminTab: 'extinguishers' });
       },

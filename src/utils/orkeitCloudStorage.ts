@@ -1,6 +1,6 @@
 import{collection,doc,deleteDoc,onSnapshot,setDoc}from'firebase/firestore';import{db}from'../firebase';
 
-const cols={sites:'orkeit_sites',contracts:'orkeit_contracts',maintenance:'orkeit_extinguisher_maintenance',delegates:'users',visits:'orkeit_visits'} as const;
+const cols={sites:'orkeit_sites',contracts:'orkeit_contracts',maintenance:'orkeit_extinguisher_maintenance',delegates:'users',visits:'orkeit_visits',customers:'orkeit_customers',requests:'orkeit_service_requests'} as const;
 const clean=(v:any):any=>{if(v===undefined)return null;if(v===null||typeof v!=='object')return v;if(Array.isArray(v))return v.map(clean);const o:any={};Object.entries(v).forEach(([k,x])=>o[k]=clean(x));return o};
 const sub=(key:keyof typeof cols,setter:(x:any[])=>void)=>onSnapshot(collection(db,cols[key]),snap=>{const a:any[]=[];snap.forEach(x=>{const d:any=x.data();if(key==='delegates'&&d.role&&d.role!=='agent'&&d.role!=='delegate')return;a.push(d)});setter(a)},e=>console.warn('Firestore '+key+' listener:',e));
 const save=(key:keyof typeof cols,x:any)=>setDoc(doc(db,cols[key],x.id),clean(x),{merge:true});
@@ -19,3 +19,8 @@ export const deleteSite=(id:string)=>del('sites',id);
 export const deleteContract=(id:string)=>del('contracts',id);
 export const deleteMaintenance=(id:string)=>del('maintenance',id);
 export const deleteDelegate=(id:string)=>del('delegates',id);
+
+export const subscribeCustomers=(f:(x:any[])=>void)=>sub('customers',f);
+export const subscribeRequests=(f:(x:any[])=>void)=>sub('requests',f);
+export const saveCustomer=(x:any)=>save('customers',x);
+export const saveRequest=(x:any)=>save('requests',x);

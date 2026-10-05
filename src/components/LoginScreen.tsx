@@ -34,6 +34,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
   const [successRegistrationMsg, setSuccessRegistrationMsg] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -73,6 +74,55 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     // Auto-login into the client portal
     onLoginSuccess(newUser);
   };
+
+  if (!showLoginForm) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center px-4 py-8 font-['Cairo',sans-serif]">
+        <div className="fixed inset-0 pointer-events-none flex items-center justify-center">
+          <div className="w-[420px] h-[420px] bg-gradient-to-tr from-orange-600/15 via-red-600/10 to-transparent rounded-full blur-3xl" />
+        </div>
+
+        <div className="w-full max-w-md relative z-10 text-center space-y-7">
+          <div className="space-y-3">
+            <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-red-600 via-orange-600 to-amber-600 flex items-center justify-center text-white shadow-2xl shadow-orange-950/70 border border-orange-400/30">
+              <Flame className="w-10 h-10" />
+            </div>
+            <h1 className="text-3xl font-black text-white">أوريكيت <span className="text-orange-500">ORIKET</span></h1>
+            <p className="text-sm text-slate-400">شركة أوريكيت لأنظمة السلامة والوقاية من الحريق</p>
+          </div>
+
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 p-5 rounded-3xl shadow-2xl space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-xl font-black text-white">مرحباً بك</h2>
+              <p className="text-xs text-slate-400">للحصول على خدمات السلامة والصيانة، ابدأ بطلب الخدمة.</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowLoginForm(true)}
+              className="w-full min-h-14 py-4 px-5 rounded-2xl bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-black text-base shadow-xl shadow-orange-950/40 flex items-center justify-center gap-2 transition active:scale-[0.98]"
+            >
+              <Building2 className="w-5 h-5" />
+              <span>اطلب خدمة</span>
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              عند الضغط على «اطلب خدمة» سيتم تحويلك إلى صفحة تسجيل الدخول، وبعد الدخول يمكنك اختيار الخدمة وإرسال الطلب.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setShowLoginForm(true)}
+              className="w-full py-3 rounded-2xl bg-slate-950 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 font-bold text-xs transition"
+            >
+              لدي حساب — تسجيل الدخول
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center px-4 py-8 font-['Cairo',sans-serif] selection:bg-orange-500 selection:text-white">

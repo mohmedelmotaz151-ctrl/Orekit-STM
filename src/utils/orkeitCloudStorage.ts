@@ -41,7 +41,7 @@ export const saveDelegate=(x:any)=>save('delegates',{...x,role:'agent'});
 export const saveVisit=(x:any)=>save('visits',x);
 export const deleteSite=(id:string)=>del('sites',id);
 export const deleteContract=(id:string)=>del('contracts',id);
-export const deleteMaintenance=async(id:string)=>{await del('maintenance',id);try{localStorage.setItem('ork_maintenance',JSON.stringify(JSON.parse(localStorage.getItem('ork_maintenance')||'[]').filter((q:any)=>q?.id!==id)))}catch{}};
+export const deleteMaintenance=async(id:string)=>{await del('maintenance',id).catch(()=>{});await deleteDoc(doc(db,'orkeit_extinguisher_maintenance',id)).catch(e=>console.warn('تعذر حذف صيانة الطفايات من Firebase:',e));try{localStorage.setItem('ork_maintenance',JSON.stringify(JSON.parse(localStorage.getItem('ork_maintenance')||'[]').filter((q:any)=>q?.id!==id)))}catch{}};
 export const deleteDelegate=(id:string)=>del('delegates',id);
 export const subscribeCustomers=(f:(x:any[])=>void)=>sub('customers',f);
 export const subscribeRequests=(f:(x:any[])=>void)=>sub('requests',f);

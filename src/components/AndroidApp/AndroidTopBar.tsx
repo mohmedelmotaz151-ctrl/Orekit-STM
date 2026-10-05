@@ -51,7 +51,7 @@ export const AndroidTopBar: React.FC<AndroidTopBarProps> = ({
   const roleBadge = getRoleBadge();
 
   return (
-    <header className="sticky top-0 z-40 bg-[#070B1C]/95 backdrop-blur-xl border-b border-[#1E2945] shadow-md transition-all w-full select-none">
+    <header className="sticky top-0 z-40 bg-[#0b1220]/98 backdrop-blur-xl border-b border-[#2b3a50] shadow-sm transition-all w-full select-none">
       <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-[60px] flex items-center justify-between gap-2">
         
         {/* Right side (RTL Start): ORKEIT Logo & Brand */}
@@ -102,7 +102,7 @@ export const AndroidTopBar: React.FC<AndroidTopBarProps> = ({
             )}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-9 h-9 rounded-xl bg-[#10172B] hover:bg-[#151F38] text-[#19C7A0] border border-[#1E2945] transition flex items-center justify-center active:scale-95"
+            className="w-9 h-9 rounded-[11px] bg-[#101a2b] hover:bg-[#151F38] text-[#19C7A0] border border-[#1E2945] transition flex items-center justify-center active:scale-95"
             title="واتساب الدعم الفني"
           >
             <MessageCircle className="w-4 h-4 fill-current" />
@@ -112,7 +112,7 @@ export const AndroidTopBar: React.FC<AndroidTopBarProps> = ({
           <button
             type="button"
             onClick={() => onNavigateTab('notifications')}
-            className={`relative w-8 h-8 rounded-xl flex items-center justify-center transition border active:scale-95 ${
+            className={`relative w-9 h-9 rounded-[11px] flex items-center justify-center transition border active:scale-95 ${
               activeTab === 'notifications'
                 ? 'bg-[#20A9FF]/20 text-[#20A9FF] border-[#20A9FF]/50'
                 : 'bg-[#10172B] text-[#8992AA] hover:text-[#F5F7FF] border-[#1E2945]'
@@ -132,7 +132,7 @@ export const AndroidTopBar: React.FC<AndroidTopBarProps> = ({
           <button
             type="button"
             onClick={() => onNavigateTab('profile')}
-            className={`w-8 h-8 rounded-xl flex items-center justify-center transition border active:scale-95 ${
+            className={`w-9 h-9 rounded-[11px] flex items-center justify-center transition border active:scale-95 ${
               activeTab === 'profile'
                 ? 'bg-[#20A9FF] text-[#070B1C] border-[#20A9FF] font-bold shadow-sm'
                 : 'bg-[#10172B] text-[#8992AA] hover:text-[#F5F7FF] border-[#1E2945]'

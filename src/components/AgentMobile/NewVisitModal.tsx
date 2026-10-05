@@ -114,6 +114,7 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
   const [extNeedsReplacement, setExtNeedsReplacement] = useState<boolean>(false);
   const [extNeedsNewInstall, setExtNeedsNewInstall] = useState<boolean>(false);
   const [extNotes, setExtNotes] = useState<string>('');
+  const [extMaintenanceExpiry, setExtMaintenanceExpiry] = useState<string>('');
 
   // Alarm system
   const [alarmExists, setAlarmExists] = useState<boolean>(true);
@@ -171,6 +172,7 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
       setExtNeedsMaintenance(Boolean(defaultSiteToVisit.equipment?.extinguishers?.needsMaintenance));
       setExtNeedsReplacement(Boolean(defaultSiteToVisit.equipment?.extinguishers?.needsReplacement));
       setExtNeedsNewInstall(Boolean(defaultSiteToVisit.equipment?.extinguishers?.needsNewInstall));
+      setExtMaintenanceExpiry(defaultSiteToVisit.extinguisherMaintenance?.expiryDate || '');
       setAlarmExists(Boolean(defaultSiteToVisit.equipment?.alarmSystem?.exists ?? true));
       setAlarmWorking(Boolean(defaultSiteToVisit.equipment?.alarmSystem?.working ?? true));
       setAlarmNeedsMaintenance(Boolean(defaultSiteToVisit.equipment?.alarmSystem?.needsMaintenance));
@@ -360,7 +362,10 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
       approvalStatus: defaultSiteToVisit ? defaultSiteToVisit.approvalStatus : 'pending',
       approvedAt: defaultSiteToVisit?.approvedAt,
       approvedBy: defaultSiteToVisit?.approvedBy,
-      extinguisherMaintenance: defaultSiteToVisit?.extinguisherMaintenance,
+      extinguisherMaintenance: {
+        ...(defaultSiteToVisit?.extinguisherMaintenance || {}),
+        expiryDate: extMaintenanceExpiry,
+      },
       createdByAgentId: currentUser.id,
       createdByAgentName: currentUser.name,
       createdAt: defaultSiteToVisit ? defaultSiteToVisit.createdAt : new Date().toISOString().split('T')[0],
@@ -483,6 +488,40 @@ export const NewVisitModal: React.FC<NewVisitModalProps> = ({
                   <p className="text-xs text-slate-300 max-w-md mx-auto mt-1">
                     يقوم نظام أوريكيت بتسجيل إحداثيات GPS الدقيقة، وقت الوصول، ونوع الجهاز، لضمان مصداقية الزيارات واعتماد الحافز المالي (1.50 ر.س).
                   </p>
+                </div>
+
+                {/* بيانات المنشأة الأساسية — تظهر مباشرة عند الضغط على إنشاء جديد */}
+                <div className="bg-slate-950/80 p-4 rounded-2xl border border-orange-500/30 text-right space-y-3">
+                  <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+                    <Building2 className="w-4 h-4 text-orange-400" />
+                    <h4 className="font-bold text-sm text-white">بيانات العميل والمنشأة</h4>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">اسم المنشأة</label>
+                      <input type="text" value={siteName} onChange={(e) => setSiteName(e.target.value)} placeholder="اسم المنشأة / المحل / الشركة" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-500" />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">اسم العميل / المسؤول</label>
+                      <input type="text" value={managerName} onChange={(e) => setManagerName(e.target.value)} placeholder="اسم العميل أو المسؤول" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-500" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] text-slate-400 mb-1">الموقع / العنوان</label>
+                      <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="الحي، الشارع، وصف الموقع" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-500" />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">تاريخ نهاية العقد</label>
+                      <input type="date" value={contractEnd} onChange={(e) => setContractEnd(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white" />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">عدد الطفايات</label>
+                      <input type="number" min="0" value={extinguisherCount} onChange={(e) => setExtinguisherCount(Math.max(0, Number(e.target.value) || 0))} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] text-slate-400 mb-1">تاريخ انتهاء صيانة الطفايات</label>
+                      <input type="date" value={extMaintenanceExpiry} onChange={(e) => setExtMaintenanceExpiry(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white" />
+                    </div>
+                  </div>
                 </div>
 
                 {/* GPS Info Card */}

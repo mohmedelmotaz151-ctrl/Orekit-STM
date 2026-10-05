@@ -609,7 +609,7 @@ export const AndroidHomeScreen: React.FC<AndroidHomeScreenProps> = ({
         </div>
       )}
 
-{currentUser.role === 'client' && (
+      <>
       {/* ==================================================== */}
       {/* 5. SERVICES CAROUSEL HIGHLIGHTS                       */}
       {/* ==================================================== */}
@@ -651,7 +651,7 @@ export const AndroidHomeScreen: React.FC<AndroidHomeScreenProps> = ({
         </div>
       </div>
 
-      )}
+       </>
       {/* ==================================================== */}
       {/* 6. URGENT EMERGENCY NOTIFICATION (if any active)      */}
       {/* ==================================================== */}

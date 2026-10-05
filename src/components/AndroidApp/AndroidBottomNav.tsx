@@ -74,8 +74,8 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
               onClick={() => {
                 if (item.id === 'orders') setMoreOpen((prev) => !prev);
                 else { setMoreOpen(false); onSelectTab(item.id); }
-              }
               }}
+              className={`relative flex flex-col items-center justify-center flex-1 py-1 px-0.5 rounded-2xl transition-all duration-200 active:scale-95 touch-manipulation min-h-[52px] ${
                 isActive
                   ? 'text-[#B08D57]'
                   : 'text-[#8992AA] hover:text-[#F5F7FF]'

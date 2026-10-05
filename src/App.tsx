@@ -143,6 +143,14 @@ export default function App() {
   const [showAdminCRM, setShowAdminCRM] = useState(false);
   const [trackingModalOrder, setTrackingModalOrder] = useState<OrkeitServiceOrder | null>(null);
 
+  // Never expose legacy demonstration sites in the production application.
+  const DEMO_SITE_IDS = new Set([
+    'site_salam_mall',
+    'site_shawayah_gulf',
+    'site_yamama_warehouses',
+    'site_palace_hotel',
+  ]);
+
   // Admin dashboard navigation tabs
   const [adminTab, setAdminTab] = useState<'dashboard' | 'sites' | 'extinguishers' | 'agents' | 'clients' | 'incentives' | 'reports' | 'alerts'>('dashboard');
   const [isAdminMoreOpen, setIsAdminMoreOpen] = useState(false);
@@ -172,7 +180,7 @@ export default function App() {
     });
 
     const unsubSites = subscribeToSites((cloudSites) => {
-      const normalized = cloudSites.map(normalizeSite);
+      const normalized = cloudSites.filter((site) => !DEMO_SITE_IDS.has(site.id)).map(normalizeSite);
       setSites(normalized);
       saveStoredSites(normalized);
     });
@@ -217,7 +225,7 @@ export default function App() {
       fetchDatabaseData().then((dbData) => {
         if (dbData) {
           if (dbData.users && dbData.users.length > 0) setUsers(dbData.users);
-          if (dbData.sites) setSites(dbData.sites.map(normalizeSite));
+          if (dbData.sites) setSites(dbData.sites.filter((site) => !DEMO_SITE_IDS.has(site.id)).map(normalizeSite));
           if (dbData.visits) setVisits(dbData.visits);
           if (dbData.followups) setFollowups(dbData.followups);
           if (dbData.incidents) setIncidents(dbData.incidents);
@@ -1107,7 +1115,7 @@ export default function App() {
             />
           )}
 
-          {activeAndroidTab === 'services' && (
+          {activeAndroidTab === 'services' && currentUser.role === 'client' && (
             <AndroidServicesScreen
               currentUser={currentUser}
               sites={visibleSites}
@@ -1165,6 +1173,7 @@ export default function App() {
 
       {/* Fixed Android Bottom Navigation (5 items) */}
       <AndroidBottomNav
+        currentUser={currentUser}
         activeTab={activeAndroidTab}
         onSelectTab={(tab) => {
           setShowAdminCRM(false);

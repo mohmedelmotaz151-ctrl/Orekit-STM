@@ -442,3 +442,164 @@ body { background: #0b1220 !important; color: var(--orkeit-text) !important; }
 @media (min-width: 1440px) {
   .max-w-7xl { max-width: 1440px !important; }
 }
+
+
+/* =========================================================
+   ORKEIT NATIVE ANDROID APP SHELL
+   Makes the installed/mobile experience feel like an app,
+   while preserving the responsive desktop workspace.
+   ========================================================= */
+html, body, #root {
+  overscroll-behavior: none;
+}
+
+html {
+  background: #070b12;
+}
+
+body {
+  background: #070b12 !important;
+}
+
+button, a {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (max-width: 767px) {
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    height: 100%;
+    min-height: 100dvh;
+    overflow: hidden;
+    position: fixed;
+    inset: 0;
+  }
+
+  #root {
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* Native-app content viewport */
+  #root > * {
+    min-width: 0;
+  }
+
+  main {
+    min-height: 0 !important;
+    height: auto;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* App-like cards: less web-page framing */
+  main .rounded-2xl {
+    border-radius: 16px !important;
+  }
+
+  main .rounded-xl {
+    border-radius: 14px !important;
+  }
+
+  /* Comfortable native touch targets */
+  main button:not([aria-label="إغلاق"]):not(.absolute) {
+    min-height: 44px;
+  }
+
+  input, select, textarea {
+    font-size: 16px !important;
+    min-height: 48px !important;
+  }
+
+  /* Hide decorative web-like scrollbars */
+  main::-webkit-scrollbar {
+    display: none;
+  }
+
+  main {
+    scrollbar-width: none;
+  }
+
+  /* App header */
+  header {
+    flex-shrink: 0;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  header > div {
+    height: 58px !important;
+  }
+
+  /* Bottom app navigation */
+  nav.fixed {
+    padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    border-radius: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    box-shadow: 0 -8px 28px rgba(0,0,0,.30) !important;
+  }
+
+  nav.fixed > div {
+    height: 66px !important;
+  }
+
+  nav.fixed button {
+    min-height: 56px !important;
+  }
+
+  /* Remove desktop-like hover effects on touch */
+  button:hover {
+    filter: none !important;
+  }
+
+  /* Full-screen dialogs on phones */
+  [role="dialog"] {
+    padding: 0 !important;
+  }
+
+  [role="dialog"] > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92dvh !important;
+    border-radius: 22px 22px 0 0 !important;
+    margin-top: auto !important;
+  }
+}
+
+@media (min-width: 768px) {
+  body {
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  main {
+    padding-bottom: 100px !important;
+  }
+}
+
+/* Standalone PWA: remove every browser-like outer feeling */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  body {
+    background: #070b12 !important;
+  }
+
+  header {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  main {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+  }
+}

@@ -1,8 +1,8 @@
 import{collection,doc,deleteDoc,onSnapshot,setDoc}from'firebase/firestore';import{db}from'../firebase';
 
-const cols={sites:'orkeit_sites',contracts:'orkeit_contracts',maintenance:'orkeit_extinguisher_maintenance',delegates:'orkeit_delegates',visits:'orkeit_visits'} as const;
+const cols={sites:'orkeit_sites',contracts:'orkeit_contracts',maintenance:'orkeit_extinguisher_maintenance',delegates:'users',visits:'orkeit_visits'} as const;
 const clean=(v:any):any=>{if(v===undefined)return null;if(v===null||typeof v!=='object')return v;if(Array.isArray(v))return v.map(clean);const o:any={};Object.entries(v).forEach(([k,x])=>o[k]=clean(x));return o};
-const sub=(key:keyof typeof cols,setter:(x:any[])=>void)=>onSnapshot(collection(db,cols[key]),snap=>{const a:any[]=[];snap.forEach(x=>a.push(x.data()));setter(a)},e=>console.warn('Firestore '+key+' listener:',e));
+const sub=(key:keyof typeof cols,setter:(x:any[])=>void)=>onSnapshot(collection(db,cols[key]),snap=>{const a:any[]=[];snap.forEach(x=>{const d:any=x.data();if(key==='delegates'&&d.role&&d.role!=='agent'&&d.role!=='delegate')return;a.push(d)});setter(a)},e=>console.warn('Firestore '+key+' listener:',e));
 const save=(key:keyof typeof cols,x:any)=>setDoc(doc(db,cols[key],x.id),clean(x),{merge:true});
 const del=(key:keyof typeof cols,id:string)=>deleteDoc(doc(db,cols[key],id));
 export const subscribeSites=(f:(x:any[])=>void)=>sub('sites',f);
@@ -13,7 +13,7 @@ export const subscribeVisits=(f:(x:any[])=>void)=>sub('visits',f);
 export const saveSite=(x:any)=>save('sites',x);
 export const saveContract=(x:any)=>save('contracts',x);
 export const saveMaintenance=(x:any)=>save('maintenance',x);
-export const saveDelegate=(x:any)=>save('delegates',x);
+export const saveDelegate=(x:any)=>save('delegates',{...x,role:'agent'});
 export const saveVisit=(x:any)=>save('visits',x);
 export const deleteSite=(id:string)=>del('sites',id);
 export const deleteContract=(id:string)=>del('contracts',id);

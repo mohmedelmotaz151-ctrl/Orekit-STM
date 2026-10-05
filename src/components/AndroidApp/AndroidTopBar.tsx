@@ -52,7 +52,7 @@ export const AndroidTopBar: React.FC<AndroidTopBarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-[#070B1C]/95 backdrop-blur-xl border-b border-[#1E2945] shadow-md transition-all w-full select-none">
-      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-[60px] flex items-center justify-between gap-2">
         
         {/* Right side (RTL Start): ORKEIT Logo & Brand */}
         <button
@@ -64,7 +64,7 @@ export const AndroidTopBar: React.FC<AndroidTopBarProps> = ({
           className="flex items-center gap-2 text-right p-1 -mr-1 rounded-xl transition active:scale-95 shrink-0"
           title="بوابة المنظومة"
         >
-          <div className="relative w-8 h-8 rounded-xl overflow-hidden shadow-md shrink-0 border border-[#1E2945] bg-[#10172B]">
+          <div className="relative w-9 h-9 rounded-xl overflow-hidden shadow-md shrink-0 border border-[#1E2945] bg-[#10172B]">
             <img 
               src="/pwa-192x192.png" 
               alt="ORKEIT" 
@@ -102,7 +102,7 @@ export const AndroidTopBar: React.FC<AndroidTopBarProps> = ({
             )}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-8 h-8 rounded-xl bg-[#10172B] hover:bg-[#151F38] text-[#19C7A0] border border-[#1E2945] transition flex items-center justify-center active:scale-95"
+            className="w-9 h-9 rounded-xl bg-[#10172B] hover:bg-[#151F38] text-[#19C7A0] border border-[#1E2945] transition flex items-center justify-center active:scale-95"
             title="واتساب الدعم الفني"
           >
             <MessageCircle className="w-4 h-4 fill-current" />

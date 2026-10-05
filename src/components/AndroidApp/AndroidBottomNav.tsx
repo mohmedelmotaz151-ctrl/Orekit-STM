@@ -1,9 +1,11 @@
 import React from 'react';
 import { Home, Wrench, ClipboardList, Bell, User } from 'lucide-react';
+import { User as AppUser } from '../../types';
 
 export type AndroidTabType = 'home' | 'services' | 'orders' | 'notifications' | 'profile';
 
 interface AndroidBottomNavProps {
+  currentUser: AppUser;
   activeTab: AndroidTabType;
   onSelectTab: (tab: AndroidTabType) => void;
   urgentAlertsCount?: number;
@@ -11,6 +13,7 @@ interface AndroidBottomNavProps {
 }
 
 export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
+  currentUser,
   activeTab,
   onSelectTab,
   urgentAlertsCount = 0,
@@ -40,7 +43,7 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
       badgeColor: 'bg-[#EF3340]'
     },
     { id: 'profile', label: 'حسابي', icon: User },
-  ];
+  ].filter((item) => currentUser.role === 'client' || item.id !== 'services');
 
   return (
     <nav 

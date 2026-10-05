@@ -55,7 +55,7 @@ export const MobileAppModeBanner: React.FC = () => {
 
   return (
     <>
-      <div className="bg-[#10172B] border-b border-[#1E2945] px-3 py-2 text-xs text-[#F5F7FF] flex items-center justify-between gap-2 shadow-sm animate-fadeIn">
+      <div className="bg-[#101a2b] border-b border-[#1E2945] px-3 py-2 text-xs text-[#F5F7FF] flex items-center justify-between gap-2 shadow-sm animate-fadeIn">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-7 h-7 rounded-lg bg-[#20A9FF]/15 text-[#20A9FF] flex items-center justify-center shrink-0">
             <Smartphone className="w-4 h-4" />

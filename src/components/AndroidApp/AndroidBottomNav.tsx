@@ -50,7 +50,7 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
         paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
       }}
     >
-      <div className="w-full max-w-7xl mx-auto px-1 sm:px-4 h-16 flex items-center justify-around">
+      <div className="w-full max-w-7xl mx-auto px-1 sm:px-4 h-16 flex items-center justify-around gap-0.5">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -60,7 +60,7 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
               key={item.id}
               type="button"
               onClick={() => onSelectTab(item.id)}
-              className={`relative flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-2xl transition-all duration-200 active:scale-95 touch-manipulation min-h-[48px] ${
+              className={`relative flex flex-col items-center justify-center flex-1 py-1 px-0.5 rounded-2xl transition-all duration-200 active:scale-95 touch-manipulation min-h-[52px] ${
                 isActive
                   ? 'text-[#20A9FF]'
                   : 'text-[#8992AA] hover:text-[#F5F7FF]'

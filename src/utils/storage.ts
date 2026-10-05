@@ -75,7 +75,306 @@ export const INITIAL_USERS: User[] = [
 ];
 
 // Production mode: no demonstration/test sites are seeded.
-export const INITIAL_SITES: Site[] = [];
+const getDynamicSampleSites = (): Site[] => {
+  const now = new Date();
+  const dIn6Days = new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const dIn8Days = new Date(now.getTime() + 8 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const dAgo12Days = new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const dIn250Days = new Date(now.getTime() + 250 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  const dLastYear1 = new Date(now.getTime() - (365 - 6) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const dLastYear2 = new Date(now.getTime() - (365 - 8) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const dLastYear3 = new Date(now.getTime() - (365 + 12) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const dMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  return [
+    {
+      id: 'site_salam_mall',
+      name: 'مجمع أسواق السلام التجاري',
+      type: 'مجمع تجاري',
+      managerName: 'أ. فهد التميمي',
+      phone: '0555334577',
+      city: 'الرياض',
+      district: 'الملز',
+      address: 'طريق صلاح الدين الأيوبي - الملز',
+      latitude: 24.6681,
+      longitude: 46.7219,
+      license: {
+        hasLicense: 'yes',
+        licenseType: 'بلدي ودفاع مدني',
+        licenseNumber: 'LIC-2024-8841',
+        expiryDate: dIn6Days,
+      },
+      contract: {
+        hasContract: 'yes',
+        companyName: 'شركة أوريكيت للسلامة والوقاية من الحريق',
+        startDate: dLastYear1,
+        endDate: dIn6Days,
+        annualValue: 8500,
+      },
+      equipment: {
+        extinguishers: {
+          totalCount: 16,
+          types: ['powder', 'co2', 'foam'],
+          needsMaintenance: true,
+          needsReplacement: false,
+          needsNewInstall: false,
+        },
+        alarmSystem: { exists: true, working: true, needsMaintenance: false, needsInstall: false, detectorCount: 48, callPointCount: 12, panelType: 'معنون Addressable' },
+        waterAndPumps: { sprinklersExist: true, sprinklersCount: 220, sprinklersCondition: 'good', pumpsExist: true, pumpsType: 'ديزل + كهرباء + جوكي', pumpsWorking: true, fireHoseReelsCount: 6, fireCabinetsCount: 6, specialSuppressionSystem: 'لا يوجد', specialSuppressionWorking: true },
+      },
+      civilDefense: {
+        hasRecord: true,
+        lastVisitDate: dLastYear1,
+        nextVisitDate: dIn6Days,
+        reportNumber: 'CD-88419',
+        inspectorName: 'ملازم أول خالد الشمري',
+        notes: 'المنشأة بحاجة لتجديد كروت الصيانة لكفايات الحريق خلال المهلة',
+      },
+      extinguisherMaintenance: {
+        hasMaintenancePlan: true,
+        lastMaintenanceDate: dLastYear1,
+        expiryDate: dIn6Days, // ⚡ In 6 days (due for 10-day reminder!)
+        maintenanceCompany: 'شركة أوريكيت للسلامة والوقاية من الحريق',
+        technicianName: 'م. حسام العتيبي',
+        certificateOrTagNumber: 'EXT-SALAM-8841',
+        cylinderPressureChecked: true,
+        status: 'expiring_soon',
+        powderCount: 8,
+        co2Count: 4,
+        foamCount: 2,
+        waterCount: 0,
+        wetChemicalCount: 2,
+        cleanAgentCount: 0,
+        reminder10DaysNotified: false,
+        notes: 'متبقي 6 أيام على انتهاء الصلاحية - مطلوب فحص الضغط وتعبئة فورية',
+      },
+      status: 'expiring_soon',
+      approvalStatus: 'approved',
+      createdByAgentId: 'agent_1',
+      createdByAgentName: 'أحمد الغامدي',
+      createdAt: dLastYear1,
+      updatedAt: dLastYear1,
+      incentiveAmount: 1.5,
+      incentivePaid: true,
+      visitsCount: 3,
+    },
+    {
+      id: 'site_shawayah_gulf',
+      name: 'مطاعم شواية الخليج والمذاق',
+      type: 'مطعم',
+      managerName: 'أ. عبدالسلام الشهري',
+      phone: '0555334577',
+      city: 'الرياض',
+      district: 'السليمانية',
+      address: 'شارع الملك عبدالعزيز - السليمانية',
+      latitude: 24.7082,
+      longitude: 46.6983,
+      license: {
+        hasLicense: 'yes',
+        licenseType: 'رخصة أنشطة غذائية وسلامة',
+        licenseNumber: 'LIC-2024-5521',
+        expiryDate: dIn8Days,
+      },
+      contract: {
+        hasContract: 'yes',
+        companyName: 'شركة أوريكيت للسلامة والوقاية من الحريق',
+        startDate: dLastYear2,
+        endDate: dIn8Days,
+        annualValue: 5200,
+      },
+      equipment: {
+        extinguishers: {
+          totalCount: 8,
+          types: ['powder', 'co2'],
+          needsMaintenance: true,
+          needsReplacement: false,
+          needsNewInstall: false,
+        },
+        alarmSystem: { exists: true, working: true, needsMaintenance: false, needsInstall: false, detectorCount: 16, callPointCount: 4, panelType: 'تقليدي Conventional' },
+        waterAndPumps: { sprinklersExist: false, sprinklersCount: 0, sprinklersCondition: 'good', pumpsExist: false, pumpsType: '', pumpsWorking: false, fireHoseReelsCount: 2, fireCabinetsCount: 2, specialSuppressionSystem: 'كيتشن هود Wet Chemical', specialSuppressionWorking: true },
+      },
+      civilDefense: {
+        hasRecord: true,
+        lastVisitDate: dLastYear2,
+        nextVisitDate: dIn8Days,
+        reportNumber: 'CD-55214',
+        inspectorName: 'نقيب سلطان الحربي',
+      },
+      extinguisherMaintenance: {
+        hasMaintenancePlan: true,
+        lastMaintenanceDate: dLastYear2,
+        expiryDate: dIn8Days, // ⚡ In 8 days (due for 10-day reminder!)
+        maintenanceCompany: 'شركة أوريكيت للسلامة والوقاية من الحريق',
+        technicianName: 'فني معتمد طارق النمري',
+        certificateOrTagNumber: 'EXT-GULF-5521',
+        cylinderPressureChecked: true,
+        status: 'expiring_soon',
+        powderCount: 4,
+        co2Count: 2,
+        foamCount: 0,
+        waterCount: 0,
+        wetChemicalCount: 2,
+        cleanAgentCount: 0,
+        reminder10DaysNotified: false,
+        notes: 'متبقي 8 أيام على انتهاء كفايات المطعم وكيتشن هود المطبخ',
+      },
+      status: 'expiring_soon',
+      approvalStatus: 'approved',
+      createdByAgentId: 'agent_1',
+      createdByAgentName: 'أحمد الغامدي',
+      createdAt: dLastYear2,
+      updatedAt: dLastYear2,
+      incentiveAmount: 1.5,
+      incentivePaid: true,
+      visitsCount: 2,
+    },
+    {
+      id: 'site_yamama_warehouses',
+      name: 'مستودعات اليمامة المركزية',
+      type: 'مستودع',
+      managerName: 'م. إبراهيم الدوسري',
+      phone: '0555334577',
+      city: 'الدمام',
+      district: 'الخالدية',
+      address: 'المنطقة الصناعية الأولى - مستودع B4',
+      latitude: 26.4207,
+      longitude: 50.0888,
+      license: {
+        hasLicense: 'yes',
+        licenseType: 'رخصة صناعية ولوجستية',
+        licenseNumber: 'LIC-2023-1109',
+        expiryDate: dAgo12Days,
+      },
+      contract: {
+        hasContract: 'yes',
+        companyName: 'شركة أوريكيت للسلامة والوقاية من الحريق',
+        startDate: dLastYear3,
+        endDate: dAgo12Days,
+        annualValue: 12000,
+      },
+      equipment: {
+        extinguishers: {
+          totalCount: 24,
+          types: ['powder', 'co2', 'water'],
+          needsMaintenance: true,
+          needsReplacement: true,
+          needsNewInstall: false,
+        },
+        alarmSystem: { exists: true, working: false, needsMaintenance: true, needsInstall: false, detectorCount: 64, callPointCount: 16, panelType: 'معنون Addressable' },
+        waterAndPumps: { sprinklersExist: true, sprinklersCount: 450, sprinklersCondition: 'maintenance_required', pumpsExist: true, pumpsType: 'ديزل + كهرباء', pumpsWorking: true, fireHoseReelsCount: 8, fireCabinetsCount: 8, specialSuppressionSystem: 'لا يوجد', specialSuppressionWorking: true },
+      },
+      civilDefense: {
+        hasRecord: true,
+        lastVisitDate: dLastYear3,
+        nextVisitDate: dAgo12Days,
+        reportNumber: 'CD-11093',
+        inspectorName: 'رائد ماجد القحطاني',
+        notes: 'إشعار صيانة ومخالفة تأخير فحص كفايات الحريق',
+      },
+      extinguisherMaintenance: {
+        hasMaintenancePlan: true,
+        lastMaintenanceDate: dLastYear3,
+        expiryDate: dAgo12Days, // 🔴 Expired 12 days ago!
+        maintenanceCompany: 'شركة أوريكيت للسلامة والوقاية من الحريق',
+        technicianName: 'فني صيانة معتمد',
+        certificateOrTagNumber: 'EXT-YAMAMA-1109',
+        cylinderPressureChecked: false,
+        status: 'expired',
+        powderCount: 14,
+        co2Count: 6,
+        foamCount: 0,
+        waterCount: 4,
+        wetChemicalCount: 0,
+        cleanAgentCount: 0,
+        reminder10DaysNotified: true,
+        notes: 'منتهية الصلاحية منذ 12 يوم - بحاجة لتعبئة فورية واستبدال صمامات',
+      },
+      status: 'urgent_maintenance',
+      approvalStatus: 'approved',
+      createdByAgentId: 'agent_2',
+      createdByAgentName: 'خالد السبيعي',
+      createdAt: dLastYear3,
+      updatedAt: dLastYear3,
+      incentiveAmount: 1.5,
+      incentivePaid: true,
+      visitsCount: 4,
+    },
+    {
+      id: 'site_palace_hotel',
+      name: 'فندق قصر الرياض الدولي',
+      type: 'فندق',
+      managerName: 'أ. منصور العلي',
+      phone: '0555334577',
+      city: 'الرياض',
+      district: 'العليا',
+      address: 'طريق الملك فهد - حي العليا',
+      latitude: 24.7136,
+      longitude: 46.6753,
+      license: {
+        hasLicense: 'yes',
+        licenseType: 'رخصة فندقية وسياحية',
+        licenseNumber: 'LIC-2026-9923',
+        expiryDate: dIn250Days,
+      },
+      contract: {
+        hasContract: 'yes',
+        companyName: 'شركة أوريكيت للسلامة والوقاية من الحريق',
+        startDate: dMonthsAgo,
+        endDate: dIn250Days,
+        annualValue: 24000,
+      },
+      equipment: {
+        extinguishers: {
+          totalCount: 30,
+          types: ['powder', 'co2', 'foam'],
+          needsMaintenance: false,
+          needsReplacement: false,
+          needsNewInstall: false,
+        },
+        alarmSystem: { exists: true, working: true, needsMaintenance: false, needsInstall: false, detectorCount: 120, callPointCount: 24, panelType: 'معنون Addressable' },
+        waterAndPumps: { sprinklersExist: true, sprinklersCount: 600, sprinklersCondition: 'good', pumpsExist: true, pumpsType: 'ديزل + كهرباء + جوكي', pumpsWorking: true, fireHoseReelsCount: 12, fireCabinetsCount: 12, specialSuppressionSystem: 'FM-200 بغرف السيرفرات', specialSuppressionWorking: true },
+      },
+      civilDefense: {
+        hasRecord: true,
+        lastVisitDate: dMonthsAgo,
+        nextVisitDate: dIn250Days,
+        reportNumber: 'CD-99231',
+        inspectorName: 'عقيد سعد المطيري',
+      },
+      extinguisherMaintenance: {
+        hasMaintenancePlan: true,
+        lastMaintenanceDate: dMonthsAgo,
+        expiryDate: dIn250Days, // 🟢 Valid (250 days remaining)
+        maintenanceCompany: 'شركة أوريكيت للسلامة والوقاية من الحريق',
+        technicianName: 'م. حسام العتيبي',
+        certificateOrTagNumber: 'EXT-PALACE-9923',
+        cylinderPressureChecked: true,
+        status: 'valid',
+        powderCount: 15,
+        co2Count: 8,
+        foamCount: 4,
+        waterCount: 0,
+        wetChemicalCount: 0,
+        cleanAgentCount: 3,
+        reminder10DaysNotified: false,
+        notes: 'كفايات الفندق مفحوصة وسارية ومطابقة لاشتراطات الدفاع المدني',
+      },
+      status: 'competitor_contract',
+      approvalStatus: 'approved',
+      createdByAgentId: 'agent_1',
+      createdByAgentName: 'أحمد الغامدي',
+      createdAt: dMonthsAgo,
+      updatedAt: dMonthsAgo,
+      incentiveAmount: 1.5,
+      incentivePaid: true,
+      visitsCount: 1,
+    },
+  ];
+};
+
+export const INITIAL_SITES: Site[] = getDynamicSampleSites();
+
 export const INITIAL_VISITS: Visit[] = [];
 export const INITIAL_FOLLOWUPS: FollowUpLog[] = [];
 
@@ -233,32 +532,37 @@ export function normalizeSite(raw: any): Site {
   };
 }
 
-const DEMO_SITE_IDS = new Set([
-  'site_salam_mall',
-  'site_shawayah_gulf',
-  'site_yamama_warehouses',
-  'site_palace_hotel',
-]);
+const RESTORED_SITES_MIGRATION_KEY = 'oriket_restored_sites_v1';
 
 export function getStoredSites(): Site[] {
   try {
     const raw = localStorage.getItem(SITES_KEY);
     if (!raw) {
       localStorage.setItem(SITES_KEY, JSON.stringify(INITIAL_SITES));
-      return INITIAL_SITES;
+      localStorage.setItem(RESTORED_SITES_MIGRATION_KEY, '1');
+      return INITIAL_SITES.map(normalizeSite);
     }
+
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      const productionSites = parsed
-        .filter((site: Site) => !DEMO_SITE_IDS.has(site.id))
-        .map(normalizeSite);
-      localStorage.setItem(SITES_KEY, JSON.stringify(productionSites));
-      return productionSites;
+    if (!Array.isArray(parsed)) {
+      localStorage.setItem(SITES_KEY, JSON.stringify(INITIAL_SITES));
+      localStorage.setItem(RESTORED_SITES_MIGRATION_KEY, '1');
+      return INITIAL_SITES.map(normalizeSite);
     }
-    localStorage.setItem(SITES_KEY, JSON.stringify(INITIAL_SITES));
-    return INITIAL_SITES;
+
+    // Restore the four previously removed company sample facilities once.
+    // After this migration, normal user additions/deletions remain untouched.
+    const migrated = localStorage.getItem(RESTORED_SITES_MIGRATION_KEY) === '1';
+    if (parsed.length === 0 && !migrated) {
+      const restored = INITIAL_SITES.map(normalizeSite);
+      localStorage.setItem(SITES_KEY, JSON.stringify(restored));
+      localStorage.setItem(RESTORED_SITES_MIGRATION_KEY, '1');
+      return restored;
+    }
+
+    return parsed.map(normalizeSite);
   } catch {
-    return INITIAL_SITES;
+    return INITIAL_SITES.map(normalizeSite);
   }
 }
 

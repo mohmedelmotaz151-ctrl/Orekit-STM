@@ -119,7 +119,7 @@ export const SitesManagement: React.FC<SitesManagementProps> = ({
             className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-orange-950/50 transition"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>تسجيل موقع جديد</span>
+            <span>إضافة موقع / منشأة جديدة</span>
           </button>
         </div>
       </div>

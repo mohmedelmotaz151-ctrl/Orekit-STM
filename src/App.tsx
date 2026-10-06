@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { deleteCloud, firebaseConfigured, loadCloud, saveCloud } from './cloudStore';
 
 type Site={id:string;client:string;facility:string;phone:string;address:string;contractEnd:string;extCount:number};
 type Visit={id:string;siteId:string;date:string;status:string;notes:string};
@@ -20,7 +21,7 @@ export default function App(){
 }
 function Login({onLogin}:{onLogin:()=>void}){
  const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState('');
- const submit=(e:React.FormEvent)=>{e.preventDefault();if(username.trim()===USERNAME&&password===PASSWORD){localStorage.setItem(AUTH_KEY,'1');onLogin()}else setError('اسم المستخدم أو كلمة المرور غير صحيحة.')};
+ const submit=(e:FormEvent)=>{e.preventDefault();if(username.trim()===USERNAME&&password===PASSWORD){localStorage.setItem(AUTH_KEY,'1');onLogin()}else setError('اسم المستخدم أو كلمة المرور غير صحيحة.')};
  return <div className="loginPage"><div className="loginCard"><div className="loginLogo">O</div><p className="eyebrow">ORKEIT SAFETY</p><h1>تسجيل الدخول</h1><p className="loginHint">نظام زيارات الدفاع المدني</p><form onSubmit={submit}><label>اسم المستخدم<input inputMode="numeric" autoComplete="username" value={username} onChange={e=>setUsername(e.target.value)} required/></label><label>كلمة المرور<input type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} required/></label>{error&&<div className="error">{error}</div>}<button className="primary wide">دخول إلى النظام</button></form></div></div>;
 }
 function Dashboard({onLogout}:{onLogout:()=>void}){
@@ -28,17 +29,32 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const [visits,setVisits]=useState<Visit[]>(()=>load('/visits',[]));
  const [maintenance,setMaintenance]=useState<Maintenance[]>(()=>load('/maintenance',[]));
  const [delegates,setDelegates]=useState<Delegate[]>(()=>load('/delegates',[]));
+ const [cloudReady,setCloudReady]=useState(false);
+ useEffect(()=>{let cancelled=false;(async()=>{if(!firebaseConfigured){setCloudReady(true);return}try{
+   const [cloudSites,cloudVisits,cloudMaintenance,cloudDelegates]=await Promise.all([
+    loadCloud<Site>('sites'),loadCloud<Visit>('visits'),loadCloud<Maintenance>('maintenance'),loadCloud<Delegate>('delegates')
+   ]);
+   if(cancelled)return;
+   if(cloudSites.length)setSites(cloudSites),save('/sites',cloudSites);
+   if(cloudVisits.length)setVisits(cloudVisits),save('/visits',cloudVisits);
+   if(cloudMaintenance.length)setMaintenance(cloudMaintenance),save('/maintenance',cloudMaintenance);
+   if(cloudDelegates.length)setDelegates(cloudDelegates),save('/delegates',cloudDelegates);
+ }catch(err){console.error('Firebase load failed',err)}finally{if(!cancelled)setCloudReady(true)}})();return()=>{cancelled=true}},[]);
  const [page,setPage]=useState<'home'|'sites'|'visits'|'maintenance'|'delegates'>('home');
  const [open,setOpen]=useState<string|null>(null),[menu,setMenu]=useState(false),[editing,setEditing]=useState<any>(null);
- const update=(setter:any,key:string)=>(value:any)=>{setter(value);save(key,value)};
- const setSitesSafe=update(setSites,'/sites'),setVisitsSafe=update(setVisits,'/visits'),setMaintenanceSafe=update(setMaintenance,'/maintenance'),setDelegatesSafe=update(setDelegates,'/delegates');
+ const update=(setter:any,key:string,kind:'sites'|'visits'|'maintenance'|'delegates')=>(value:any)=>{
+   setter(value);save(key,value);
+   if(firebaseConfigured){const previous=value as any[];previous.forEach(item=>{void saveCloud(kind,item).catch(err=>console.error('Firebase save failed',err))})}
+ };
+ const removeCloudRecord=(kind:'sites'|'visits'|'maintenance'|'delegates',id:string)=>{if(firebaseConfigured)void deleteCloud(kind,id).catch(err=>console.error('Firebase delete failed',err))};
+ const setSitesSafe=update(setSites,'/sites','sites'),setVisitsSafe=update(setVisits,'/visits','visits'),setMaintenanceSafe=update(setMaintenance,'/maintenance','maintenance'),setDelegatesSafe=update(setDelegates,'/delegates','delegates');
  const expiring=useMemo(()=>{const now=Date.now();return sites.filter(s=>s.contractEnd && (new Date(s.contractEnd).getTime()-now)<=30*86400000).length},[sites]);
  const nav=[['home','الرئيسية'],['sites','المواقع والمنشآت'],['visits','الزيارات'],['maintenance','صيانة الطفايات'],['delegates','المناديب']] as const;
  const go=(p:any)=>{setPage(p);setMenu(false);setOpen(null);setEditing(null)};
  const add=(kind:string)=>{setEditing(null);setOpen(kind)};
- const remove=(kind:string,id:string)=>{if(!confirm('هل تريد حذف السجل؟'))return;if(kind==='site')setSitesSafe(sites.filter(x=>x.id!==id));if(kind==='visit')setVisitsSafe(visits.filter(x=>x.id!==id));if(kind==='maintenance')setMaintenanceSafe(maintenance.filter(x=>x.id!==id));if(kind==='delegate')setDelegatesSafe(delegates.filter(x=>x.id!==id))};
+ const remove=(kind:string,id:string)=>{if(!confirm('هل تريد حذف السجل؟'))return;if(kind==='site'){setSitesSafe(sites.filter(x=>x.id!==id));removeCloudRecord('sites',id)}if(kind==='visit'){setVisitsSafe(visits.filter(x=>x.id!==id));removeCloudRecord('visits',id)}if(kind==='maintenance'){setMaintenanceSafe(maintenance.filter(x=>x.id!==id));removeCloudRecord('maintenance',id)}if(kind==='delegate'){setDelegatesSafe(delegates.filter(x=>x.id!==id));removeCloudRecord('delegates',id)}};
  return <div className="app">
-  <header><button className="menuBtn" onClick={()=>setMenu(!menu)}>☰</button><div className="logo"><b>O</b><span><strong>ORKEIT</strong><small>زيارات الدفاع المدني</small></span></div><div className="headerTag">نظام مستقل</div><button className="logout" onClick={onLogout}>خروج</button></header>
+  <header><button className="menuBtn" onClick={()=>setMenu(!menu)}>☰</button><div className="logo"><b>O</b><span><strong>ORKEIT</strong><small>زيارات الدفاع المدني</small></span></div><div className="headerTag">{firebaseConfigured&&cloudReady?"متصل بقاعدة البيانات":"وضع محلي — أكمل إعداد Firebase"}</div><button className="logout" onClick={onLogout}>خروج</button></header>
   {menu&&<><div className="backdrop" onClick={()=>setMenu(false)}/><aside>{nav.map(([k,l])=><button className={page===k?'active':''} key={k} onClick={()=>go(k)}>{l}</button>)}</aside></>}
   <main>
    {page==='home'&&<><section className="hero"><div><p className="eyebrow">ORKEIT SAFETY</p><h1>إدارة زيارات الدفاع المدني</h1><p>منشآت، زيارات، صيانة طفايات ومناديب في نظام واحد.</p></div><button className="primary" onClick={()=>add('site')}>＋ إضافة منشأة</button></section><div className="stats"><Stat n={sites.length} t="المنشآت"/><Stat n={visits.length} t="الزيارات"/><Stat n={maintenance.length} t="الصيانة"/><Stat n={expiring} t="تنبيهات قريبة"/></div><section className="panel"><h2>الوصول السريع</h2><div className="quick">{nav.slice(1).map(([k,l])=><button key={k} onClick={()=>go(k)}>{l}<span>›</span></button>)}</div></section></>}

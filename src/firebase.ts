@@ -16,5 +16,13 @@ export const db = app ? getFirestore(app) : null;
 
 export async function ensureFirebaseAuth() {
   if (!auth) return;
-  if (!auth.currentUser) await signInAnonymously(auth);
+  if (auth.currentUser) return;
+  try {
+    await signInAnonymously(auth);
+  } catch (error) {
+    // Anonymous authentication may be disabled in Firebase.
+    // Firestore rules for this app allow the required request operations,
+    // so a disabled anonymous provider must not block customer requests.
+    console.warn('Firebase anonymous authentication unavailable; continuing without it.', error);
+  }
 }

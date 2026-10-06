@@ -2,7 +2,7 @@ import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore'
 import { db, ensureFirebaseAuth, firebaseConfigured } from './firebase';
 
 type RecordData={id:string;[key:string]:unknown};
-const collections = ['sites','visits','maintenance','delegates'] as const;
+const collections = ['sites','visits','maintenance','delegates','requests'] as const;
 
 export async function loadCloud<T extends RecordData>(kind: typeof collections[number]): Promise<T[]> {
   if (!firebaseConfigured || !db) return [];

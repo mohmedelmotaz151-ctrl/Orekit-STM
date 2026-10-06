@@ -6,19 +6,30 @@ type Maintenance={id:string;siteId:string;date:string;service:string;count:numbe
 type Delegate={id:string;name:string;phone:string;active:boolean};
 
 const KEY='orkeit-civil-defense-v1';
+const AUTH_KEY='orkeit-civil-defense-auth';
+const USERNAME='0555334577';
+const PASSWORD='5520';
 const uid=()=>crypto.randomUUID?.() || Date.now().toString(36)+Math.random().toString(36).slice(2);
 const load=<T,>(key:string, fallback:T):T=>{try{const raw=localStorage.getItem(KEY+key);return raw?JSON.parse(raw):fallback}catch{return fallback}};
 const save=(key:string,value:unknown)=>localStorage.setItem(KEY+key,JSON.stringify(value));
 
 export default function App(){
+ const [loggedIn,setLoggedIn]=useState(()=>localStorage.getItem(AUTH_KEY)==='1');
+ if(!loggedIn) return <Login onLogin={()=>setLoggedIn(true)}/>;
+ return <Dashboard onLogout={()=>{localStorage.removeItem(AUTH_KEY);setLoggedIn(false)}}/>;
+}
+function Login({onLogin}:{onLogin:()=>void}){
+ const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState('');
+ const submit=(e:React.FormEvent)=>{e.preventDefault();if(username.trim()===USERNAME&&password===PASSWORD){localStorage.setItem(AUTH_KEY,'1');onLogin()}else setError('اسم المستخدم أو كلمة المرور غير صحيحة.')};
+ return <div className="loginPage"><div className="loginCard"><div className="loginLogo">O</div><p className="eyebrow">ORKEIT SAFETY</p><h1>تسجيل الدخول</h1><p className="loginHint">نظام زيارات الدفاع المدني</p><form onSubmit={submit}><label>اسم المستخدم<input inputMode="numeric" autoComplete="username" value={username} onChange={e=>setUsername(e.target.value)} required/></label><label>كلمة المرور<input type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} required/></label>{error&&<div className="error">{error}</div>}<button className="primary wide">دخول إلى النظام</button></form></div></div>;
+}
+function Dashboard({onLogout}:{onLogout:()=>void}){
  const [sites,setSites]=useState<Site[]>(()=>load('/sites',[]));
  const [visits,setVisits]=useState<Visit[]>(()=>load('/visits',[]));
  const [maintenance,setMaintenance]=useState<Maintenance[]>(()=>load('/maintenance',[]));
  const [delegates,setDelegates]=useState<Delegate[]>(()=>load('/delegates',[]));
  const [page,setPage]=useState<'home'|'sites'|'visits'|'maintenance'|'delegates'>('home');
- const [open,setOpen]=useState<string|null>(null);
- const [menu,setMenu]=useState(false);
- const [editing,setEditing]=useState<any>(null);
+ const [open,setOpen]=useState<string|null>(null),[menu,setMenu]=useState(false),[editing,setEditing]=useState<any>(null);
  const update=(setter:any,key:string)=>(value:any)=>{setter(value);save(key,value)};
  const setSitesSafe=update(setSites,'/sites'),setVisitsSafe=update(setVisits,'/visits'),setMaintenanceSafe=update(setMaintenance,'/maintenance'),setDelegatesSafe=update(setDelegates,'/delegates');
  const expiring=useMemo(()=>{const now=Date.now();return sites.filter(s=>s.contractEnd && (new Date(s.contractEnd).getTime()-now)<=30*86400000).length},[sites]);
@@ -27,7 +38,7 @@ export default function App(){
  const add=(kind:string)=>{setEditing(null);setOpen(kind)};
  const remove=(kind:string,id:string)=>{if(!confirm('هل تريد حذف السجل؟'))return;if(kind==='site')setSitesSafe(sites.filter(x=>x.id!==id));if(kind==='visit')setVisitsSafe(visits.filter(x=>x.id!==id));if(kind==='maintenance')setMaintenanceSafe(maintenance.filter(x=>x.id!==id));if(kind==='delegate')setDelegatesSafe(delegates.filter(x=>x.id!==id))};
  return <div className="app">
-  <header><button className="menuBtn" onClick={()=>setMenu(!menu)}>☰</button><div className="logo"><b>O</b><span><strong>ORKEIT</strong><small>زيارات الدفاع المدني</small></span></div><div className="headerTag">نظام مستقل</div></header>
+  <header><button className="menuBtn" onClick={()=>setMenu(!menu)}>☰</button><div className="logo"><b>O</b><span><strong>ORKEIT</strong><small>زيارات الدفاع المدني</small></span></div><div className="headerTag">نظام مستقل</div><button className="logout" onClick={onLogout}>خروج</button></header>
   {menu&&<><div className="backdrop" onClick={()=>setMenu(false)}/><aside>{nav.map(([k,l])=><button className={page===k?'active':''} key={k} onClick={()=>go(k)}>{l}</button>)}</aside></>}
   <main>
    {page==='home'&&<><section className="hero"><div><p className="eyebrow">ORKEIT SAFETY</p><h1>إدارة زيارات الدفاع المدني</h1><p>منشآت، زيارات، صيانة طفايات ومناديب في نظام واحد.</p></div><button className="primary" onClick={()=>add('site')}>＋ إضافة منشأة</button></section><div className="stats"><Stat n={sites.length} t="المنشآت"/><Stat n={visits.length} t="الزيارات"/><Stat n={maintenance.length} t="الصيانة"/><Stat n={expiring} t="تنبيهات قريبة"/></div><section className="panel"><h2>الوصول السريع</h2><div className="quick">{nav.slice(1).map(([k,l])=><button key={k} onClick={()=>go(k)}>{l}<span>›</span></button>)}</div></section></>}

@@ -50,9 +50,6 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
  const steps=['جديد','قيد المراجعة','تم التسعير','تم اعتماد الطلب','جاري التنفيذ','مكتمل'];
  return <div className="loginPage"><div className="servicesCard"><div className="serviceTop"><div><p className="eyebrow">ORKEIT SAFETY</p><h1>خدمات الدفاع المدني</h1><p>مرحبًا {user.name}، اختر الخدمة المطلوبة.</p></div><button className="switchAuth" onClick={onLogout}>خروج</button></div><div className="serviceGrid">{services.map((x,i)=><button className="serviceItem" key={x} onClick={()=>void order(x)}><span>{String(i+1).padStart(2,'0')}</span><strong>{x}</strong><b>طلب الخدمة ←</b></button>)}</div><div className="requestSection"><h2>متابعة طلباتي</h2>{loading&&<p>جاري تحميل الطلبات...</p>}{!loading&&!requests.length&&<div className="empty">لا توجد طلبات حتى الآن.</div>}{requests.map(r=><article className="requestCard" key={r.id}><div className="requestHead"><strong>{r.service}</strong><span>{r.id}</span></div><p>الحالة: <b>{r.status}</b></p><p>{r.note}</p><div className="timeline">{steps.map((s,i)=><span className={steps.indexOf(r.status)>=i?'done':''} key={s}>{s}</span>)}</div><small>آخر تحديث: {new Date(r.updatedAt).toLocaleString('ar-SA')}</small></article>)}</div></div></div>;
 }
- const services=['عقد صيانة أنظمة الدفاع المدني','فحص وصيانة طفايات الحريق','صيانة نظام إنذار الحريق','صيانة مضخات الحريق','توريد وتركيب معدات السلامة','طلب زيارة وفحص للمنشأة'];
- return <div className="loginPage"><div className="servicesCard"><p className="eyebrow">ORKEIT SAFETY</p><h1>خدمات الدفاع المدني</h1><p>مرحبًا {user.name}، اختر الخدمة المطلوبة.</p><div className="serviceGrid">{services.map((x,i)=><button className="serviceItem" key={x} onClick={()=>alert('تم اختيار: '+x+'\nسنتواصل معك على '+user.phone)}><span>{String(i+1).padStart(2,'0')}</span><strong>{x}</strong><b>طلب الخدمة ←</b></button>)}</div><button className="switchAuth" onClick={onLogout}>تسجيل الخروج</button></div></div>;
-}
 function Dashboard({onLogout}:{onLogout:()=>void}){
  const [sites,setSites]=useState<Site[]>(()=>load('/sites',[]));
  const [visits,setVisits]=useState<Visit[]>(()=>load('/visits',[]));
@@ -61,7 +58,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const [requests,setRequests]=useState<ServiceRequest[]>(()=>load('/requests',[]));
  const [cloudReady,setCloudReady]=useState(false);
  useEffect(()=>{let cancelled=false;(async()=>{if(!firebaseConfigured){setCloudReady(true);return}try{
-   const [cloudSites,cloudVisits,cloudMaintenance,cloudDelegates]=await Promise.all([
+   const [cloudSites,cloudVisits,cloudMaintenance,cloudDelegates,cloudRequests]=await Promise.all([
     loadCloud<Site>('sites'),loadCloud<Visit>('visits'),loadCloud<Maintenance>('maintenance'),loadCloud<Delegate>('delegates'),loadCloud<ServiceRequest>('requests')
    ]);
    if(cancelled)return;

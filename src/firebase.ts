@@ -3,10 +3,10 @@ import { getAuth, signInAnonymously } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyAD20x36K4Iv5HxMBIXtp4vdt63erMXJu8',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'oriket-14b76.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'oriket-14b76',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:369863592977:web:68010e2585c7c1657f35b0',
 };
 
 export const firebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);

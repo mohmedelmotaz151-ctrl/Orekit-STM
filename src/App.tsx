@@ -5,6 +5,7 @@ type Site={id:string;client:string;facility:string;phone:string;address:string;c
 type Visit={id:string;siteId:string;date:string;status:string;notes:string};
 type Maintenance={id:string;siteId:string;date:string;service:string;count:number;technician:string};
 type Delegate={id:string;name:string;phone:string;active:boolean};
+type ServiceRequest={id:string;customerId:string;customerName:string;phone:string;service:string;status:string;note:string;createdAt:number;updatedAt:number};
 
 const KEY='orkeit-civil-defense-v1';
 const AUTH_KEY='orkeit-civil-defense-auth';
@@ -41,6 +42,15 @@ function CustomerAuth({onBack,onLogin}:{onBack:()=>void;onLogin:(u:any)=>void}){
 }
 function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
  const services=['عقد صيانة أنظمة الدفاع المدني','فحص وصيانة طفايات الحريق','صيانة نظام إنذار الحريق','صيانة مضخات الحريق','توريد وتركيب معدات السلامة','طلب زيارة وفحص للمنشأة'];
+ const [requests,setRequests]=useState<ServiceRequest[]>([]);
+ const [loading,setLoading]=useState(true);
+ const refresh=async()=>{try{if(firebaseConfigured){const all=await loadCloud<ServiceRequest>('requests');setRequests(all.filter(x=>x.customerId===user.id).sort((a,b)=>b.createdAt-a.createdAt));}}catch(e){console.error(e)}finally{setLoading(false)}};
+ useEffect(()=>{void refresh()},[user.id]);
+ const order=async(service:string)=>{const now=Date.now();const req:ServiceRequest={id:'ORK-'+new Date().getFullYear()+'-'+Math.floor(100000+Math.random()*900000),customerId:user.id,customerName:user.name,phone:user.phone,service,status:'جديد',note:'تم استلام طلبك وسيتم مراجعته من الإدارة.',createdAt:now,updatedAt:now};try{if(firebaseConfigured)await saveCloud('requests',req);setRequests(x=>[req,...x]);alert('تم إرسال الطلب. رقم المتابعة: '+req.id)}catch(e){console.error(e);alert('تعذر إرسال الطلب، حاول مرة أخرى.')}};
+ const steps=['جديد','قيد المراجعة','تم التسعير','تم اعتماد الطلب','جاري التنفيذ','مكتمل'];
+ return <div className="loginPage"><div className="servicesCard"><div className="serviceTop"><div><p className="eyebrow">ORKEIT SAFETY</p><h1>خدمات الدفاع المدني</h1><p>مرحبًا {user.name}، اختر الخدمة المطلوبة.</p></div><button className="switchAuth" onClick={onLogout}>خروج</button></div><div className="serviceGrid">{services.map((x,i)=><button className="serviceItem" key={x} onClick={()=>void order(x)}><span>{String(i+1).padStart(2,'0')}</span><strong>{x}</strong><b>طلب الخدمة ←</b></button>)}</div><div className="requestSection"><h2>متابعة طلباتي</h2>{loading&&<p>جاري تحميل الطلبات...</p>}{!loading&&!requests.length&&<div className="empty">لا توجد طلبات حتى الآن.</div>}{requests.map(r=><article className="requestCard" key={r.id}><div className="requestHead"><strong>{r.service}</strong><span>{r.id}</span></div><p>الحالة: <b>{r.status}</b></p><p>{r.note}</p><div className="timeline">{steps.map((s,i)=><span className={steps.indexOf(r.status)>=i?'done':''} key={s}>{s}</span>)}</div><small>آخر تحديث: {new Date(r.updatedAt).toLocaleString('ar-SA')}</small></article>)}</div></div></div>;
+}
+ const services=['عقد صيانة أنظمة الدفاع المدني','فحص وصيانة طفايات الحريق','صيانة نظام إنذار الحريق','صيانة مضخات الحريق','توريد وتركيب معدات السلامة','طلب زيارة وفحص للمنشأة'];
  return <div className="loginPage"><div className="servicesCard"><p className="eyebrow">ORKEIT SAFETY</p><h1>خدمات الدفاع المدني</h1><p>مرحبًا {user.name}، اختر الخدمة المطلوبة.</p><div className="serviceGrid">{services.map((x,i)=><button className="serviceItem" key={x} onClick={()=>alert('تم اختيار: '+x+'\nسنتواصل معك على '+user.phone)}><span>{String(i+1).padStart(2,'0')}</span><strong>{x}</strong><b>طلب الخدمة ←</b></button>)}</div><button className="switchAuth" onClick={onLogout}>تسجيل الخروج</button></div></div>;
 }
 function Dashboard({onLogout}:{onLogout:()=>void}){
@@ -48,27 +58,29 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const [visits,setVisits]=useState<Visit[]>(()=>load('/visits',[]));
  const [maintenance,setMaintenance]=useState<Maintenance[]>(()=>load('/maintenance',[]));
  const [delegates,setDelegates]=useState<Delegate[]>(()=>load('/delegates',[]));
+ const [requests,setRequests]=useState<ServiceRequest[]>(()=>load('/requests',[]));
  const [cloudReady,setCloudReady]=useState(false);
  useEffect(()=>{let cancelled=false;(async()=>{if(!firebaseConfigured){setCloudReady(true);return}try{
    const [cloudSites,cloudVisits,cloudMaintenance,cloudDelegates]=await Promise.all([
-    loadCloud<Site>('sites'),loadCloud<Visit>('visits'),loadCloud<Maintenance>('maintenance'),loadCloud<Delegate>('delegates')
+    loadCloud<Site>('sites'),loadCloud<Visit>('visits'),loadCloud<Maintenance>('maintenance'),loadCloud<Delegate>('delegates'),loadCloud<ServiceRequest>('requests')
    ]);
    if(cancelled)return;
    if(cloudSites.length)setSites(cloudSites),save('/sites',cloudSites);
    if(cloudVisits.length)setVisits(cloudVisits),save('/visits',cloudVisits);
    if(cloudMaintenance.length)setMaintenance(cloudMaintenance),save('/maintenance',cloudMaintenance);
    if(cloudDelegates.length)setDelegates(cloudDelegates),save('/delegates',cloudDelegates);
+   if(cloudRequests.length)setRequests(cloudRequests),save('/requests',cloudRequests);
  }catch(err){console.error('Firebase load failed',err)}finally{if(!cancelled)setCloudReady(true)}})();return()=>{cancelled=true}},[]);
- const [page,setPage]=useState<'home'|'sites'|'visits'|'maintenance'|'delegates'>('home');
+ const [page,setPage]=useState<'home'|'sites'|'visits'|'maintenance'|'delegates'|'requests'>('home');
  const [open,setOpen]=useState<string|null>(null),[menu,setMenu]=useState(false),[editing,setEditing]=useState<any>(null);
- const update=(setter:any,key:string,kind:'sites'|'visits'|'maintenance'|'delegates')=>(value:any)=>{
+ const update=(setter:any,key:string,kind:'sites'|'visits'|'maintenance'|'delegates'|'requests')=>(value:any)=>{
    setter(value);save(key,value);
    if(firebaseConfigured){const previous=value as any[];previous.forEach(item=>{void saveCloud(kind,item).catch(err=>console.error('Firebase save failed',err))})}
  };
- const removeCloudRecord=(kind:'sites'|'visits'|'maintenance'|'delegates',id:string)=>{if(firebaseConfigured)void deleteCloud(kind,id).catch(err=>console.error('Firebase delete failed',err))};
- const setSitesSafe=update(setSites,'/sites','sites'),setVisitsSafe=update(setVisits,'/visits','visits'),setMaintenanceSafe=update(setMaintenance,'/maintenance','maintenance'),setDelegatesSafe=update(setDelegates,'/delegates','delegates');
+ const removeCloudRecord=(kind:'sites'|'visits'|'maintenance'|'delegates'|'requests',id:string)=>{if(firebaseConfigured)void deleteCloud(kind,id).catch(err=>console.error('Firebase delete failed',err))};
+ const setSitesSafe=update(setSites,'/sites','sites'),setVisitsSafe=update(setVisits,'/visits','visits'),setMaintenanceSafe=update(setMaintenance,'/maintenance','maintenance'),setDelegatesSafe=update(setDelegates,'/delegates','delegates'),setRequestsSafe=update(setRequests,'/requests','requests');
  const expiring=useMemo(()=>{const now=Date.now();return sites.filter(s=>s.contractEnd && (new Date(s.contractEnd).getTime()-now)<=30*86400000).length},[sites]);
- const nav=[['home','الرئيسية'],['sites','المواقع والمنشآت'],['visits','الزيارات'],['maintenance','صيانة الطفايات'],['delegates','المناديب']] as const;
+ const nav=[['home','الرئيسية'],['sites','المواقع والمنشآت'],['visits','الزيارات'],['maintenance','صيانة الطفايات'],['delegates','المناديب'],['requests','طلبات العملاء']] as const;
  const go=(p:any)=>{setPage(p);setMenu(false);setOpen(null);setEditing(null)};
  const add=(kind:string)=>{setEditing(null);setOpen(kind)};
  const remove=(kind:string,id:string)=>{if(!confirm('هل تريد حذف السجل؟'))return;if(kind==='site'){setSitesSafe(sites.filter(x=>x.id!==id));removeCloudRecord('sites',id)}if(kind==='visit'){setVisitsSafe(visits.filter(x=>x.id!==id));removeCloudRecord('visits',id)}if(kind==='maintenance'){setMaintenanceSafe(maintenance.filter(x=>x.id!==id));removeCloudRecord('maintenance',id)}if(kind==='delegate'){setDelegatesSafe(delegates.filter(x=>x.id!==id));removeCloudRecord('delegates',id)}};
@@ -80,6 +92,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
    {page==='sites'&&<ListPage title="المواقع والمنشآت" add={()=>add('site')}><div className="grid">{sites.map(s=><Card key={s.id} title={s.facility||'منشأة'} lines={[s.client,s.phone,s.address,s.contractEnd?'انتهاء العقد: '+s.contractEnd:'']} badge={'الطفايات: '+s.extCount} del={()=>remove('site',s.id)}/>)}</div>{!sites.length&&<Empty/>}</ListPage>}
    {page==='visits'&&<ListPage title="الزيارات" add={()=>add('visit')}><div className="grid">{visits.map(v=>{const s=sites.find(x=>x.id===v.siteId);return <Card key={v.id} title={s?.facility||'موقع محذوف'} lines={[v.date,v.status,v.notes]} del={()=>remove('visit',v.id)}/>})}</div>{!visits.length&&<Empty/>}</ListPage>}
    {page==='maintenance'&&<ListPage title="صيانة الطفايات" add={()=>add('maintenance')}><div className="grid">{maintenance.map(m=><Card key={m.id} title={sites.find(s=>s.id===m.siteId)?.facility||'منشأة'} lines={[m.service,m.date,'الفني: '+m.technician]} badge={'العدد: '+m.count} del={()=>remove('maintenance',m.id)}/>)}</div>{!maintenance.length&&<Empty/>}</ListPage>}
+   {page==='requests'&&<ListPage title="طلبات العملاء" add={()=>{}}><div className="grid">{requests.sort((a,b)=>b.updatedAt-a.updatedAt).map(r=><RequestAdminCard key={r.id} request={r} onSave={x=>{setRequestsSafe(requests.map(q=>q.id===x.id?x:q))}} onDelete={()=>{setRequestsSafe(requests.filter(q=>q.id!==r.id));removeCloudRecord('requests',r.id)}}/>)}</div>{!requests.length&&<Empty/>}</ListPage>}
    {page==='delegates'&&<ListPage title="المناديب" add={()=>add('delegate')}><div className="grid">{delegates.map(d=><Card key={d.id} title={d.name} lines={[d.phone,d.active?'نشط':'موقوف']} del={()=>remove('delegate',d.id)}/>)}</div>{!delegates.length&&<Empty/>}</ListPage>}
   </main>
   {open==='site'&&<SiteForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setSitesSafe([x,...sites.filter(s=>s.id!==x.id)]);setOpen(null)}}/>}
@@ -87,6 +100,12 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
   {open==='maintenance'&&<MaintenanceForm sites={sites} initial={editing} close={()=>setOpen(null)} onSave={x=>{setMaintenanceSafe([x,...maintenance.filter(m=>m.id!==x.id)]);setOpen(null)}}/>}
   {open==='delegate'&&<DelegateForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setDelegatesSafe([x,...delegates.filter(d=>d.id!==x.id)]);setOpen(null)}}/>}
  </div>
+}
+function RequestAdminCard({request,onSave,onDelete}:{request:ServiceRequest;onSave:(x:ServiceRequest)=>void;onDelete:()=>void}){
+ const statuses=['جديد','قيد المراجعة','تم التسعير','تم اعتماد الطلب','جاري التنفيذ','مكتمل','مرفوض'];
+ const [status,setStatus]=useState(request.status),[note,setNote]=useState(request.note);
+ const saveIt=()=>{const x={...request,status,note,updatedAt:Date.now()};onSave(x);if(firebaseConfigured)void saveCloud('requests',x).catch(e=>console.error(e));};
+ return <article className="card requestAdmin"><h3>{request.service}</h3><p><b>رقم الطلب:</b> {request.id}</p><p><b>العميل:</b> {request.customerName} · {request.phone}</p><label>حالة الطلب<select value={status} onChange={e=>setStatus(e.target.value)}>{statuses.map(s=><option key={s}>{s}</option>)}</select></label><label>ملاحظة للعميل<textarea value={note} onChange={e=>setNote(e.target.value)} rows={3}/></label><button className="primary wide" onClick={saveIt}>تحديث حالة الطلب</button><button className="delete" onClick={onDelete}>حذف الطلب</button></article>
 }
 function Stat({n,t}:{n:number;t:string}){return <div className="stat"><strong>{n}</strong><span>{t}</span></div>}
 function ListPage({title,add,children}:{title:string;add:()=>void;children:any}){return <section><div className="pageTitle"><h1>{title}</h1><button className="primary" onClick={add}>＋ إضافة</button></div>{children}</section>}

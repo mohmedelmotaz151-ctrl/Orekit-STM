@@ -8,6 +8,8 @@ type Delegate={id:string;name:string;phone:string;active:boolean};
 
 const KEY='orkeit-civil-defense-v1';
 const AUTH_KEY='orkeit-civil-defense-auth';
+const CUSTOMER_AUTH_KEY='orkeit-customer-auth';
+const CUSTOMER_ACCOUNTS_KEY='orkeit-customer-accounts';
 const USERNAME='0555334577';
 const PASSWORD='5520';
 const uid=()=>crypto.randomUUID?.() || Date.now().toString(36)+Math.random().toString(36).slice(2);
@@ -16,13 +18,30 @@ const save=(key:string,value:unknown)=>localStorage.setItem(KEY+key,JSON.stringi
 
 export default function App(){
  const [loggedIn,setLoggedIn]=useState(()=>localStorage.getItem(AUTH_KEY)==='1');
- if(!loggedIn) return <Login onLogin={()=>setLoggedIn(true)}/>;
+ const [customerPortal,setCustomerPortal]=useState(false);
+ if(customerPortal) return <CustomerPortal onBack={()=>setCustomerPortal(false)}/>;
+ if(!loggedIn) return <Login onLogin={()=>setLoggedIn(true)} onCustomer={()=>setCustomerPortal(true)}/>;
  return <Dashboard onLogout={()=>{localStorage.removeItem(AUTH_KEY);setLoggedIn(false)}}/>;
 }
-function Login({onLogin}:{onLogin:()=>void}){
+function Login({onLogin,onCustomer}:{onLogin:()=>void;onCustomer:()=>void}){
  const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState('');
  const submit=(e:FormEvent)=>{e.preventDefault();if(username.trim()===USERNAME&&password===PASSWORD){localStorage.setItem(AUTH_KEY,'1');onLogin()}else setError('اسم المستخدم أو كلمة المرور غير صحيحة.')};
- return <div className="loginPage"><div className="loginCard"><div className="loginLogo">O</div><p className="eyebrow">ORKEIT SAFETY</p><h1>تسجيل الدخول</h1><p className="loginHint">نظام زيارات الدفاع المدني</p><form onSubmit={submit}><label>اسم المستخدم<input inputMode="numeric" autoComplete="username" value={username} onChange={e=>setUsername(e.target.value)} required/></label><label>كلمة المرور<input type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} required/></label>{error&&<div className="error">{error}</div>}<button className="primary wide">دخول إلى النظام</button></form></div></div>;
+ return <div className="loginPage"><div className="loginCard"><div className="loginLogo">O</div><p className="eyebrow">ORKEIT SAFETY</p><h1>تسجيل الدخول</h1><p className="loginHint">نظام زيارات الدفاع المدني</p><form onSubmit={submit}><label>اسم المستخدم<input inputMode="numeric" autoComplete="username" value={username} onChange={e=>setUsername(e.target.value)} required/></label><label>كلمة المرور<input type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} required/></label>{error&&<div className="error">{error}</div>}<button className="primary wide">دخول إلى النظام</button></form><div className="customerGate"><span>عميل وتريد طلب خدمة؟</span><button type="button" className="customerButton" onClick={onCustomer}>اطلب خدمة</button></div></div></div>;
+}
+function CustomerPortal({onBack}:{onBack:()=>void}){
+ const [user,setUser]=useState<any>(()=>{try{return JSON.parse(localStorage.getItem(CUSTOMER_AUTH_KEY)||'null')}catch{return null}});
+ if(user) return <CustomerServices user={user} onLogout={()=>{localStorage.removeItem(CUSTOMER_AUTH_KEY);setUser(null)}}/>;
+ return <CustomerAuth onBack={onBack} onLogin={u=>{localStorage.setItem(CUSTOMER_AUTH_KEY,JSON.stringify(u));setUser(u)}}/>;
+}
+function CustomerAuth({onBack,onLogin}:{onBack:()=>void;onLogin:(u:any)=>void}){
+ const [mode,setMode]=useState<'login'|'register'>('login'),[name,setName]=useState(''),[phone,setPhone]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState('');
+ const get=()=>{try{return JSON.parse(localStorage.getItem(CUSTOMER_ACCOUNTS_KEY)||'[]')}catch{return []}};
+ const submit=(e:FormEvent)=>{e.preventDefault();setError('');const list=get();if(mode==='register'){if(!name.trim()||!phone.trim()||password.length<4){setError('أدخل البيانات المطلوبة وكلمة مرور لا تقل عن 4 أحرف.');return}if(list.some((x:any)=>x.phone===phone.trim())){setError('رقم الجوال مسجل مسبقًا.');return}const u={id:uid(),name:name.trim(),phone:phone.trim(),password};localStorage.setItem(CUSTOMER_ACCOUNTS_KEY,JSON.stringify([u,...list]));onLogin({id:u.id,name:u.name,phone:u.phone});return}const u=list.find((x:any)=>x.phone===phone.trim()&&x.password===password);if(!u){setError('رقم الجوال أو كلمة المرور غير صحيحة.');return}onLogin({id:u.id,name:u.name,phone:u.phone})};
+ return <div className="loginPage"><div className="loginCard"><button type="button" className="backLink" onClick={onBack}>← العودة</button><div className="loginLogo">O</div><p className="eyebrow">ORKEIT SAFETY</p><h1>{mode==='login'?'تسجيل دخول العميل':'إنشاء حساب عميل'}</h1><p className="loginHint">بعد الدخول ستظهر لك خدمات الدفاع المدني.</p>{mode==='register'&&<label>اسم العميل<input value={name} onChange={e=>setName(e.target.value)} required/></label>}<label>رقم الجوال<input inputMode="tel" value={phone} onChange={e=>setPhone(e.target.value)} required/></label><label>كلمة المرور<input type="password" value={password} onChange={e=>setPassword(e.target.value)} required/></label>{error&&<div className="error">{error}</div>}<button type="button" className="primary wide" onClick={submit}>{mode==='login'?'دخول':'إنشاء الحساب'}</button><button type="button" className="switchAuth" onClick={()=>{setMode(mode==='login'?'register':'login');setError('')}}>{mode==='login'?'ليس لديك حساب؟ إنشاء حساب':'لديك حساب؟ تسجيل الدخول'}</button></div></div>;
+}
+function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
+ const services=['عقد صيانة أنظمة الدفاع المدني','فحص وصيانة طفايات الحريق','صيانة نظام إنذار الحريق','صيانة مضخات الحريق','توريد وتركيب معدات السلامة','طلب زيارة وفحص للمنشأة'];
+ return <div className="loginPage"><div className="servicesCard"><p className="eyebrow">ORKEIT SAFETY</p><h1>خدمات الدفاع المدني</h1><p>مرحبًا {user.name}، اختر الخدمة المطلوبة.</p><div className="serviceGrid">{services.map((x,i)=><button className="serviceItem" key={x} onClick={()=>alert('تم اختيار: '+x+'\nسنتواصل معك على '+user.phone)}><span>{String(i+1).padStart(2,'0')}</span><strong>{x}</strong><b>طلب الخدمة ←</b></button>)}</div><button className="switchAuth" onClick={onLogout}>تسجيل الخروج</button></div></div>;
 }
 function Dashboard({onLogout}:{onLogout:()=>void}){
  const [sites,setSites]=useState<Site[]>(()=>load('/sites',[]));

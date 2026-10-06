@@ -1,24 +1,3 @@
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import { fileURLToPath } from 'url';
-import path from 'path';
 import { defineConfig } from 'vite';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-export default defineConfig(() => {
-  return {
-    plugins: [react(), tailwindcss()],
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
-    },
-    server: {
-      // HMR is disabled in AI Studio environment
-      hmr: false,
-      // Disable file watching to save CPU
-      watch: null,
-    },
-  };
-});
+import react from '@vitejs/plugin-react';
+export default defineConfig({ plugins:[react()] });

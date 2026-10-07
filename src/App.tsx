@@ -400,11 +400,12 @@ function DocumentPaper({kind,form,stamp}:{kind:'contract'|'scene';form:any;stamp
  const title=kind==='contract'?'عقد صيانة أنظمة السلامة والدفاع المدني':'مشهد سلامة وفحص للمنشأة';
  const stampText=stamp==='company'?'ختم ORKEIT':stamp==='inspection'?'تمت المعاينة':'ORKEIT';
  return <div className="documentPaper">
-  <div className="paperLetterhead">
-   <div className="letterheadArabic"><strong>شركة اوريكيت</strong><b>للمقاولات العامة</b><small>الرقم الموحد: 754857775</small></div>
-   <div className="letterheadLogo"><span className="letterheadMark">O</span><strong>أوريكيت</strong><small>ORKIT</small></div>
-   <div className="letterheadEnglish"><strong>ORKIT COMPANY</strong><b>For General Contracting</b><small>Unified No. 754857775</small></div>
+  <div className="officialLetterhead">
+   <div className="officialArabic"><strong>شركة أوريكيت</strong><b>للمقاولات العامة</b><span>الرقم الموحد: 754857775</span></div>
+   <div className="officialLogo"><div className="officialLogoMark">O</div><strong>أوريكيت</strong><small>ORKIT</small></div>
+   <div className="officialEnglish"><strong>ORKIT COMPANY</strong><b>For General Contracting</b><span>Unified No. 754857775</span></div>
   </div>
+  <div className="officialLine"/>
   <div className="paperRule"/><div className="paperTitle"><h1>{title}</h1><div><b>التاريخ:</b> {form.start||'................'} &nbsp; | &nbsp; <b>{kind==='contract'?'مدة السريان':'تاريخ الزيارة'}:</b> {form.end||'................'}</div></div>
   <div className="infoGrid"><div><b>العميل</b><span>{form.client||'................................'}</span></div><div><b>المنشأة</b><span>{form.facility||'................................'}</span></div><div><b>الجوال</b><span>{form.phone||'................................'}</span></div><div><b>الموقع</b><span>{form.address||'................................'}</span></div></div>
   {kind==='contract'?<div className="paperBody">
@@ -418,7 +419,7 @@ function DocumentPaper({kind,form,stamp}:{kind:'contract'|'scene';form:any;stamp
    <h3>التوصيات والإجراءات المطلوبة</h3><div className="sceneBox">{form.recommendations||'لا توجد توصيات إضافية.'}</div>
   </div>}
   <div className="paperExtra"><b>ملاحظات إضافية:</b> {form.notes||'لا توجد ملاحظات إضافية.'}</div>
-  <div className="paperSign"><div><b>العميل / المسؤول</b><span>الاسم: __________________</span><span>التوقيع: ________________</span></div><div className="stamp">{stampText}<br/><small>ORKEIT</small></div><div><b>شركة اوريكيت</b><span>{kind==='scene'?'الفني / المفتش':'المسؤول المعتمد'}</span><span>التوقيع: ________________</span></div></div>
+  <div className="paperSign"><div><b>العميل / المسؤول</b><span>الاسم: __________________</span><span>التوقيع: ________________</span></div><div className="officialStamp"><span>شركة أوريكيت</span><strong>{stampText}</strong><b>للمقاولات العامة</b><small>ORKIT</small></div><div><b>شركة اوريكيت</b><span>{kind==='scene'?'الفني / المفتش':'المسؤول المعتمد'}</span><span>التوقيع: ________________</span></div></div>
   <div className="paperFooter">شركة اوريكيت للمقاولات العامة • حي الضيافة • 0533137140 • الرقم الموحد: {form.unified||'—'}</div>
  </div>;
 }

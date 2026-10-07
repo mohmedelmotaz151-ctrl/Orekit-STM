@@ -327,19 +327,98 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
 }
 function DocumentsPage(){
  const [kind,setKind]=useState<'contract'|'scene'|null>(null);
- const [form,setForm]=useState({client:'',facility:'',phone:'',address:'',start:new Date().toISOString().slice(0,10),end:'',unified:'',contractNo:'ORK-CON-'+new Date().getFullYear()+'-'+Math.floor(100000+Math.random()*900000),notes:''});
+ const [stamp,setStamp]=useState<'company'|'inspection'|'approved'>('company');
+ const [form,setForm]=useState({
+  client:'',facility:'',phone:'',address:'',start:new Date().toISOString().slice(0,10),end:'',
+  unified:'',contractNo:'ORK-CON-'+new Date().getFullYear()+'-'+Math.floor(100000+Math.random()*900000),
+  price:'',payment:'',frequency:'ربع سنوي',response:'24 ساعة',equipment:'',inspector:'',
+  visitType:'زيارة وفحص دوري',observations:'',recommendations:'',compliance:'تمت المعاينة وتسجيل الحالة',
+  scope:'فحص وصيانة أنظمة ومعدات السلامة والدفاع المدني',notes:''
+ });
  const update=(k:keyof typeof form,v:string)=>setForm(x=>({...x,[k]:v}));
  const print=()=>window.print();
+ const reset=()=>{setKind(null);setForm(x=>({...x,contractNo:'ORK-CON-'+new Date().getFullYear()+'-'+Math.floor(100000+Math.random()*900000)}))};
  return <section className="documentsPage">
-  <div className="pageTitle"><div><h1>إنشاء عقد ومشهد</h1><p className="docHint">مستندات رسمية على ورق Orkeit المروس.</p></div></div>
-  {!kind?<div className="documentChoices"><button className="documentChoice" onClick={()=>setKind('contract')}><span>📄</span><strong>إنشاء عقد صيانة</strong><small>عقد جديد برقم تلقائي وبيانات العميل والمدة.</small></button><button className="documentChoice" onClick={()=>setKind('scene')}><span>🛡️</span><strong>إنشاء مشهد سلامة</strong><small>مشهد رسمي للمنشأة على نفس الورق المروس.</small></button></div>:
-  <><div className="documentEditor"><div className="panel"><div className="panelTitle"><h2>{kind==='contract'?'بيانات عقد الصيانة':'بيانات مشهد السلامة'}</h2><button className="textBtn" onClick={()=>setKind(null)}>← اختيار المستند</button></div><form><Input label="اسم العميل" value={form.client} onChange={v=>update('client',v)} required/><Input label="اسم المنشأة" value={form.facility} onChange={v=>update('facility',v)} required/><Input label="رقم الجوال" value={form.phone} onChange={v=>update('phone',v)}/><Input label="العنوان / الموقع" value={form.address} onChange={v=>update('address',v)}/><div className="twoInputs"><Input label="تاريخ المستند" value={form.start} onChange={v=>update('start',v)} type="date"/><Input label={kind==='contract'?'تاريخ نهاية العقد':'تاريخ الزيارة'} value={form.end} onChange={v=>update('end',v)} type="date"/></div><Input label="الرقم الموحد" value={form.unified} onChange={v=>update('unified',v)} placeholder="أدخل الرقم الموحد للمنشأة"/><Input label="رقم المستند" value={form.contractNo} onChange={()=>{}}/><label>ملاحظات<textarea value={form.notes} onChange={e=>update('notes',e.target.value)} rows={4}/></label><button type="button" className="primary wide" onClick={print}>🖨️ معاينة وطباعة / حفظ PDF</button></form></div>
-  <DocumentPaper kind={kind} form={form}/></div></>}
+  <div className="pageTitle"><div><h1>إنشاء عقد ومشهد</h1><p className="docHint">مولد مستندات Orkeit الرسمي — ترويسة، ختم، بيانات منشأة، بنود وتفاصيل قابلة للطباعة.</p></div></div>
+  {!kind?<div className="documentChoices">
+   <button className="documentChoice" onClick={()=>setKind('contract')}><span>📄</span><strong>إنشاء عقد صيانة</strong><small>عقد كامل ببيانات العميل والمدة ونطاق العمل والأسعار والبنود والتوقيعات والأختام.</small></button>
+   <button className="documentChoice" onClick={()=>setKind('scene')}><span>🛡️</span><strong>إنشاء مشهد سلامة</strong><small>مشهد زيارة وفحص مع حالة الأنظمة والملاحظات والتوصيات وخانات التوقيع والختم.</small></button>
+  </div>:
+  <><div className="documentEditor">
+   <div className="panel"><div className="panelTitle"><h2>{kind==='contract'?'بيانات عقد الصيانة':'بيانات مشهد السلامة'}</h2><button className="textBtn" type="button" onClick={reset}>← اختيار المستند</button></div>
+    <form className="docForm">
+     <div className="formSectionTitle">بيانات العميل والمنشأة</div>
+     <Input label="اسم العميل" value={form.client} onChange={v=>update('client',v)} required/>
+     <Input label="اسم المنشأة" value={form.facility} onChange={v=>update('facility',v)} required/>
+     <Input label="رقم الجوال" value={form.phone} onChange={v=>update('phone',v)}/>
+     <Input label="العنوان / الموقع" value={form.address} onChange={v=>update('address',v)}/>
+     <Input label="الرقم الموحد" value={form.unified} onChange={v=>update('unified',v)} placeholder="أدخل الرقم الموحد للمنشأة"/>
+     <Input label="رقم المستند" value={form.contractNo} onChange={()=>{}}/>
+     <div className="twoInputs"><Input label="تاريخ المستند" value={form.start} onChange={v=>update('start',v)} type="date"/><Input label={kind==='contract'?'تاريخ نهاية العقد':'تاريخ الزيارة'} value={form.end} onChange={v=>update('end',v)} type="date"/></div>
+     {kind==='contract'?<><div className="formSectionTitle">تفاصيل العقد</div>
+      <Input label="نطاق الأعمال" value={form.scope} onChange={v=>update('scope',v)}/>
+      <div className="twoInputs"><Input label="قيمة العقد" value={form.price} onChange={v=>update('price',v)} placeholder="مثال: 5,000 ريال"/><Input label="طريقة السداد" value={form.payment} onChange={v=>update('payment',v)} placeholder="دفعة مقدمة / شهري / سنوي"/></div>
+      <div className="twoInputs"><Input label="دورية الزيارة" value={form.frequency} onChange={v=>update('frequency',v)}/><Input label="زمن الاستجابة" value={form.response} onChange={v=>update('response',v)}/></div>
+      <Input label="المعدات / الأنظمة المشمولة" value={form.equipment} onChange={v=>update('equipment',v)} placeholder="إنذار، طفايات، مضخات، رشاشات..."/>
+     </>:<><div className="formSectionTitle">تفاصيل المشهد والفحص</div>
+      <div className="twoInputs"><Input label="نوع الزيارة" value={form.visitType} onChange={v=>update('visitType',v)}/><Input label="اسم المفتش / الفني" value={form.inspector} onChange={v=>update('inspector',v)}/></div>
+      <Input label="حالة الأنظمة / المعدات" value={form.compliance} onChange={v=>update('compliance',v)}/>
+      <label>الملاحظات<textarea value={form.observations} onChange={e=>update('observations',e.target.value)} rows={4} placeholder="اكتب نتائج المعاينة والملاحظات..."/></label>
+      <label>التوصيات والإجراءات المطلوبة<textarea value={form.recommendations} onChange={e=>update('recommendations',e.target.value)} rows={4} placeholder="اكتب التوصيات أو الأعمال المطلوب تنفيذها..."/></label>
+     </>}
+     <div className="formSectionTitle">الختم والتذييل</div>
+     <label>نوع الختم<select value={stamp} onChange={e=>setStamp(e.target.value as typeof stamp)}><option value="company">ختم ORKEIT</option><option value="inspection">ختم تمت المعاينة</option><option value="approved">ختم الشركة / توقيع</option></select></label>
+     <label>ملاحظات إضافية<textarea value={form.notes} onChange={e=>update('notes',e.target.value)} rows={3}/></label>
+     <button type="button" className="primary wide" onClick={print}>🖨️ معاينة وطباعة / حفظ PDF</button>
+    </form>
+   </div>
+   <DocumentPaper kind={kind} form={form} stamp={stamp}/>
+  </div></>}
  </section>;
 }
-function DocumentPaper({kind,form}:{kind:'contract'|'scene';form:{client:string;facility:string;phone:string;address:string;start:string;end:string;unified:string;contractNo:string;notes:string}}){
- const title=kind==='contract'?'عقد صيانة أنظمة السلامة والدفاع المدني':'مشهد سلامة للمنشأة';
- return <div className="documentPaper"><div className="paperHeader"><div className="paperLogo">O</div><div><strong>ORKEIT</strong><small>شركة اوريكيت للمقاولات العامة</small><small>أعمال السلامة والدفاع المدني</small></div><div className="paperMeta"><b>الرقم الموحد</b><span>{form.unified||'....................'}</span><b>رقم المستند</b><span>{form.contractNo}</span></div></div><div className="paperRule"/><div className="paperTitle"><h1>{title}</h1><div><b>التاريخ:</b> {form.start||'................'} &nbsp; <b>السريان/الزيارة:</b> {form.end||'................'}</div></div><div className="paperBody"><p><b>العميل:</b> {form.client||'........................................................'}</p><p><b>المنشأة:</b> {form.facility||'........................................................'}</p><p><b>رقم الجوال:</b> {form.phone||'................................'}</p><p><b>الموقع:</b> {form.address||'........................................................'}</p>{kind==='contract'?<><h3>موضوع العقد</h3><p>تلتزم شركة اوريكيت للمقاولات العامة بتنفيذ أعمال الفحص والصيانة الدورية لأنظمة ومعدات السلامة والدفاع المدني وفق نطاق العمل المتفق عليه والاشتراطات المعتمدة.</p><h3>مدة العقد</h3><p>يبدأ العقد من تاريخ {form.start||'........'} وينتهي في {form.end||'........'}.</p></>:<><h3>بيان المشهد</h3><p>تشهد شركة اوريكيت للمقاولات العامة بأن المنشأة الموضحة أعلاه تمت زيارتها/فحصها، وتم تسجيل الملاحظات والإجراءات اللازمة وفق نطاق الزيارة.</p></>}<h3>ملاحظات</h3><p className="notesBox">{form.notes||'لا توجد ملاحظات.'}</p></div><div className="paperSign"><div><b>العميل / المسؤول</b><span>التوقيع: __________________</span></div><div className="stamp">ختم<br/>ORKEIT</div><div><b>شركة اوريكيت</b><span>التوقيع: __________________</span></div></div><div className="paperFooter">شركة اوريكيت للمقاولات العامة • حي الضيافة • 0533137140 • aldr3.xyz</div></div>
+const contractClauses=[
+ 'يُعد هذا العقد اتفاقاً بين شركة اوريكيت للمقاولات العامة والطرف الثاني الموضح في بيانات العقد لتنفيذ نطاق الأعمال المتفق عليه.',
+ 'يلتزم الطرفان بصحة البيانات والمعلومات والمستندات المقدمة عند إبرام العقد.',
+ 'يشمل نطاق العقد أعمال الفحص والصيانة الوقائية والتصحيحية للأنظمة والمعدات المحددة في العقد فقط.',
+ 'تُنفذ الأعمال وفق التعليمات الفنية المعتمدة والاشتراطات النظامية ذات العلاقة ومتطلبات السلامة المطبقة على الموقع.',
+ 'تحدد دورية الزيارات حسب البيانات المدخلة في العقد، ويجوز تنسيق مواعيد إضافية عند الحاجة.',
+ 'يلتزم العميل بتمكين فريق Orkeit من دخول الموقع والوصول إلى الأنظمة والمعدات المطلوب فحصها.',
+ 'يلتزم العميل بإبلاغ الشركة بأي أعطال أو بلاغات أو تغييرات مؤثرة على أنظمة السلامة بالموقع.',
+ 'تُسجل نتائج الفحص والملاحظات والإجراءات المنفذة في محاضر أو تقارير الزيارة عند الحاجة.',
+ 'الأعمال الإضافية أو قطع الغيار أو الاستبدالات غير المشمولة في نطاق العقد تحتاج إلى اعتماد مستقل من العميل.',
+ 'تكون قيمة العقد وطريقة السداد وفق البيانات المثبتة في هذا المستند وأي عرض سعر أو ملحق معتمد.',
+ 'في حال تأخر السداد، يحق للشركة تعليق الأعمال غير الطارئة بعد إشعار العميل، مع مراعاة الأعمال اللازمة للسلامة بحسب الحالة.',
+ 'تلتزم الشركة بالمحافظة على سرية بيانات الموقع والمعلومات التي تطلع عليها أثناء تنفيذ الأعمال، في حدود ما يسمح به النظام.',
+ 'لا تتحمل الشركة مسؤولية الأعطال الناتجة عن سوء الاستخدام أو التعديلات غير المعتمدة أو العبث بالمعدات أو الحوادث الخارجة عن نطاق الصيانة.',
+ 'لا يشمل العقد الأعمال المدنية أو الكهربائية الرئيسية أو التعديلات الإنشائية إلا إذا نص عليها صراحة في عرض أو ملحق مستقل.',
+ 'تحدد قطع الغيار والمواد المطلوبة وفق نتائج الفحص وحالة المعدات، ويجوز تقديم عرض مستقل لها.',
+ 'يجب على العميل توفير بيئة عمل آمنة لفريق الصيانة وإبلاغه بالمخاطر المعروفة في الموقع.',
+ 'تُعتمد أي تعديلات على نطاق العقد أو مدته أو قيمته كتابةً من الطرفين.',
+ 'يجوز لأي طرف طلب إنهاء العقد وفق ما يتم الاتفاق عليه كتابياً، مع تسوية الأعمال والمستحقات المنفذة حتى تاريخ الإنهاء.',
+ 'تُحل الملاحظات والنزاعات المتعلقة بتنفيذ العقد ودياً أولاً، ثم وفق الأنظمة والجهات المختصة في المملكة العربية السعودية.',
+ 'يمثل هذا المستند وملحقاته المعتمدة كامل نطاق الاتفاق فيما يتعلق بالأعمال الموضحة فيه، وأي إضافة لاحقة يجب توثيقها واعتمادها.'
+];
+function DocumentPaper({kind,form,stamp}:{kind:'contract'|'scene';form:any;stamp:'company'|'inspection'|'approved'}){
+ const title=kind==='contract'?'عقد صيانة أنظمة السلامة والدفاع المدني':'مشهد سلامة وفحص للمنشأة';
+ const stampText=stamp==='company'?'ختم ORKEIT':stamp==='inspection'?'تمت المعاينة':'ORKEIT';
+ return <div className="documentPaper">
+  <div className="paperHeader"><div className="paperLogo">O</div><div><strong>ORKEIT</strong><small>شركة اوريكيت للمقاولات العامة</small><small>أعمال السلامة والدفاع المدني</small><small>حي الضيافة • 0533137140 • aldr3.xyz</small></div><div className="paperMeta"><b>الرقم الموحد</b><span>{form.unified||'....................'}</span><b>رقم المستند</b><span>{form.contractNo}</span></div></div>
+  <div className="paperRule"/><div className="paperTitle"><h1>{title}</h1><div><b>التاريخ:</b> {form.start||'................'} &nbsp; | &nbsp; <b>{kind==='contract'?'مدة السريان':'تاريخ الزيارة'}:</b> {form.end||'................'}</div></div>
+  <div className="infoGrid"><div><b>العميل</b><span>{form.client||'................................'}</span></div><div><b>المنشأة</b><span>{form.facility||'................................'}</span></div><div><b>الجوال</b><span>{form.phone||'................................'}</span></div><div><b>الموقع</b><span>{form.address||'................................'}</span></div></div>
+  {kind==='contract'?<div className="paperBody">
+   <h3>أولاً: نطاق العقد</h3><p>{form.scope}</p>
+   <h3>ثانياً: بيانات التنفيذ</h3><div className="detailsTable"><div><b>قيمة العقد</b><span>{form.price||'حسب العرض المعتمد'}</span></div><div><b>السداد</b><span>{form.payment||'حسب الاتفاق'}</span></div><div><b>دورية الزيارة</b><span>{form.frequency}</span></div><div><b>زمن الاستجابة</b><span>{form.response}</span></div><div><b>الأنظمة والمعدات</b><span>{form.equipment||'وفق نطاق العمل والتقرير الفني'}</span></div></div>
+   <h3>ثالثاً: بنود وشروط العقد</h3><ol className="clauses">{contractClauses.map((x,i)=><li key={i}>{x}</li>)}</ol>
+  </div>:<div className="paperBody">
+   <h3>بيانات الزيارة</h3><div className="detailsTable"><div><b>نوع الزيارة</b><span>{form.visitType}</span></div><div><b>الفني / المفتش</b><span>{form.inspector||'................................'}</span></div><div><b>حالة الأنظمة</b><span>{form.compliance}</span></div></div>
+   <h3>الأعمال والمعاينة</h3><p>تمت زيارة المنشأة الموضحة أعلاه لغرض الفحص والمعاينة وتقييم حالة أنظمة ومعدات السلامة والدفاع المدني ضمن نطاق الزيارة.</p>
+   <h3>الملاحظات</h3><div className="sceneBox">{form.observations||'لا توجد ملاحظات مسجلة.'}</div>
+   <h3>التوصيات والإجراءات المطلوبة</h3><div className="sceneBox">{form.recommendations||'لا توجد توصيات إضافية.'}</div>
+  </div>}
+  <div className="paperExtra"><b>ملاحظات إضافية:</b> {form.notes||'لا توجد ملاحظات إضافية.'}</div>
+  <div className="paperSign"><div><b>العميل / المسؤول</b><span>الاسم: __________________</span><span>التوقيع: ________________</span></div><div className="stamp">{stampText}<br/><small>ORKEIT</small></div><div><b>شركة اوريكيت</b><span>{kind==='scene'?'الفني / المفتش':'المسؤول المعتمد'}</span><span>التوقيع: ________________</span></div></div>
+  <div className="paperFooter">شركة اوريكيت للمقاولات العامة • حي الضيافة • 0533137140 • aldr3.xyz • الرقم الموحد: {form.unified||'—'}</div>
+ </div>;
 }
 function RequestAdminCard({request,onSave,onDelete}:{request:ServiceRequest;onSave:(x:ServiceRequest)=>void;onDelete:()=>void}){
  const statuses=['جديد','قيد المراجعة','تم التسعير','تم اعتماد الطلب','جاري التنفيذ','مكتمل','مرفوض'];

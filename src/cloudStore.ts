@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
 import { db, ensureFirebaseAuth, firebaseConfigured } from './firebase';
 
 export type RecordData = { id: string; [key: string]: unknown };
@@ -22,6 +22,20 @@ export async function loadCloud<T extends RecordData>(kind: CloudCollection): Pr
   await ensureFirebaseAuth();
   const snap = await getDocs(collection(db, 'orkeit_civil_defense', kind));
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as T));
+}
+
+export async function subscribeCloud<T extends RecordData>(
+  kind: CloudCollection,
+  onChange: (items: T[]) => void,
+  onError?: (error: unknown) => void
+) {
+  if (!firebaseConfigured || !db) return () => {};
+  await ensureFirebaseAuth();
+  return onSnapshot(
+    collection(db, 'orkeit_civil_defense', kind),
+    snap => onChange(snap.docs.map(d => ({ id: d.id, ...d.data() } as T))),
+    error => onError?.(error)
+  );
 }
 
 export async function saveCloud(kind: CloudCollection, item: RecordData) {

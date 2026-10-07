@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { deleteCloud, firebaseConfigured, loadCloud, saveCloud } from './cloudStore';
+import { useEffect, useMemo, useState, useRef, type FormEvent } from 'react';
+import { deleteCloud, firebaseConfigured, loadCloud, saveCloud, subscribeCloud } from './cloudStore';
 
 type Site={id:string;client:string;facility:string;phone:string;address:string;contractEnd:string;extCount:number};
 type Visit={id:string;siteId:string;date:string;status:string;notes:string};
-type Maintenance={id:string;siteId:string;date:string;service:string;count:number;technician:string};
+type Maintenance={id:string;siteId:string;date:string;expiryDate:string;service:string;count:number;technician:string};
 type Delegate={id:string;name:string;phone:string;active:boolean};
-type ServiceRequest={id:string;customerId:string;customerName:string;phone:string;service:string;status:string;note:string;createdAt:number;updatedAt:number};
+type ServiceRequest={id:string;customerId:string;customerName:string;phone:string;service:string;facility:string;address:string;status:string;note:string;createdAt:number;updatedAt:number};
+type CustomerRecord={id:string;name:string;phone:string;facility:string;address:string;updatedAt:number};
 
 const KEY='orkeit-civil-defense-v1';
 const AUTH_KEY='orkeit-civil-defense-auth';
@@ -16,6 +17,36 @@ const PASSWORD='5520';
 const uid=()=>crypto.randomUUID?.() || Date.now().toString(36)+Math.random().toString(36).slice(2);
 const load=<T,>(key:string, fallback:T):T=>{try{const raw=localStorage.getItem(KEY+key);return raw?JSON.parse(raw):fallback}catch{return fallback}};
 const save=(key:string,value:unknown)=>localStorage.setItem(KEY+key,JSON.stringify(value));
+
+const daysUntil=(date:string)=>Math.ceil((new Date(date+'T23:59:59').getTime()-Date.now())/86400000);
+const expiryLabel=(days:number)=>{
+ if(days<0)return 'منتهية';
+ if(days<=3)return 'حرجة — قبل 3 أيام';
+ if(days<=7)return 'إنذار أخير — قبل 7 أيام';
+ if(days<=15)return 'إنذار — قبل 15 يومًا';
+ if(days<=30)return 'تنبيه — قبل 30 يومًا';
+ return '';
+};
+const notifyOutside=(title:string,body:string)=>{
+ if(typeof window!=='undefined' && 'Notification' in window && Notification.permission==='granted'){
+   try{new Notification(title,{body,icon:'/pwa-192x192.png',tag:title})}catch{}
+ }
+};
+const requestNotificationPermission=async()=>{
+ if(typeof window!=='undefined' && 'Notification' in window && Notification.permission==='default'){
+   try{await Notification.requestPermission()}catch{}
+ }
+};
+function NotificationBell({items,title='الإشعارات'}:{items:string[];title?:string}){
+ const [open,setOpen]=useState(false);
+ const count=items.length;
+ return <div className="notificationWrap">
+   <button type="button" className="notificationBell" onClick={()=>{setOpen(!open);void requestNotificationPermission()}} aria-label={title}>🔔{count>0&&<span>{count>99?'99+':count}</span>}</button>
+   {open&&<div className="notificationPanel"><div className="notificationHead"><strong>{title}</strong><button onClick={()=>setOpen(false)}>×</button></div>{count?<>{items.slice(0,12).map((x,i)=><div className="notificationItem" key={i}>⚠️ {x}</div>)}</>:<div className="empty">لا توجد إشعارات جديدة.</div>}<small>اضغط الجرس للسماح بإشعارات الجهاز.</small></div>}
+ </div>
+}
+
+
 
 export default function App(){
  const [loggedIn,setLoggedIn]=useState(()=>localStorage.getItem(AUTH_KEY)==='1');
@@ -67,11 +98,74 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
  const services=['عقد صيانة أنظمة الدفاع المدني','فحص وصيانة طفايات الحريق','صيانة نظام إنذار الحريق','صيانة مضخات الحريق','توريد وتركيب معدات السلامة','طلب زيارة وفحص للمنشأة'];
  const [requests,setRequests]=useState<ServiceRequest[]>([]);
  const [loading,setLoading]=useState(true);
- const refresh=async()=>{try{if(firebaseConfigured){const all=await loadCloud<ServiceRequest>('requests');setRequests(all.filter(x=>x.customerId===user.id).sort((a,b)=>b.createdAt-a.createdAt));}}catch(e){console.error(e)}finally{setLoading(false)}};
- useEffect(()=>{void refresh()},[user.id]);
- const order=async(service:string)=>{const now=Date.now();const req:ServiceRequest={id:'ORK-'+new Date().getFullYear()+'-'+Math.floor(100000+Math.random()*900000),customerId:user.id,customerName:user.name,phone:user.phone,service,status:'جديد',note:'تم استلام طلبك وسيتم مراجعته من الإدارة.',createdAt:now,updatedAt:now};try{if(firebaseConfigured)await saveCloud('requests',req);setRequests(x=>[req,...x]);alert('تم إرسال الطلب. رقم المتابعة: '+req.id)}catch(e){console.error(e);alert('تعذر إرسال الطلب، حاول مرة أخرى.')}};
+ const [selectedService,setSelectedService]=useState('');
+ const [form,setForm]=useState({name:user.name||'',phone:user.phone||'',facility:'',address:''});
+ const [noticeItems,setNoticeItems]=useState<string[]>([]);
+ const previous=useRef<Record<string,string>>({});
+ const firstSnapshot=useRef(true);
+ useEffect(()=>{void requestNotificationPermission();},[]);
+ useEffect(()=>{
+   let unsub:(()=>void)|undefined;
+   const run=async()=>{
+    try{
+      if(firebaseConfigured){
+       unsub=await subscribeCloud<ServiceRequest>('requests',all=>{
+        const mine=all.filter(x=>x.customerId===user.id).sort((a,b)=>b.createdAt-a.createdAt);
+        setRequests(mine);
+        if(!firstSnapshot.current){
+          mine.forEach(x=>{
+            const old=previous.current[x.id];
+            if(old && old!==x.status){
+              const msg=`تم تحديث طلب ${x.id}: ${x.status}`;
+              setNoticeItems(n=>[msg,...n].slice(0,20));
+              notifyOutside('Orkeit — تحديث طلبك',msg);
+            }
+          });
+        }
+        previous.current=Object.fromEntries(mine.map(x=>[x.id,x.status]));
+        firstSnapshot.current=false;
+       },e=>console.error('Customer realtime error',e));
+      }
+    }catch(e){console.error(e)}
+    finally{setLoading(false)}
+   };
+   void run();
+   return()=>{unsub?.()};
+ },[user.id]);
+ const order=async()=>{
+   const name=form.name.trim(),phone=form.phone.trim().replace(/\\s+/g,'');
+   if(!selectedService||!name||!phone||!form.facility.trim()||!form.address.trim()){
+     alert('أكمل الاسم ورقم الجوال واسم المنشأة وموقعها.');return;
+   }
+   const now=Date.now();
+   const req:ServiceRequest={
+    id:'ORK-'+new Date().getFullYear()+'-'+Math.floor(100000+Math.random()*900000),
+    customerId:user.id,customerName:name,phone,service:selectedService,
+    facility:form.facility.trim(),address:form.address.trim(),
+    status:'جديد',note:'تم استلام طلبك وسيتم مراجعته من الإدارة.',createdAt:now,updatedAt:now
+   };
+   const customer:CustomerRecord={id:user.id,name,phone,facility:req.facility,address:req.address,updatedAt:now};
+   try{
+    if(firebaseConfigured){await saveCloud('customers',customer);await saveCloud('requests',req)}
+    setRequests(x=>[req,...x]);setSelectedService('');setForm({name,phone,facility:'',address:''});
+    alert('تم إرسال الطلب بنجاح. رقم المتابعة: '+req.id);
+   }catch(e){console.error(e);alert('تعذر إرسال الطلب، حاول مرة أخرى.')}
+ };
  const steps=['جديد','قيد المراجعة','تم التسعير','تم اعتماد الطلب','جاري التنفيذ','مكتمل'];
- return <div className="loginPage"><div className="servicesCard"><div className="serviceTop"><div><p className="eyebrow">ORKEIT SAFETY</p><h1>خدمات الدفاع المدني</h1><p>مرحبًا {user.name}، اختر الخدمة المطلوبة.</p></div><button className="switchAuth" onClick={onLogout}>خروج</button></div><div className="serviceGrid">{services.map((x,i)=><button className="serviceItem" key={x} onClick={()=>void order(x)}><span>{String(i+1).padStart(2,'0')}</span><strong>{x}</strong><b>طلب الخدمة ←</b></button>)}</div><div className="requestSection"><h2>متابعة طلباتي</h2>{loading&&<p>جاري تحميل الطلبات...</p>}{!loading&&!requests.length&&<div className="empty">لا توجد طلبات حتى الآن.</div>}{requests.map(r=><article className="requestCard" key={r.id}><div className="requestHead"><strong>{r.service}</strong><span>{r.id}</span></div><p>الحالة: <b>{r.status}</b></p><p>{r.note}</p><div className="timeline">{steps.map((s,i)=><span className={steps.indexOf(r.status)>=i?'done':''} key={s}>{s}</span>)}</div><small>آخر تحديث: {new Date(r.updatedAt).toLocaleString('ar-SA')}</small></article>)}</div></div></div>;
+ return <div className="loginPage"><div className="servicesCard">
+  <div className="serviceTop"><div><p className="eyebrow">ORKEIT SAFETY</p><h1>خدمات الدفاع المدني</h1><p>مرحبًا {user.name}، اختر الخدمة المطلوبة.</p></div><div className="serviceActions"><NotificationBell items={noticeItems} title="تحديثات طلباتك"/><button className="switchAuth" onClick={onLogout}>خروج</button></div></div>
+  {!selectedService?<><div className="serviceGrid">{services.map((x,i)=><button className="serviceItem" key={x} onClick={()=>setSelectedService(x)}><span>{String(i+1).padStart(2,'0')}</span><strong>{x}</strong><b>طلب الخدمة ←</b></button>)}</div></>:
+  <section className="requestFormCard"><button className="backLink" type="button" onClick={()=>setSelectedService('')}>← العودة للخدمات</button><h2>إكمال إجراءات الطلب</h2><p>الخدمة المطلوبة: <b>{selectedService}</b></p>
+   <label>اسم العميل<input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required/></label>
+   <label>رقم الجوال<input inputMode="tel" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} required/></label>
+   <label>اسم المنشأة<input value={form.facility} onChange={e=>setForm({...form,facility:e.target.value})} required/></label>
+   <label>موقع المنشأة / العنوان<textarea value={form.address} onChange={e=>setForm({...form,address:e.target.value})} rows={3} required/></label>
+   <button className="primary wide" type="button" onClick={()=>void order()}>إرسال طلب الخدمة</button>
+  </section>}
+  <div className="requestSection"><h2>متابعة طلباتي</h2>{loading&&<p>جاري تحميل الطلبات...</p>}{!loading&&!requests.length&&<div className="empty">لا توجد طلبات حتى الآن.</div>}
+   {requests.map(r=><article className="requestCard" key={r.id}><div className="requestHead"><strong>{r.service}</strong><span>{r.id}</span></div><p><b>المنشأة:</b> {r.facility}</p><p><b>الموقع:</b> {r.address}</p><p>الحالة: <b>{r.status}</b></p><p>{r.note}</p><div className="timeline">{steps.map((s,i)=><span className={steps.indexOf(r.status)>=i?'done':''} key={s}>{s}</span>)}</div><small>آخر تحديث: {new Date(r.updatedAt).toLocaleString('ar-SA')}</small></article>)}
+  </div>
+ </div></div>;
 }
 function Dashboard({onLogout}:{onLogout:()=>void}){
  const [sites,setSites]=useState<Site[]>(()=>load('/sites',[]));
@@ -79,7 +173,23 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const [maintenance,setMaintenance]=useState<Maintenance[]>(()=>load('/maintenance',[]));
  const [delegates,setDelegates]=useState<Delegate[]>(()=>load('/delegates',[]));
  const [requests,setRequests]=useState<ServiceRequest[]>(()=>load('/requests',[]));
+ const [noticeItems,setNoticeItems]=useState<string[]>([]);
+ const previousRequests=useRef<Record<string,number>>({});
+ const firstRequestSnapshot=useRef(true);
  const [cloudReady,setCloudReady]=useState(false);
+ useEffect(()=>{void requestNotificationPermission();},[]);
+ useEffect(()=>{let unsub:(()=>void)|undefined;(async()=>{try{if(firebaseConfigured){unsub=await subscribeCloud<ServiceRequest>('requests',all=>{
+   const sorted=all.sort((a,b)=>b.updatedAt-a.updatedAt);
+   setRequests(sorted);save('/requests',sorted);
+   if(!firstRequestSnapshot.current){
+    sorted.filter(x=>!previousRequests.current[x.id]).forEach(x=>{
+      const msg=`خدمة جديدة: ${x.service} — ${x.customerName} — ${x.facility}`;
+      setNoticeItems(n=>[msg,...n].slice(0,20));notifyOutside('Orkeit — طلب خدمة جديد',msg);
+    });
+   }
+   previousRequests.current=Object.fromEntries(sorted.map(x=>[x.id,x.updatedAt]));
+   firstRequestSnapshot.current=false;
+ },e=>console.error('Admin realtime error',e));}}catch(e){console.error(e)}})();return()=>{unsub?.()};},[]);
  useEffect(()=>{let cancelled=false;(async()=>{
    if(!firebaseConfigured){setCloudReady(false);return}
    try{
@@ -131,13 +241,19 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  };
  const removeCloudRecord=(kind:'sites'|'visits'|'maintenance'|'delegates'|'requests',id:string)=>{if(firebaseConfigured)void deleteCloud(kind,id).catch(err=>console.error('Firebase delete failed',err))};
  const setSitesSafe=update(setSites,'/sites','sites'),setVisitsSafe=update(setVisits,'/visits','visits'),setMaintenanceSafe=update(setMaintenance,'/maintenance','maintenance'),setDelegatesSafe=update(setDelegates,'/delegates','delegates'),setRequestsSafe=update(setRequests,'/requests','requests');
- const expiring=useMemo(()=>{const now=Date.now();return sites.filter(s=>s.contractEnd && (new Date(s.contractEnd).getTime()-now)<=30*86400000).length},[sites]);
+ const expiryAlerts=useMemo(()=>{
+   const alerts:string[]=[];
+   sites.forEach(s=>{if(s.contractEnd){const d=daysUntil(s.contractEnd);const label=expiryLabel(d);if(label)alerts.push(`${label}: عقد ${s.facility||s.client} ينتهي في ${s.contractEnd}`)}});
+   maintenance.forEach(m=>{if(m.expiryDate){const d=daysUntil(m.expiryDate);const label=expiryLabel(d);if(label)alerts.push(`${label}: صيانة طفايات ${sites.find(s=>s.id===m.siteId)?.facility||'منشأة'} تنتهي في ${m.expiryDate}`)}});
+   return alerts;
+ },[sites,maintenance]);
+ const expiring=expiryAlerts.length;
  const nav=[['home','الرئيسية'],['sites','المواقع والمنشآت'],['visits','الزيارات'],['maintenance','صيانة الطفايات'],['delegates','المناديب'],['requests','طلبات العملاء']] as const;
  const go=(p:any)=>{setPage(p);setMenu(false);setOpen(null);setEditing(null)};
  const add=(kind:string)=>{setEditing(null);setOpen(kind)};
  const remove=(kind:string,id:string)=>{if(!confirm('هل تريد حذف السجل؟'))return;if(kind==='site'){setSitesSafe(sites.filter(x=>x.id!==id));removeCloudRecord('sites',id)}if(kind==='visit'){setVisitsSafe(visits.filter(x=>x.id!==id));removeCloudRecord('visits',id)}if(kind==='maintenance'){setMaintenanceSafe(maintenance.filter(x=>x.id!==id));removeCloudRecord('maintenance',id)}if(kind==='delegate'){setDelegatesSafe(delegates.filter(x=>x.id!==id));removeCloudRecord('delegates',id)}};
  return <div className="app">
-  <header><button className="menuBtn" onClick={()=>setMenu(!menu)}>☰</button><div className="logo"><b>O</b><span><strong>ORKEIT</strong><small>زيارات الدفاع المدني</small></span></div><div className="headerTag">{firebaseConfigured&&cloudReady?"متصل بقاعدة البيانات":"وضع محلي — أكمل إعداد Firebase"}</div><button className="logout" onClick={onLogout}>خروج</button></header>
+  <header><button className="menuBtn" onClick={()=>setMenu(!menu)}>☰</button><div className="logo"><b>O</b><span><strong>ORKEIT</strong><small>زيارات الدفاع المدني</small></span></div><div className="headerTag">{firebaseConfigured&&cloudReady?"متصل بقاعدة البيانات":"وضع محلي — أكمل إعداد Firebase"}</div><NotificationBell items={[...noticeItems,...expiryAlerts]} title="تنبيهات النظام"/><button className="logout" onClick={onLogout}>خروج</button></header>
   {menu&&<><div className="backdrop" onClick={()=>setMenu(false)}/><aside>{nav.map(([k,l])=><button className={page===k?'active':''} key={k} onClick={()=>go(k)}>{l}</button>)}</aside></>}
   <main>
    {page==='home'&&<><section className="hero"><div><p className="eyebrow">ORKEIT SAFETY</p><h1>إدارة زيارات الدفاع المدني</h1><p>منشآت، زيارات، صيانة طفايات ومناديب في نظام واحد.</p></div><button className="primary" onClick={()=>add('site')}>＋ إضافة منشأة</button></section><div className="stats"><Stat n={sites.length} t="المنشآت"/><Stat n={visits.length} t="الزيارات"/><Stat n={maintenance.length} t="الصيانة"/><Stat n={expiring} t="تنبيهات قريبة"/></div><section className="panel"><h2>الوصول السريع</h2><div className="quick">{nav.slice(1).map(([k,l])=><button key={k} onClick={()=>go(k)}>{l}<span>›</span></button>)}</div></section></>}
@@ -167,5 +283,5 @@ function Modal({title,close,children}:{title:string;close:()=>void;children:any}
 function Input({label,value,onChange,type='text',required=false}:{label:string;value:any;onChange:(v:string)=>void;type?:string;required?:boolean}){return <label>{label}<input type={type} value={value??''} onChange={e=>onChange(e.target.value)} required={required}/></label>}
 function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSave:(x:Site)=>void}){const [x,setX]=useState<Site>(initial||{id:uid(),client:'',facility:'',phone:'',address:'',contractEnd:'',extCount:0});return <Modal title="إضافة منشأة" close={close}><form onSubmit={e=>{e.preventDefault();onSave({...x,extCount:Number(x.extCount||0)})}}><Input label="اسم العميل" value={x.client} onChange={v=>setX({...x,client:v})} required/><Input label="اسم المنشأة" value={x.facility} onChange={v=>setX({...x,facility:v})} required/><Input label="رقم الجوال" value={x.phone} onChange={v=>setX({...x,phone:v})}/><Input label="العنوان" value={x.address} onChange={v=>setX({...x,address:v})}/><Input label="تاريخ انتهاء العقد" value={x.contractEnd} onChange={v=>setX({...x,contractEnd:v})} type="date"/><Input label="عدد الطفايات" value={x.extCount} onChange={v=>setX({...x,extCount:v as any})} type="number"/><button className="primary wide">حفظ المنشأة</button></form></Modal>}
 function VisitForm({sites,initial,close,onSave}:{sites:Site[];initial?:Visit|null;close:()=>void;onSave:(x:Visit)=>void}){const [x,setX]=useState<Visit>(initial||{id:uid(),siteId:sites[0]?.id||'',date:new Date().toISOString().slice(0,10),status:'مجدولة',notes:''});return <Modal title="تسجيل زيارة" close={close}><form onSubmit={e=>{e.preventDefault();onSave(x)}}><label>المنشأة<select value={x.siteId} onChange={e=>setX({...x,siteId:e.target.value})}>{sites.map(s=><option key={s.id} value={s.id}>{s.facility}</option>)}</select></label><Input label="التاريخ" value={x.date} onChange={v=>setX({...x,date:v})} type="date" required/><Input label="الحالة" value={x.status} onChange={v=>setX({...x,status:v})}/><Input label="ملاحظات" value={x.notes} onChange={v=>setX({...x,notes:v})}/><button className="primary wide" disabled={!sites.length}>حفظ الزيارة</button></form></Modal>}
-function MaintenanceForm({sites,initial,close,onSave}:{sites:Site[];initial?:Maintenance|null;close:()=>void;onSave:(x:Maintenance)=>void}){const [x,setX]=useState<Maintenance>(initial||{id:uid(),siteId:sites[0]?.id||'',date:new Date().toISOString().slice(0,10),service:'فحص وصيانة الطفايات',count:1,technician:''});return <Modal title="تسجيل صيانة" close={close}><form onSubmit={e=>{e.preventDefault();onSave({...x,count:Number(x.count||0)})}}><label>المنشأة<select value={x.siteId} onChange={e=>setX({...x,siteId:e.target.value})}>{sites.map(s=><option key={s.id} value={s.id}>{s.facility}</option>)}</select></label><Input label="الخدمة" value={x.service} onChange={v=>setX({...x,service:v})}/><Input label="التاريخ" value={x.date} onChange={v=>setX({...x,date:v})} type="date"/><Input label="عدد الطفايات" value={x.count} onChange={v=>setX({...x,count:v as any})} type="number"/><Input label="اسم الفني" value={x.technician} onChange={v=>setX({...x,technician:v})}/><button className="primary wide" disabled={!sites.length}>حفظ</button></form></Modal>}
+function MaintenanceForm({sites,initial,close,onSave}:{sites:Site[];initial?:Maintenance|null;close:()=>void;onSave:(x:Maintenance)=>void}){const [x,setX]=useState<Maintenance>(initial||{id:uid(),siteId:sites[0]?.id||'',date:new Date().toISOString().slice(0,10),expiryDate:'',service:'فحص وصيانة الطفايات',count:1,technician:''});return <Modal title="تسجيل صيانة" close={close}><form onSubmit={e=>{e.preventDefault();onSave({...x,count:Number(x.count||0)})}}><label>المنشأة<select value={x.siteId} onChange={e=>setX({...x,siteId:e.target.value})}>{sites.map(s=><option key={s.id} value={s.id}>{s.facility}</option>)}</select></label><Input label="الخدمة" value={x.service} onChange={v=>setX({...x,service:v})}/><Input label="التاريخ" value={x.date} onChange={v=>setX({...x,date:v})} type="date"/><Input label="تاريخ انتهاء الصيانة" value={x.expiryDate} onChange={v=>setX({...x,expiryDate:v})} type="date"/><Input label="عدد الطفايات" value={x.count} onChange={v=>setX({...x,count:v as any})} type="number"/><Input label="اسم الفني" value={x.technician} onChange={v=>setX({...x,technician:v})}/><button className="primary wide" disabled={!sites.length}>حفظ</button></form></Modal>}
 function DelegateForm({initial,close,onSave}:{initial?:Delegate|null;close:()=>void;onSave:(x:Delegate)=>void}){const [x,setX]=useState<Delegate>(initial||{id:uid(),name:'',phone:'',active:true});return <Modal title="إضافة مندوب" close={close}><form onSubmit={e=>{e.preventDefault();onSave(x)}}><Input label="اسم المندوب" value={x.name} onChange={v=>setX({...x,name:v})} required/><Input label="رقم الجوال" value={x.phone} onChange={v=>setX({...x,phone:v})}/><label>الحالة<select value={x.active?'active':'inactive'} onChange={e=>setX({...x,active:e.target.value==='active'})}><option value="active">نشط</option><option value="inactive">موقوف</option></select></label><button className="primary wide">حفظ المندوب</button></form></Modal>}

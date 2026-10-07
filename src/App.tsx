@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useRef, type FormEvent } from 'react';
 import { deleteCloud, firebaseConfigured, loadCloud, saveCloud, subscribeCloud } from './cloudStore';
+import { enablePush, sendPush, startForegroundPushListener } from './push';
 
 type Site={id:string;client:string;facility:string;phone:string;address:string;contractEnd:string;extCount:number};
 type Visit={id:string;siteId:string;date:string;status:string;notes:string};
@@ -103,7 +104,7 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
  const [noticeItems,setNoticeItems]=useState<string[]>([]);
  const previous=useRef<Record<string,string>>({});
  const firstSnapshot=useRef(true);
- useEffect(()=>{void requestNotificationPermission();},[]);
+ useEffect(()=>{void requestNotificationPermission(); void enablePush(user.id,'customer').catch(e=>console.warn('Push setup:',e)); void startForegroundPushListener().catch(()=>{});},[user.id]);
  useEffect(()=>{
    let unsub:(()=>void)|undefined;
    const run=async()=>{
@@ -148,6 +149,7 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
    try{
     if(firebaseConfigured){await saveCloud('customers',customer);await saveCloud('requests',req)}
     setRequests(x=>[req,...x]);setSelectedService('');setForm({name,phone,facility:'',address:''});
+    void sendPush({role:'admin'},'Orkeit — طلب خدمة جديد',`خدمة جديدة: ${req.service} — ${req.customerName} — ${req.facility}`,{requestId:req.id});
     alert('تم إرسال الطلب بنجاح. رقم المتابعة: '+req.id);
    }catch(e){console.error(e);alert('تعذر إرسال الطلب، حاول مرة أخرى.')}
  };
@@ -177,7 +179,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const previousRequests=useRef<Record<string,number>>({});
  const firstRequestSnapshot=useRef(true);
  const [cloudReady,setCloudReady]=useState(false);
- useEffect(()=>{void requestNotificationPermission();},[]);
+ useEffect(()=>{void requestNotificationPermission(); void enablePush('orkeit-admin','admin').catch(e=>console.warn('Admin push setup:',e)); void startForegroundPushListener().catch(()=>{});},[]);
  useEffect(()=>{let unsub:(()=>void)|undefined;(async()=>{try{if(firebaseConfigured){unsub=await subscribeCloud<ServiceRequest>('requests',all=>{
    const sorted=all.sort((a,b)=>b.updatedAt-a.updatedAt);
    setRequests(sorted);save('/requests',sorted);
@@ -272,7 +274,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
 function RequestAdminCard({request,onSave,onDelete}:{request:ServiceRequest;onSave:(x:ServiceRequest)=>void;onDelete:()=>void}){
  const statuses=['جديد','قيد المراجعة','تم التسعير','تم اعتماد الطلب','جاري التنفيذ','مكتمل','مرفوض'];
  const [status,setStatus]=useState(request.status),[note,setNote]=useState(request.note);
- const saveIt=()=>{const x={...request,status,note,updatedAt:Date.now()};onSave(x);if(firebaseConfigured)void saveCloud('requests',x).catch(e=>console.error(e));};
+ const saveIt=()=>{const x={...request,status,note,updatedAt:Date.now()};onSave(x);if(firebaseConfigured)void saveCloud('requests',x).catch(e=>console.error(e)); void sendPush({userId:request.customerId},'Orkeit — تحديث طلبك',`تم تحديث الطلب ${request.id}: ${status}`,{requestId:request.id,status});};
  return <article className="card requestAdmin"><h3>{request.service}</h3><p><b>رقم الطلب:</b> {request.id}</p><p><b>العميل:</b> {request.customerName} · {request.phone}</p><label>حالة الطلب<select value={status} onChange={e=>setStatus(e.target.value)}>{statuses.map(s=><option key={s}>{s}</option>)}</select></label><label>ملاحظة للعميل<textarea value={note} onChange={e=>setNote(e.target.value)} rows={3}/></label><button className="primary wide" onClick={saveIt}>تحديث حالة الطلب</button><button className="delete" onClick={onDelete}>حذف الطلب</button></article>
 }
 function Stat({n,t}:{n:number;t:string}){return <div className="stat"><strong>{n}</strong><span>{t}</span></div>}

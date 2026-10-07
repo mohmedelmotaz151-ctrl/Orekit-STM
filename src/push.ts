@@ -4,6 +4,42 @@ import { app, auth, ensureFirebaseAuth, firebaseConfigured } from './firebase';
 const env=(import.meta as ImportMeta & { env: Record<string, string | undefined> }).env;
 const vapidKey = env.vapid_key || env.VITE_FIREBASE_VAPID_KEY || '';
 
+let notificationAudioContext: AudioContext | null = null;
+
+export function unlockNotificationSound() {
+  if (typeof window === 'undefined') return;
+  try {
+    notificationAudioContext ??= new AudioContext();
+    if (notificationAudioContext.state === 'suspended') void notificationAudioContext.resume();
+  } catch {}
+}
+
+export function playNotificationSound() {
+  try {
+    unlockNotificationSound();
+    if (!notificationAudioContext) return;
+    const ctx = notificationAudioContext;
+    const now = ctx.currentTime;
+    const gain = ctx.createGain();
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.setValueAtTime(660, now + 0.12);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.22, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.38);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.4);
+  } catch {}
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pointerdown', unlockNotificationSound, { passive: true });
+  window.addEventListener('touchstart', unlockNotificationSound, { passive: true });
+}
+
 async function registerMessagingWorker() {
   if (!('serviceWorker' in navigator)) return null;
   return navigator.serviceWorker.register('/firebase-messaging-sw.js');
@@ -74,6 +110,7 @@ export async function startForegroundPushListener() {
   }
 
   const unsubscribe = onMessage(getMessaging(app), payload => {
+    playNotificationSound();
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
         new Notification(

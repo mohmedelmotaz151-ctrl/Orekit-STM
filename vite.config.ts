@@ -1,3 +1,2 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-export default defineConfig({ plugins:[react()] });
+import { defineConfig } from 'vite'; import react from '@vitejs/plugin-react';
+export default defineConfig({plugins:[react()],envPrefix:['VITE_','api_','auth_','project_','storage_','messaging_','app_','vapid_']});

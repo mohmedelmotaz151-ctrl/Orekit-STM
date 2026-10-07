@@ -6,6 +6,8 @@ const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'oriket-14b76.firebaseapp.com',
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'oriket-14b76',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'oriket-14b76.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '369863592977',
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
 };
 
@@ -27,8 +29,6 @@ export async function ensureFirebaseAuth() {
   try {
     await signInAnonymously(auth);
   } catch (error) {
-    // The current Firestore rules allow the app to continue when
-    // anonymous authentication is not enabled.
     console.warn(
       'Firebase anonymous authentication unavailable; continuing without it.',
       error

@@ -57,22 +57,54 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const [delegates,setDelegates]=useState<Delegate[]>(()=>load('/delegates',[]));
  const [requests,setRequests]=useState<ServiceRequest[]>(()=>load('/requests',[]));
  const [cloudReady,setCloudReady]=useState(false);
- useEffect(()=>{let cancelled=false;(async()=>{if(!firebaseConfigured){setCloudReady(true);return}try{
-   const [cloudSites,cloudVisits,cloudMaintenance,cloudDelegates,cloudRequests]=await Promise.all([
-    loadCloud<Site>('sites'),loadCloud<Visit>('visits'),loadCloud<Maintenance>('maintenance'),loadCloud<Delegate>('delegates'),loadCloud<ServiceRequest>('requests')
-   ]);
-   if(cancelled)return;
-   if(cloudSites.length)setSites(cloudSites),save('/sites',cloudSites);
-   if(cloudVisits.length)setVisits(cloudVisits),save('/visits',cloudVisits);
-   if(cloudMaintenance.length)setMaintenance(cloudMaintenance),save('/maintenance',cloudMaintenance);
-   if(cloudDelegates.length)setDelegates(cloudDelegates),save('/delegates',cloudDelegates);
-   if(cloudRequests.length)setRequests(cloudRequests),save('/requests',cloudRequests);
- }catch(err){console.error('Firebase load failed',err)}finally{if(!cancelled)setCloudReady(true)}})();return()=>{cancelled=true}},[]);
+ useEffect(()=>{let cancelled=false;(async()=>{
+   if(!firebaseConfigured){setCloudReady(false);return}
+   try{
+     const [cloudSites,cloudVisits,cloudMaintenance,cloudDelegates,cloudRequests]=await Promise.all([
+       loadCloud<Site>('sites'),
+       loadCloud<Visit>('visits'),
+       loadCloud<Maintenance>('maintenance'),
+       loadCloud<Delegate>('delegates'),
+       loadCloud<ServiceRequest>('requests')
+     ]);
+     if(cancelled)return;
+
+     const migrate = async <T extends {id:string}>(kind:'sites'|'visits'|'maintenance'|'delegates'|'requests', localKey:string, cloud:T[], local:T[], setState:(value:T[])=>void) => {
+       if(cloud.length > 0){
+         setState(cloud);
+         save(localKey, cloud);
+         return;
+       }
+       if(local.length > 0 && !localStorage.getItem('orkeit-firestore-migrated-'+kind)){
+         await Promise.all(local.map(item => saveCloud(kind, item)));
+         localStorage.setItem('orkeit-firestore-migrated-'+kind,'1');
+         setState(local);
+       } else {
+         setState(cloud);
+         save(localKey, cloud);
+       }
+     };
+
+     await migrate('sites','/sites',cloudSites,sites,setSites);
+     await migrate('visits','/visits',cloudVisits,visits,setVisits);
+     await migrate('maintenance','/maintenance',cloudMaintenance,maintenance,setMaintenance);
+     await migrate('delegates','/delegates',cloudDelegates,delegates,setDelegates);
+     await migrate('requests','/requests',cloudRequests,requests,setRequests);
+   }catch(err){
+     console.error('Firebase load failed',err);
+   }finally{
+     if(!cancelled)setCloudReady(true);
+   }
+   })();return()=>{cancelled=true}},[]);
  const [page,setPage]=useState<'home'|'sites'|'visits'|'maintenance'|'delegates'|'requests'>('home');
  const [open,setOpen]=useState<string|null>(null),[menu,setMenu]=useState(false),[editing,setEditing]=useState<any>(null);
  const update=(setter:any,key:string,kind:'sites'|'visits'|'maintenance'|'delegates'|'requests')=>(value:any)=>{
-   setter(value);save(key,value);
-   if(firebaseConfigured){const previous=value as any[];previous.forEach(item=>{void saveCloud(kind,item).catch(err=>console.error('Firebase save failed',err))})}
+   setter(value);
+   save(key,value);
+   if(firebaseConfigured){
+     const records=value as any[];
+     void Promise.all(records.map(item=>saveCloud(kind,item))).catch(err=>console.error('Firebase save failed',err));
+   }
  };
  const removeCloudRecord=(kind:'sites'|'visits'|'maintenance'|'delegates'|'requests',id:string)=>{if(firebaseConfigured)void deleteCloud(kind,id).catch(err=>console.error('Firebase delete failed',err))};
  const setSitesSafe=update(setSites,'/sites','sites'),setVisitsSafe=update(setVisits,'/visits','visits'),setMaintenanceSafe=update(setMaintenance,'/maintenance','maintenance'),setDelegatesSafe=update(setDelegates,'/delegates','delegates'),setRequestsSafe=update(setRequests,'/requests','requests');

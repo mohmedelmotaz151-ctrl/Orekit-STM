@@ -199,18 +199,41 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const firstRequestSnapshot=useRef(true);
  const [cloudReady,setCloudReady]=useState(false);
  useEffect(()=>{void requestNotificationPermission(); void enablePush('orkeit-admin','admin').catch(e=>console.warn('Admin push setup:',e)); void startForegroundPushListener().catch(()=>{});},[]);
- useEffect(()=>{let unsub:(()=>void)|undefined;(async()=>{try{if(firebaseConfigured){unsub=await subscribeCloud<ServiceRequest>('requests',all=>{
-   const sorted=all.sort((a,b)=>b.updatedAt-a.updatedAt);
-   setRequests(sorted);save('/requests',sorted);
-   if(!firstRequestSnapshot.current){
-    sorted.filter(x=>!previousRequests.current[x.id]).forEach(x=>{
-      const msg=`خدمة جديدة: ${x.service} — ${x.customerName} — ${x.facility}`;
-      setNoticeItems(n=>[msg,...n].slice(0,20));notifyOutside('Orkeit — طلب خدمة جديد',msg);
-    });
+ const [requestSyncError,setRequestSyncError]=useState('');
+ const refreshRequests=async()=>{
+   if(!firebaseConfigured){setRequestSyncError('Firebase غير مهيأ');return}
+   try{
+     const all=await loadCloud<ServiceRequest>('requests');
+     const sorted=[...all].sort((a,b)=>b.updatedAt-a.updatedAt);
+     setRequests(sorted);save('/requests',sorted);setRequestSyncError('');
+   }catch(e){
+     const err=e as {code?:string;message?:string};
+     setRequestSyncError(err.code||err.message||'تعذر تحميل الطلبات');
    }
-   previousRequests.current=Object.fromEntries(sorted.map(x=>[x.id,x.updatedAt]));
-   firstRequestSnapshot.current=false;
- },e=>console.error('Admin realtime error',e));}}catch(e){console.error(e)}})();return()=>{unsub?.()};},[]);
+ };
+ useEffect(()=>{let unsub:(()=>void)|undefined;(async()=>{
+   try{
+    if(firebaseConfigured){
+      unsub=await subscribeCloud<ServiceRequest>('requests',all=>{
+       const sorted=[...all].sort((a,b)=>b.updatedAt-a.updatedAt);
+       setRequests(sorted);save('/requests',sorted);setRequestSyncError('');
+       if(!firstRequestSnapshot.current){
+        sorted.filter(x=>!previousRequests.current[x.id]).forEach(x=>{
+         const msg=`خدمة جديدة: ${x.service} — ${x.customerName} — ${x.facility}`;
+         setNoticeItems(n=>[msg,...n].slice(0,20));notifyOutside('Orkeit — طلب خدمة جديد',msg);
+        });
+       }
+       previousRequests.current=Object.fromEntries(sorted.map(x=>[x.id,x.updatedAt]));
+       firstRequestSnapshot.current=false;
+      },e=>{
+       console.error('Admin realtime error',e);
+       const err=e as {code?:string;message?:string};
+       setRequestSyncError(err.code||err.message||'تعذر الاتصال بطلبات العملاء');
+       void refreshRequests();
+      });
+    }
+   }catch(e){console.error(e);void refreshRequests()}
+  })();return()=>{unsub?.()};},[]);
  useEffect(()=>{let cancelled=false;(async()=>{
    if(!firebaseConfigured){setCloudReady(false);return}
    try{
@@ -283,7 +306,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
    {page==='sites'&&<ListPage title="المواقع والمنشآت" add={()=>add('site')}><div className="grid">{sites.map(s=><Card key={s.id} title={s.facility||'منشأة'} lines={[s.client,s.phone,s.address,s.contractEnd?'انتهاء العقد: '+s.contractEnd:'']} badge={'الطفايات: '+s.extCount} del={()=>remove('site',s.id)}/>)}</div>{!sites.length&&<Empty/>}</ListPage>}
    {page==='visits'&&<ListPage title="الزيارات" add={()=>add('visit')}><div className="grid">{visits.map(v=>{const s=sites.find(x=>x.id===v.siteId);return <Card key={v.id} title={s?.facility||'موقع محذوف'} lines={[v.date,v.status,v.notes]} del={()=>remove('visit',v.id)}/>})}</div>{!visits.length&&<Empty/>}</ListPage>}
    {page==='maintenance'&&<ListPage title="صيانة الطفايات" add={()=>add('maintenance')}><div className="grid">{maintenance.map(m=><Card key={m.id} title={sites.find(s=>s.id===m.siteId)?.facility||'منشأة'} lines={[m.service,m.date,'الفني: '+m.technician]} badge={'العدد: '+m.count} del={()=>remove('maintenance',m.id)}/>)}</div>{!maintenance.length&&<Empty/>}</ListPage>}
-   {page==='requests'&&<ListPage title="طلبات العملاء" add={()=>{}}><div className="requestToolbar"><input placeholder="بحث بالعميل أو المنشأة أو رقم الطلب..." value={requestSearch} onChange={e=>setRequestSearch(e.target.value)}/><select value={requestFilter} onChange={e=>setRequestFilter(e.target.value)}><option>الكل</option>{['جديد','قيد المراجعة','تم التسعير','تم اعتماد الطلب','جاري التنفيذ','مكتمل','مرفوض'].map(s=><option key={s}>{s}</option>)}</select><button className="secondaryBtn" onClick={()=>exportCsv('orkeit-service-requests.csv',[['رقم الطلب','العميل','الجوال','الخدمة','المنشأة','الحالة','تاريخ الإنشاء'],...requests.map(r=>[r.id,r.customerName,r.phone,r.service,r.facility,r.status,new Date(r.createdAt).toLocaleString('ar-SA')])])}>تصدير Excel/CSV</button></div><div className="grid">{requests.filter(r=>{const q=requestSearch.trim().toLowerCase();const hit=!q||[r.id,r.customerName,r.phone,r.service,r.facility,r.address].some(v=>String(v).toLowerCase().includes(q));return hit&&(requestFilter==='الكل'||r.status===requestFilter)}).sort((a,b)=>b.updatedAt-a.updatedAt).map(r=><RequestAdminCard key={r.id} request={r} onSave={x=>{setRequestsSafe(requests.map(q=>q.id===x.id?x:q))}} onDelete={()=>{setRequestsSafe(requests.filter(q=>q.id!==r.id));removeCloudRecord('requests',r.id)}}/>)}</div>{!requests.length&&<Empty/>}</ListPage>}
+   {page==='requests'&&<ListPage title="طلبات العملاء" add={()=>{}}><div className="requestSyncBar"><span className={requestSyncError?'syncBad':'syncOk'}>{requestSyncError?'⚠ '+requestSyncError:'● الطلبات متزامنة مع Firebase'}</span><button className="secondaryBtn" onClick={()=>void refreshRequests()}>تحديث الآن</button></div><div className="requestToolbar"><input placeholder="بحث بالعميل أو المنشأة أو رقم الطلب..." value={requestSearch} onChange={e=>setRequestSearch(e.target.value)}/><select value={requestFilter} onChange={e=>setRequestFilter(e.target.value)}><option>الكل</option>{['جديد','قيد المراجعة','تم التسعير','تم اعتماد الطلب','جاري التنفيذ','مكتمل','مرفوض'].map(s=><option key={s}>{s}</option>)}</select><button className="secondaryBtn" onClick={()=>exportCsv('orkeit-service-requests.csv',[['رقم الطلب','العميل','الجوال','الخدمة','المنشأة','الحالة','تاريخ الإنشاء'],...requests.map(r=>[r.id,r.customerName,r.phone,r.service,r.facility,r.status,new Date(r.createdAt).toLocaleString('ar-SA')])])}>تصدير Excel/CSV</button></div><div className="grid">{requests.filter(r=>{const q=requestSearch.trim().toLowerCase();const hit=!q||[r.id,r.customerName,r.phone,r.service,r.facility,r.address].some(v=>String(v).toLowerCase().includes(q));return hit&&(requestFilter==='الكل'||r.status===requestFilter)}).sort((a,b)=>b.updatedAt-a.updatedAt).map(r=><RequestAdminCard key={r.id} request={r} onSave={x=>{setRequestsSafe(requests.map(q=>q.id===x.id?x:q))}} onDelete={()=>{setRequestsSafe(requests.filter(q=>q.id!==r.id));removeCloudRecord('requests',r.id)}}/>)}</div>{!requests.length&&<Empty/>}</ListPage>}
    {page==='delegates'&&<ListPage title="المناديب" add={()=>add('delegate')}><div className="grid">{delegates.map(d=><Card key={d.id} title={d.name} lines={[d.phone,d.active?'نشط':'موقوف']} del={()=>remove('delegate',d.id)}/>)}</div>{!delegates.length&&<Empty/>}</ListPage>}
   </main>
   {open==='site'&&<SiteForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setSitesSafe([x,...sites.filter(s=>s.id!==x.id)]);setOpen(null)}}/>}

@@ -1,7 +1,8 @@
 import { getMessaging, getToken, isSupported, onMessage } from 'firebase/messaging';
 import { app, auth, ensureFirebaseAuth, firebaseConfigured } from './firebase';
 
-const vapidKey = import.meta.env.vapid_key || import.meta.env.VITE_FIREBASE_VAPID_KEY || '';
+const env=(import.meta as ImportMeta & { env: Record<string, string | undefined> }).env;
+const vapidKey = env.vapid_key || env.VITE_FIREBASE_VAPID_KEY || '';
 
 async function registerMessagingWorker() {
   if (!('serviceWorker' in navigator)) return null;

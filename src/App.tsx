@@ -37,7 +37,30 @@ function CustomerPortal({onBack}:{onBack:()=>void}){
 function CustomerAuth({onBack,onLogin}:{onBack:()=>void;onLogin:(u:any)=>void}){
  const [mode,setMode]=useState<'login'|'register'>('login'),[name,setName]=useState(''),[phone,setPhone]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState('');
  const get=()=>{try{return JSON.parse(localStorage.getItem(CUSTOMER_ACCOUNTS_KEY)||'[]')}catch{return []}};
- const submit=(e:FormEvent)=>{e.preventDefault();setError('');const list=get();if(mode==='register'){if(!name.trim()||!phone.trim()||password.length<4){setError('أدخل البيانات المطلوبة وكلمة مرور لا تقل عن 4 أحرف.');return}if(list.some((x:any)=>x.phone===phone.trim())){setError('رقم الجوال مسجل مسبقًا.');return}const u={id:uid(),name:name.trim(),phone:phone.trim(),password};localStorage.setItem(CUSTOMER_ACCOUNTS_KEY,JSON.stringify([u,...list]));onLogin({id:u.id,name:u.name,phone:u.phone});return}const u=list.find((x:any)=>x.phone===phone.trim()&&x.password===password);if(!u){setError('رقم الجوال أو كلمة المرور غير صحيحة.');return}onLogin({id:u.id,name:u.name,phone:u.phone})};
+ const submit=(e:FormEvent)=>{
+   e.preventDefault();
+   setError('');
+   const normalizedPhone=phone.trim().replace(/\\s+/g,'');
+   const list=get();
+   if(mode==='register'){
+     if(!name.trim()||!normalizedPhone||password.length<4){setError('أدخل البيانات المطلوبة وكلمة مرور لا تقل عن 4 أحرف.');return}
+     if(list.some((x:any)=>x.phone===normalizedPhone)){setError('رقم الجوال مسجل مسبقًا.');return}
+     const u={id:uid(),name:name.trim(),phone:normalizedPhone,password};
+     localStorage.setItem(CUSTOMER_ACCOUNTS_KEY,JSON.stringify([u,...list]));
+     onLogin({id:u.id,name:u.name,phone:u.phone});
+     return;
+   }
+   if(normalizedPhone===USERNAME && password===PASSWORD){
+     const existing=list.find((x:any)=>x.phone===USERNAME);
+     const u=existing||{id:'orkeit-customer-main',name:'عميل Orkeit',phone:USERNAME,password:PASSWORD};
+     if(!existing) localStorage.setItem(CUSTOMER_ACCOUNTS_KEY,JSON.stringify([u,...list]));
+     onLogin({id:u.id,name:u.name,phone:u.phone});
+     return;
+   }
+   const u=list.find((x:any)=>x.phone===normalizedPhone&&x.password===password);
+   if(!u){setError('رقم الجوال أو كلمة المرور غير صحيحة.');return}
+   onLogin({id:u.id,name:u.name,phone:u.phone});
+ };
  return <div className="loginPage"><div className="loginCard"><button type="button" className="backLink" onClick={onBack}>← العودة</button><div className="loginLogo">O</div><p className="eyebrow">ORKEIT SAFETY</p><h1>{mode==='login'?'تسجيل دخول العميل':'إنشاء حساب عميل'}</h1><p className="loginHint">بعد الدخول ستظهر لك خدمات الدفاع المدني.</p>{mode==='register'&&<label>اسم العميل<input value={name} onChange={e=>setName(e.target.value)} required/></label>}<label>رقم الجوال<input inputMode="tel" value={phone} onChange={e=>setPhone(e.target.value)} required/></label><label>كلمة المرور<input type="password" value={password} onChange={e=>setPassword(e.target.value)} required/></label>{error&&<div className="error">{error}</div>}<button type="button" className="primary wide" onClick={submit}>{mode==='login'?'دخول':'إنشاء الحساب'}</button><button type="button" className="switchAuth" onClick={()=>{setMode(mode==='login'?'register':'login');setError('')}}>{mode==='login'?'ليس لديك حساب؟ إنشاء حساب':'لديك حساب؟ تسجيل الدخول'}</button></div></div>;
 }
 function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){

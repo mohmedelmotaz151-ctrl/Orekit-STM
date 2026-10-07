@@ -402,7 +402,7 @@ function DocumentPaper({kind,form,stamp}:{kind:'contract'|'scene';form:any;stamp
  const title=kind==='contract'?'عقد صيانة أنظمة السلامة والدفاع المدني':'مشهد سلامة وفحص للمنشأة';
  const stampText=stamp==='company'?'ختم ORKEIT':stamp==='inspection'?'تمت المعاينة':'ORKEIT';
  return <div className="documentPaper">
-  <div className="paperHeader"><div className="paperLogo">O</div><div><strong>ORKEIT</strong><small>شركة اوريكيت للمقاولات العامة</small><small>أعمال السلامة والدفاع المدني</small><small>حي الضيافة • 0533137140 • aldr3.xyz</small></div><div className="paperMeta"><b>الرقم الموحد</b><span>{form.unified||'....................'}</span><b>رقم المستند</b><span>{form.contractNo}</span></div></div>
+  <div className="paperHeader"><div className="paperLogo">O</div><div><strong>ORKEIT</strong><small>شركة اوريكيت للمقاولات العامة</small><small>أعمال السلامة والدفاع المدني</small><small>حي الضيافة • 0533137140</small></div><div className="paperMeta"><b>الرقم الموحد</b><span>{form.unified||'....................'}</span><b>رقم المستند</b><span>{form.contractNo}</span></div></div>
   <div className="paperRule"/><div className="paperTitle"><h1>{title}</h1><div><b>التاريخ:</b> {form.start||'................'} &nbsp; | &nbsp; <b>{kind==='contract'?'مدة السريان':'تاريخ الزيارة'}:</b> {form.end||'................'}</div></div>
   <div className="infoGrid"><div><b>العميل</b><span>{form.client||'................................'}</span></div><div><b>المنشأة</b><span>{form.facility||'................................'}</span></div><div><b>الجوال</b><span>{form.phone||'................................'}</span></div><div><b>الموقع</b><span>{form.address||'................................'}</span></div></div>
   {kind==='contract'?<div className="paperBody">
@@ -417,7 +417,7 @@ function DocumentPaper({kind,form,stamp}:{kind:'contract'|'scene';form:any;stamp
   </div>}
   <div className="paperExtra"><b>ملاحظات إضافية:</b> {form.notes||'لا توجد ملاحظات إضافية.'}</div>
   <div className="paperSign"><div><b>العميل / المسؤول</b><span>الاسم: __________________</span><span>التوقيع: ________________</span></div><div className="stamp">{stampText}<br/><small>ORKEIT</small></div><div><b>شركة اوريكيت</b><span>{kind==='scene'?'الفني / المفتش':'المسؤول المعتمد'}</span><span>التوقيع: ________________</span></div></div>
-  <div className="paperFooter">شركة اوريكيت للمقاولات العامة • حي الضيافة • 0533137140 • aldr3.xyz • الرقم الموحد: {form.unified||'—'}</div>
+  <div className="paperFooter">شركة اوريكيت للمقاولات العامة • حي الضيافة • 0533137140 • الرقم الموحد: {form.unified||'—'}</div>
  </div>;
 }
 function RequestAdminCard({request,onSave,onDelete}:{request:ServiceRequest;onSave:(x:ServiceRequest)=>void;onDelete:()=>void}){

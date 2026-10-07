@@ -49,6 +49,7 @@ export async function sendPush(
   body: string,
   data: Record<string, string> = {}
 ) {
+  if (!auth?.currentUser) await ensureFirebaseAuth();
   if (!auth?.currentUser) return false;
 
   const idToken = await auth.currentUser.getIdToken();
@@ -61,6 +62,9 @@ export async function sendPush(
     body: JSON.stringify({ ...target, title, body, data }),
   });
 
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) console.warn('Push send failed:', response.status, result);
+  else console.info('Push sent:', result);
   return response.ok;
 }
 

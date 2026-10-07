@@ -1,3 +1,4 @@
+/// <reference types="react" />
 import { useEffect, useMemo, useState, useRef, type FormEvent } from 'react';
 import { deleteCloud, firebaseConfigured, loadCloud, saveCloud, subscribeCloud } from './cloudStore';
 import { enablePush, sendPush, startForegroundPushListener } from './push';

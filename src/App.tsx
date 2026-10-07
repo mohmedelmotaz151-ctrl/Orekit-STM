@@ -148,11 +148,22 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
    };
    const customer:CustomerRecord={id:user.id,name,phone,facility:req.facility,address:req.address,updatedAt:now};
    try{
-    if(firebaseConfigured){await saveCloud('customers',customer);await saveCloud('requests',req)}
+    if(firebaseConfigured){
+      // Save the request first so a customer-profile write cannot block the service request.
+      await saveCloud('requests',req);
+      try{ await saveCloud('customers',customer); }catch(customerError){ console.warn('Customer profile save failed:',customerError); }
+    } else {
+      console.warn('Firebase is not configured; request kept locally only.');
+    }
     setRequests(x=>[req,...x]);setSelectedService('');setForm({name,phone,facility:'',address:''});
     void sendPush({role:'admin'},'Orkeit — طلب خدمة جديد',`خدمة جديدة: ${req.service} — ${req.customerName} — ${req.facility}`,{requestId:req.id});
     alert('تم إرسال الطلب بنجاح. رقم المتابعة: '+req.id);
-   }catch(e){console.error(e);alert('تعذر إرسال الطلب، حاول مرة أخرى.')}
+   }catch(e){
+    console.error('Service request save failed:',e);
+    const err=e as {code?:string;message?:string};
+    const detail=err?.code ? `رمز الخطأ: ${err.code}` : (err?.message || 'خطأ غير معروف');
+    alert('تعذر إرسال الطلب.\\n\\n'+detail+'\\n\\nتأكد من اتصال Firebase وFirestore ثم حاول مرة أخرى.');
+   }
  };
  const steps=['جديد','قيد المراجعة','تم التسعير','تم اعتماد الطلب','جاري التنفيذ','مكتمل'];
  return <div className="loginPage"><div className="servicesCard">

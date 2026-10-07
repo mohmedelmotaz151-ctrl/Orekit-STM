@@ -36,11 +36,10 @@ const exportCsv=(filename:string,rows:string[][])=>{
   const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
 };
 
-const notifyOutside=(title:string,body:string)=>{
- if(typeof window!=='undefined' && 'Notification' in window && Notification.permission==='granted'){
-   try{new Notification(title,{body,icon:'/pwa-192x192.png',tag:title})}catch{}
- }
-};
+let notificationAudioContext: AudioContext | null = null;
+const unlockNotificationSound=()=>{if(typeof window==='undefined')return;try{notificationAudioContext ??= new AudioContext();if(notificationAudioContext.state==='suspended')void notificationAudioContext.resume()}catch{}};
+const playNotificationSound=()=>{try{if(!notificationAudioContext)return;const ctx=notificationAudioContext,now=ctx.currentTime,gain=ctx.createGain(),osc=ctx.createOscillator();osc.type='sine';osc.frequency.setValueAtTime(880,now);osc.frequency.setValueAtTime(660,now+0.12);gain.gain.setValueAtTime(0.0001,now);gain.gain.exponentialRampToValueAtTime(0.18,now+0.02);gain.gain.exponentialRampToValueAtTime(0.0001,now+0.32);osc.connect(gain);gain.connect(ctx.destination);osc.start(now);osc.stop(now+0.34)}catch{}};
+const notifyOutside=(title:string,body:string)=>{playNotificationSound();if(typeof window!=='undefined' && 'Notification' in window && Notification.permission==='granted'){try{new Notification(title,{body,icon:'/pwa-192x192.png',tag:title})}catch{}}};
 const requestNotificationPermission=async()=>{
  if(typeof window!=='undefined' && 'Notification' in window && Notification.permission==='default'){
    try{await Notification.requestPermission()}catch{}
@@ -50,7 +49,7 @@ function NotificationBell({items,title='الإشعارات'}:{items:string[];tit
  const [open,setOpen]=useState(false);
  const count=items.length;
  return <div className="notificationWrap">
-   <button type="button" className="notificationBell" onClick={()=>{setOpen(!open);void requestNotificationPermission()}} aria-label={title}>🔔{count>0&&<span>{count>99?'99+':count}</span>}</button>
+   <button type="button" className="notificationBell" onClick={()=>{unlockNotificationSound();setOpen(!open);void requestNotificationPermission()}} aria-label={title}>🔔{count>0&&<span>{count>99?'99+':count}</span>}</button>
    {open&&<div className="notificationPanel"><div className="notificationHead"><strong>{title}</strong><button onClick={()=>setOpen(false)}>×</button></div>{count?<>{items.slice(0,12).map((x,i)=><div className="notificationItem" key={i}>⚠️ {x}</div>)}</>:<div className="empty">لا توجد إشعارات جديدة.</div>}<small>اضغط الجرس للسماح بإشعارات الجهاز.</small></div>}
  </div>
 }
@@ -132,6 +131,7 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
           });
         }
         previous.current=Object.fromEntries(mine.map(x=>[x.id,x.status]));
+        if(firstSnapshot.current){setNoticeItems(mine.slice(0,12).map(x=>'طلب '+x.id+': '+x.status));}
         firstSnapshot.current=false;
        },e=>console.error('Customer realtime error',e));
       }
@@ -233,6 +233,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
         });
        }
        previousRequests.current=Object.fromEntries(sorted.map(x=>[x.id,x.updatedAt]));
+       if(firstRequestSnapshot.current){setNoticeItems(sorted.slice(0,12).map(x=>'طلب '+x.id+': '+x.status+' — '+x.customerName+' — '+x.facility));}
        firstRequestSnapshot.current=false;
       },e=>{
        console.error('Admin realtime error',e);

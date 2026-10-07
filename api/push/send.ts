@@ -1,2 +1,45 @@
-import type {VercelRequest,VercelResponse} from '@vercel/node'; import {adminAuth,adminDb,adminMessaging} from './_firebase';
-export default async function handler(req:VercelRequest,res:VercelResponse){if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});try{const h=String(req.headers.authorization||'');if(!h.startsWith('Bearer '))return res.status(401).json({error:'Unauthorized'});await adminAuth().verifyIdToken(h.slice(7));const {userId,role,title,body,data={}}=req.body||{};if((!userId&&!role)||!title||!body)return res.status(400).json({error:'Missing target or message'});const q=adminDb().collection('orkeit_civil_defense').doc('push_tokens').collection('tokens');const snap=userId?await q.where('userId','==',String(userId)).get():await q.where('role','==',role).get();const docs=snap.docs,tokens=docs.map(d=>String(d.data().token)).filter(Boolean);if(!tokens.length)return res.status(200).json({ok:true,sent:0});const r=await adminMessaging().sendEachForMulticast({tokens:tokens.slice(0,500),notification:{title:String(title),body:String(body)},data:Object.fromEntries(Object.entries(data).map(([k,v])=>[String(k),String(v)])),webpush:{fcmOptions:{link:'/'}}});await Promise.all(r.responses.map((x,i)=>!x.success?docs[i].ref.delete():Promise.resolve()));return res.status(200).json({ok:true,sent:r.successCount,failed:r.failureCount})}catch(e){console.error(e);return res.status(500).json({error:'Push send failed'})}}
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { adminAuth, adminDb, adminMessaging } from './_firebase';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  try {
+    const h = String(req.headers.authorization || '');
+    if (!h.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    await adminAuth().verifyIdToken(h.slice(7));
+
+    const { userId, role, title, body, data = {} } = req.body || {};
+    if ((!userId && !role) || !title || !body) {
+      return res.status(400).json({ error: 'Missing target or message' });
+    }
+
+    const q = adminDb()
+      .collection('orkeit_civil_defense')
+      .doc('push_tokens')
+      .collection('records');
+
+    const snap = userId
+      ? await q.where('userId', '==', String(userId)).get()
+      : await q.where('role', '==', role).get();
+
+    const docs = snap.docs;
+    const tokens = docs.map(d => String(d.data().token)).filter(Boolean);
+    if (!tokens.length) return res.status(200).json({ ok: true, sent: 0 });
+
+    const r = await adminMessaging().sendEachForMulticast({
+      tokens: tokens.slice(0, 500),
+      notification: { title: String(title), body: String(body) },
+      data: Object.fromEntries(Object.entries(data).map(([k, v]) => [String(k), String(v)])),
+      webpush: { fcmOptions: { link: '/' } },
+    });
+
+    await Promise.all(
+      r.responses.map((x, i) => !x.success ? docs[i].ref.delete() : Promise.resolve())
+    );
+
+    return res.status(200).json({ ok: true, sent: r.successCount, failed: r.failureCount });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Push send failed' });
+  }
+}

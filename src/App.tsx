@@ -1,7 +1,7 @@
 /// <reference types="react" />
 import { useEffect, useMemo, useState, useRef, type FormEvent } from 'react';
 import { deleteCloud, firebaseConfigured, loadCloud, saveCloud, subscribeCloud } from './cloudStore';
-import { enablePush, sendPush, startForegroundPushListener } from './push';
+import { enablePush, sendPush, startForegroundPushListener, unlockNotificationSound, playNotificationSound } from './push';
 
 type Site={id:string;client:string;facility:string;phone:string;address:string;contractEnd:string;extCount:number};
 type Visit={id:string;siteId:string;date:string;status:string;notes:string};
@@ -36,9 +36,6 @@ const exportCsv=(filename:string,rows:string[][])=>{
   const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
 };
 
-let notificationAudioContext: AudioContext | null = null;
-const unlockNotificationSound=()=>{if(typeof window==='undefined')return;try{notificationAudioContext ??= new AudioContext();if(notificationAudioContext.state==='suspended')void notificationAudioContext.resume()}catch{}};
-const playNotificationSound=()=>{try{if(!notificationAudioContext)return;const ctx=notificationAudioContext,now=ctx.currentTime,gain=ctx.createGain(),osc=ctx.createOscillator();osc.type='sine';osc.frequency.setValueAtTime(880,now);osc.frequency.setValueAtTime(660,now+0.12);gain.gain.setValueAtTime(0.0001,now);gain.gain.exponentialRampToValueAtTime(0.18,now+0.02);gain.gain.exponentialRampToValueAtTime(0.0001,now+0.32);osc.connect(gain);gain.connect(ctx.destination);osc.start(now);osc.stop(now+0.34)}catch{}};
 const notifyOutside=(title:string,body:string)=>{playNotificationSound();if(typeof window!=='undefined' && 'Notification' in window && Notification.permission==='granted'){try{new Notification(title,{body,icon:'/pwa-192x192.png',tag:title})}catch{}}};
 const requestNotificationPermission=async()=>{
  if(typeof window!=='undefined' && 'Notification' in window && Notification.permission==='default'){

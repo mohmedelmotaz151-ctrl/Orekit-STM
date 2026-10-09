@@ -406,7 +406,7 @@ function DocumentPaper({kind,form,stamp}:{kind:'contract'|'scene';form:any;stamp
    <div className="officialEnglish"><strong>ORKIT COMPANY</strong><b>For General Contracting</b><span>Unified No. 754857775</span></div>
   </div>
   <div className="officialLine"/>
-  <div className="paperRule"/><div className="paperTitle"><h1>{title}</h1><div><b>التاريخ:</b> {form.start||'................'} &nbsp; | &nbsp; <b>{kind==='contract'?'مدة السريان':'تاريخ الزيارة'}:</b> {form.end||'................'}</div></div>
+  <div className="paperRule"/><div className="paperTitle"><h1>{title}</h1><div className="documentNumberLine"><b>رقم المستند:</b> {form.contractNo} &nbsp; | &nbsp; <b>التاريخ:</b> {form.start||'................'} &nbsp; | &nbsp; <b>{kind==='contract'?'مدة السريان حتى':'تاريخ الزيارة'}:</b> {form.end||'................'}</div></div>
   <div className="infoGrid"><div><b>العميل</b><span>{form.client||'................................'}</span></div><div><b>المنشأة</b><span>{form.facility||'................................'}</span></div><div><b>الجوال</b><span>{form.phone||'................................'}</span></div><div><b>الموقع</b><span>{form.address||'................................'}</span></div></div>
   {kind==='contract'?<div className="paperBody">
    <h3>أولاً: نطاق العقد</h3><p>{form.scope}</p>

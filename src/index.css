@@ -41,3 +41,11 @@
 .sceneRecommendations{margin-top:8px}
 @media(max-width:600px){.safetyEquipmentTable{font-size:7px}.safetyEquipmentTable th,.safetyEquipmentTable td{padding:3px 2px}.sceneDocumentMeta{grid-template-columns:1fr 42px 1fr;gap:4px}.sceneQr{width:36px;height:36px}.sceneDocumentMeta>div:not(.sceneQr){font-size:8px}}
 @media print{.safetySceneBody{font-size:9px}.safetyEquipmentTable{break-inside:avoid}.sceneDocumentMeta{break-inside:avoid}}
+
+/* Notification actions and request-save feedback */
+.notificationItemButton{display:block;width:100%;border:0;text-align:right;cursor:pointer;font:inherit;border-radius:8px}
+.notificationItemButton:hover,.notificationItemButton:focus-visible{background:#f4eee4!important;outline:2px solid #c7a56a}
+.notificationOpenHint{float:left;color:#8b3030;font-weight:800;font-size:11px;margin-right:8px}
+.saveSuccess,.saveWarning{border-radius:8px;padding:9px 11px;font-weight:700;font-size:13px;margin:8px 0}
+.saveSuccess{color:#17653b;background:#e9f7ee;border:1px solid #bce6ca}
+.saveWarning{color:#8a4b08;background:#fff5df;border:1px solid #f0d7a4}

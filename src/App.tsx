@@ -42,12 +42,12 @@ const requestNotificationPermission=async()=>{
    try{await Notification.requestPermission()}catch{}
  }
 };
-function NotificationBell({items,title='الإشعارات'}:{items:string[];title?:string}){
+function NotificationBell({items,title='الإشعارات',onSelect}:{items:string[];title?:string;onSelect?:(item:string)=>void}){
  const [open,setOpen]=useState(false);
  const count=items.length;
  return <div className="notificationWrap">
    <button type="button" className="notificationBell" onClick={()=>{unlockNotificationSound();setOpen(!open);void requestNotificationPermission()}} aria-label={title}>🔔{count>0&&<span>{count>99?'99+':count}</span>}</button>
-   {open&&<div className="notificationPanel"><div className="notificationHead"><strong>{title}</strong><button onClick={()=>setOpen(false)}>×</button></div>{count?<>{items.slice(0,12).map((x,i)=><div className="notificationItem" key={i}>⚠️ {x}</div>)}</>:<div className="empty">لا توجد إشعارات جديدة.</div>}<small>اضغط الجرس للسماح بإشعارات الجهاز.</small></div>}
+   {open&&<div className="notificationPanel"><div className="notificationHead"><strong>{title}</strong><button onClick={()=>setOpen(false)}>×</button></div>{count?<>{items.slice(0,12).map((x,i)=><button type="button" className="notificationItem notificationItemButton" key={i} onClick={()=>{setOpen(false);onSelect?.(x)}}>⚠️ {x}<span className="notificationOpenHint">فتح ←</span></button>)}</>:<div className="empty">لا توجد إشعارات جديدة.</div>}<small>اضغط الجرس للسماح بإشعارات الجهاز.</small></div>}
  </div>
 }
 

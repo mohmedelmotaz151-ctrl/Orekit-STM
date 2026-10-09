@@ -16,3 +16,28 @@
 .docForm{display:grid;gap:10px}.formSectionTitle{font-weight:900;color:#8c682a;border-bottom:1px solid #e5e0d7;padding:12px 0 6px;margin-top:5px}.docForm select,.docForm textarea{width:100%;font:inherit;padding:11px;border:1px solid #d5d0c7;border-radius:9px;background:#fff}.infoGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:20px 0;border:1px solid #ddd4c7;border-radius:10px;padding:10px}.infoGrid div{display:grid;gap:3px;border-bottom:1px dashed #e7e0d6;padding:7px}.infoGrid div:nth-last-child(-n+2){border-bottom:0}.infoGrid b{font-size:10px;color:#8c682a}.infoGrid span{font-size:12px;min-height:18px}.detailsTable{display:grid;grid-template-columns:1fr 1fr;border:1px solid #ddd4c7;border-radius:8px;overflow:hidden;margin:10px 0}.detailsTable div{display:grid;grid-template-columns:105px 1fr;border-bottom:1px solid #eee7dd;padding:7px;gap:7px}.detailsTable div:nth-child(odd){border-left:1px solid #eee7dd}.detailsTable b{color:#76591f;font-size:11px}.detailsTable span{font-size:11px}.clauses{padding-right:24px;margin:8px 0}.clauses li{padding:5px 0;line-height:1.9;text-align:justify}.sceneBox{border:1px dashed #cfc4b4;border-radius:8px;padding:12px;min-height:80px;white-space:pre-wrap;line-height:1.9}.paperExtra{border-top:1px solid #e0d8cc;margin-top:16px;padding-top:10px;font-size:11px;line-height:1.8}.stamp{background:#fff}.stamp small{font-size:9px}.paperFooter{font-weight:600}
 @media(max-width:600px){.infoGrid{grid-template-columns:1fr}.infoGrid div:nth-last-child(-n+2){border-bottom:1px dashed #e7e0d6}.detailsTable{grid-template-columns:1fr}.detailsTable div:nth-child(odd){border-left:0}.clauses{padding-right:20px}.clauses li{font-size:10px}}
 @media print{.infoGrid{break-inside:avoid}.clauses li{break-inside:avoid}.paperBody{min-height:auto}.documentPaper{min-height:297mm}.paperHeader{margin-top:0}}
+
+/* A4 safety-scene report layout */
+.documentNumberLine{display:block;line-height:1.9;border:1px solid #e6dfd5;border-radius:5px;padding:5px;margin-top:7px;font-size:10px}
+.safetySceneBody{font-size:10px;line-height:1.6}
+.sceneDocumentMeta{display:grid;grid-template-columns:1fr 54px 1fr;gap:8px;align-items:center;border:1px solid #ddd4c7;border-radius:6px;padding:8px;margin:10px 0}
+.sceneDocumentMeta>div:not(.sceneQr){display:grid;gap:4px;font-size:9px}
+.sceneDocumentMeta span{font-weight:800;color:#8f3434}
+.sceneDocumentMeta small{font-size:8px;color:#66717c}
+.sceneQr{width:44px;height:44px;border:2px solid #25313c;display:grid;grid-template-columns:repeat(2,1fr);gap:2px;padding:3px;align-items:center;justify-items:center}
+.sceneQr i{width:13px;height:13px;border:3px solid #25313c;display:block}
+.sceneQr b{font-size:7px}
+.sceneIntro{font-size:9px;color:#66717c}
+.safetyEquipmentTable{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8px;margin:8px 0}
+.safetyEquipmentTable th,.safetyEquipmentTable td{border:1px solid #dce1e5;padding:5px 3px;text-align:right;vertical-align:middle;overflow-wrap:anywhere}
+.safetyEquipmentTable th{background:#f1f4f6;color:#35404b;font-weight:800}
+.safetyEquipmentTable th:first-child,.safetyEquipmentTable td:first-child{width:5%;text-align:center}
+.safetyEquipmentTable th:nth-child(2){width:18%}
+.safetyEquipmentTable th:nth-child(3){width:31%}
+.safetyEquipmentTable th:nth-child(4){width:7%;text-align:center}
+.safetyEquipmentTable th:nth-child(5){width:15%;text-align:center}
+.safetyEquipmentTable th:nth-child(6){width:24%}
+.conditionGood{display:inline-block;background:#e5f5eb;color:#247247;border-radius:12px;padding:2px 4px;white-space:nowrap;font-size:7px}
+.sceneRecommendations{margin-top:8px}
+@media(max-width:600px){.safetyEquipmentTable{font-size:7px}.safetyEquipmentTable th,.safetyEquipmentTable td{padding:3px 2px}.sceneDocumentMeta{grid-template-columns:1fr 42px 1fr;gap:4px}.sceneQr{width:36px;height:36px}.sceneDocumentMeta>div:not(.sceneQr){font-size:8px}}
+@media print{.safetySceneBody{font-size:9px}.safetyEquipmentTable{break-inside:avoid}.sceneDocumentMeta{break-inside:avoid}}

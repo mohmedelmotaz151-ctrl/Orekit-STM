@@ -280,7 +280,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
      if(!cancelled)setCloudReady(true);
    }
    })();return()=>{cancelled=true}},[]);
- const [page,setPage]=useState<'home'|'sites'|'visits'|'maintenance'|'delegates'|'requests'|'documents'>('home');
+ const [page,setPage]=useState<'home'|'sites'|'visits'|'maintenance'|'delegates'|'requests'|'documents'|'invite'>('home');
  const [requestSearch,setRequestSearch]=useState('');
  const [requestFilter,setRequestFilter]=useState('الكل');
  const [open,setOpen]=useState<string|null>(null),[menu,setMenu]=useState(false),[editing,setEditing]=useState<any>(null);
@@ -301,7 +301,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
    return alerts;
  },[sites,maintenance]);
  const expiring=expiryAlerts.length;
- const nav=[['home','الرئيسية'],['sites','المواقع والمنشآت'],['visits','الزيارات'],['maintenance','صيانة الطفايات'],['delegates','المناديب'],['requests','طلبات العملاء'],['documents','إنشاء عقد ومشهد']] as const;
+ const nav=[['home','الرئيسية'],['sites','المواقع والمنشآت'],['visits','الزيارات'],['maintenance','صيانة الطفايات'],['delegates','المناديب'],['requests','طلبات العملاء'],['documents','إنشاء عقد ومشهد'],['invite','بوابة دعوة واتساب']] as const;
  const go=(p:any)=>{setPage(p);setMenu(false);setOpen(null);setEditing(null)};
  const add=(kind:string)=>{setEditing(null);setOpen(kind)};
  const remove=(kind:string,id:string)=>{if(!confirm('هل تريد حذف السجل؟'))return;if(kind==='site'){setSitesSafe(sites.filter(x=>x.id!==id));removeCloudRecord('sites',id)}if(kind==='visit'){setVisitsSafe(visits.filter(x=>x.id!==id));removeCloudRecord('visits',id)}if(kind==='maintenance'){setMaintenanceSafe(maintenance.filter(x=>x.id!==id));removeCloudRecord('maintenance',id)}if(kind==='delegate'){setDelegatesSafe(delegates.filter(x=>x.id!==id));removeCloudRecord('delegates',id)}};
@@ -310,6 +310,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
   {menu&&<><div className="backdrop" onClick={()=>setMenu(false)}/><aside>{nav.map(([k,l])=><button className={page===k?'active':''} key={k} onClick={()=>go(k)}>{l}</button>)}</aside></>}
   <main>
    {page==='documents'&&<DocumentsPage/>}
+   {page==='invite'&&<WhatsAppInvitePage sites={sites}/>} 
    {page==='home'&&<><section className="hero"><div><p className="eyebrow">ORKEIT SAFETY • CONTROL CENTER</p><h1>إدارة زيارات الدفاع المدني</h1><p>لوحة تشغيل احترافية لمتابعة المنشآت والزيارات والصيانة وطلبات العملاء.</p></div><div className="heroActions"><button className="primary" onClick={()=>add('site')}>＋ إضافة منشأة</button><button className="heroGhost" onClick={()=>go('requests')}>طلبات العملاء</button></div></section><div className="stats"><Stat n={sites.length} t="المنشآت"/><Stat n={visits.length} t="الزيارات"/><Stat n={maintenance.length} t="الصيانة"/><Stat n={expiring} t="تنبيهات قريبة"/></div><section className="overviewGrid"><div className="panel"><div className="panelTitle"><h2>ملخص التشغيل</h2><span>مباشر</span></div><div className="miniStats"><div><strong>{requests.filter(x=>x.status==='جديد').length}</strong><small>طلبات جديدة</small></div><div><strong>{requests.filter(x=>x.status==='جاري التنفيذ').length}</strong><small>قيد التنفيذ</small></div><div><strong>{requests.filter(x=>x.status==='مكتمل').length}</strong><small>مكتملة</small></div></div></div><div className="panel"><div className="panelTitle"><h2>آخر الطلبات</h2><button className="textBtn" onClick={()=>go('requests')}>عرض الكل</button></div>{requests.slice(0,4).map(r=><button className="recentRequest" key={r.id} onClick={()=>go('requests')}><span><b>{r.service}</b><small>{r.customerName} • {r.facility}</small></span><em>{r.status}</em></button>)}{!requests.length&&<div className="emptyMini">لا توجد طلبات بعد.</div>}</div></section><section className="panel"><h2>الوصول السريع</h2><div className="quick">{nav.slice(1).map(([k,l])=><button key={k} onClick={()=>go(k)}>{l}<span>›</span></button>)}</div></section></>}
    {page==='sites'&&<ListPage title="المواقع والمنشآت" add={()=>add('site')}><div className="grid">{sites.map(s=><Card key={s.id} title={s.facility||'منشأة'} lines={[s.client,s.phone,s.address,s.contractEnd?'انتهاء العقد: '+s.contractEnd:'']} badge={'الطفايات: '+s.extCount} del={()=>remove('site',s.id)}/>)}</div>{!sites.length&&<Empty/>}</ListPage>}
    {page==='visits'&&<ListPage title="الزيارات" add={()=>add('visit')}><div className="grid">{visits.map(v=>{const s=sites.find(x=>x.id===v.siteId);return <Card key={v.id} title={s?.facility||'موقع محذوف'} lines={[v.date,v.status,v.notes]} del={()=>remove('visit',v.id)}/>})}</div>{!visits.length&&<Empty/>}</ListPage>}
@@ -323,7 +324,55 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
   {open==='delegate'&&<DelegateForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setDelegatesSafe([x,...delegates.filter(d=>d.id!==x.id)]);setOpen(null)}}/>}
  </div>
 }
-function DocumentsPage(){
+
+function WhatsAppInvitePage({sites}:{sites:Site[]}){
+ const [owner,setOwner]=useState('');
+ const [facility,setFacility]=useState('');
+ const [phone,setPhone]=useState('');
+ const [address,setAddress]=useState('');
+ const [services,setServices]=useState<string[]>(['صيانة طفايات الحريق','فحص وصيانة أنظمة الإنذار','عقود صيانة دورية']);
+ const [custom,setCustom]=useState('');
+ const [intro,setIntro]=useState('يسعدنا في شركة أوريكيت للمقاولات العامة أن نكون شريككم في السلامة والوقاية.');
+ const serviceOptions=['صيانة وتعبئة طفايات الحريق','فحص وصيانة أنظمة الإنذار','صيانة مضخات وشبكات الحريق','عقود صيانة دورية لأنظمة السلامة','فحص مخارج الطوارئ ولوحات الإرشاد','تجهيز متطلبات السلامة والدفاع المدني'];
+ useEffect(()=>{if(!facility.trim())return;const found=sites.find(s=>s.facility.trim()===facility.trim());if(found){if(!owner&&found.client)setOwner(found.client);if(!phone&&found.phone)setPhone(found.phone);if(!address&&found.address)setAddress(found.address)}},[facility,sites]);
+ const message=()=>{const chosen=[...services,...(custom.trim()?[custom.trim()]:[])];return `✨ *دعوة خاصة من شركة أوريكيت للمقاولات العامة* ✨
+ 
+الأستاذ/ ${owner.trim()||'صاحب المنشأة'} المحترم
+🏢 *المنشأة:* ${facility.trim()||'منشأتكم الكريمة'}
+📍 *الموقع:* ${address.trim()||'حسب موقع المنشأة'}
+ 
+${intro.trim()}
+ 
+🛡️ *خدماتنا لكم:*
+${chosen.map(s=>'• '+s).join('\n')}
+ 
+نحرص على مساعدتكم في رفع جاهزية معدات وأنظمة السلامة، وتنظيم أعمال الفحص والصيانة الدورية، ومتابعة الملاحظات والاحتياجات الفنية باحترافية، وفق نطاق الخدمة والاشتراطات المعمول بها.
+ 
+📞 يسعدنا التواصل معكم لتحديد احتياجات المنشأة وتقديم عرض مناسب.
+*شركة أوريكيت للمقاولات العامة – ORKEIT*
+خدمات الدفاع المدني والسلامة
+${address.trim()?'📍 '+address.trim():''}
+ 
+*يسعدنا خدمتكم، ونتطلع إلى تعاون مثمر يحافظ على سلامتكم وسلامة منشأتكم.*`.trim()};
+ const wa=()=>{const digits=phone.replace(/[^0-9]/g,'');const url='https://wa.me/'+digits+(digits?'?text=':'?text=')+encodeURIComponent(message());window.open(url,'_blank','noopener,noreferrer')};
+ const copy=async()=>{try{await navigator.clipboard.writeText(message());alert('تم نسخ نص الدعوة، يمكنك لصقه في واتساب.')}catch{alert(message())}};
+ return <section className="invitePage">
+  <div className="hero inviteHero"><div><p className="eyebrow">ORKEIT • CUSTOMER INVITATION</p><h1>بوابة دعوة العملاء عبر واتساب</h1><p>أنشئ دعوة شخصية باسم صاحب المنشأة واسم المنشأة، مع عرض خدمات أوريكيت برسالة أنيقة وجاهزة للإرسال.</p></div></div>
+  <div className="inviteLayout"><section className="panel inviteForm"><div className="panelTitle"><h2>بيانات الدعوة</h2><span>رسالة مخصصة</span></div>
+   <label>اسم صاحب المنشأة<input value={owner} onChange={e=>setOwner(e.target.value)} placeholder="مثال: الأستاذ محمد أحمد"/></label>
+   <label>اسم المنشأة<input list="orkeit-invite-sites" value={facility} onChange={e=>setFacility(e.target.value)} placeholder="اسم المؤسسة أو الشركة"/><datalist id="orkeit-invite-sites">{sites.map(s=><option key={s.id} value={s.facility}>{s.client}</option>)}</datalist></label>
+   <label>رقم واتساب<input inputMode="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9665xxxxxxxx"/></label>
+   <label>موقع المنشأة<input value={address} onChange={e=>setAddress(e.target.value)} placeholder="المدينة أو الحي (اختياري)"/></label>
+   <label>مقدمة الدعوة<textarea rows={3} value={intro} onChange={e=>setIntro(e.target.value)}/></label>
+   <div className="formSectionTitle">اختر الخدمات التي تريد عرضها</div>
+   <div className="inviteServices">{serviceOptions.map(s=><label key={s}><input type="checkbox" checked={services.includes(s)} onChange={e=>setServices(prev=>e.target.checked?[...prev,s]:prev.filter(x=>x!==s))}/><span>{s}</span></label>)}</div>
+   <label>خدمة إضافية (اختياري)<input value={custom} onChange={e=>setCustom(e.target.value)} placeholder="أضف خدمة أخرى"/></label>
+   <div className="inviteActions"><button className="primary wide" type="button" onClick={wa}>🟢 فتح واتساب وإرسال الدعوة</button><button className="secondaryBtn wide" type="button" onClick={()=>void copy()}>نسخ نص الدعوة</button></div>
+   <small className="muted">يفتح واتساب برسالة جاهزة للمراجعة والإرسال؛ لن تُرسل الرسالة تلقائيًا دون موافقتك.</small>
+  </section><section className="panel invitePreview"><div className="panelTitle"><h2>معاينة الرسالة</h2><span>WhatsApp</span></div><div className="inviteMessage" dir="rtl">{message().split('\n').map((line,i)=><p key={i}>{line||' '}</p>)}</div></section></div>
+ </section>
+}
+\nfunction DocumentsPage(){
  const [kind,setKind]=useState<'contract'|'scene'|null>(null);
  const [stamp,setStamp]=useState<'company'|'inspection'|'approved'>('company');
  const [form,setForm]=useState({

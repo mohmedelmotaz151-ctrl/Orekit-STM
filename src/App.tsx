@@ -372,7 +372,8 @@ ${address.trim()?'📍 '+address.trim():''}
   </section><section className="panel invitePreview"><div className="panelTitle"><h2>معاينة الرسالة</h2><span>WhatsApp</span></div><div className="inviteMessage" dir="rtl">{message().split('\n').map((line,i)=><p key={i}>{line||' '}</p>)}</div></section></div>
  </section>
 }
-\nfunction DocumentsPage(){
+
+function DocumentsPage(){
  const [kind,setKind]=useState<'contract'|'scene'|null>(null);
  const [stamp,setStamp]=useState<'company'|'inspection'|'approved'>('company');
  const [form,setForm]=useState({

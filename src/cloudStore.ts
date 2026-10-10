@@ -13,6 +13,7 @@ export const cloudCollections = [
   'scenes',
   'reports',
   'delegates',
+  'leads',
 ] as const;
 
 export type CloudCollection = typeof cloudCollections[number];

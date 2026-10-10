@@ -56,8 +56,10 @@ function NotificationBell({items,title='الإشعارات',onSelect}:{items:str
 export default function App(){
  const [loggedIn,setLoggedIn]=useState(()=>localStorage.getItem(AUTH_KEY)==='1');
  const [customerPortal,setCustomerPortal]=useState(false);
+ const [delegateUser,setDelegateUser]=useState<Delegate|null>(()=>{try{return JSON.parse(localStorage.getItem('orkeit-delegate-auth')||'null')}catch{return null}});
  if(customerPortal) return <CustomerPortal onBack={()=>setCustomerPortal(false)}/>;
- if(!loggedIn) return <Login onLogin={()=>setLoggedIn(true)} onCustomer={()=>setCustomerPortal(true)}/>;
+ if(delegateUser) return <DelegatePortal delegate={delegateUser} onLogout={()=>{localStorage.removeItem('orkeit-delegate-auth');setDelegateUser(null)}}/>;
+ if(!loggedIn) return <Login onLogin={()=>setLoggedIn(true)} onCustomer={()=>setCustomerPortal(true)} onDelegate={d=>{localStorage.setItem('orkeit-delegate-auth',JSON.stringify(d));setDelegateUser(d)}}/>;
  return <Dashboard onLogout={()=>{localStorage.removeItem(AUTH_KEY);setLoggedIn(false)}}/>;
 }
 function Login({onLogin,onCustomer,onDelegate}:{onLogin:()=>void;onCustomer:()=>void;onDelegate:(d:Delegate)=>void}){

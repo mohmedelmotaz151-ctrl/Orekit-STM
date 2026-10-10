@@ -9,6 +9,7 @@ type Maintenance={id:string;siteId:string;client?:string;date:string;expiryDate:
 type Delegate={id:string;name:string;phone:string;password:string;active:boolean};
 type ServiceRequest={id:string;customerId:string;customerName:string;phone:string;service:string;facility:string;address:string;status:string;note:string;createdAt:number;updatedAt:number};
 type CustomerRecord={id:string;name:string;phone:string;facility:string;address:string;updatedAt:number};
+type Lead={id:string;client:string;facility:string;phone:string;address:string;createdAt:number};
 
 const KEY='orkeit-civil-defense-v1';
 const AUTH_KEY='orkeit-civil-defense-auth';
@@ -199,6 +200,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const [maintenance,setMaintenance]=useState<Maintenance[]>(()=>load('/maintenance',[]));
  const [delegates,setDelegates]=useState<Delegate[]>(()=>load('/delegates',[]));
  const [requests,setRequests]=useState<ServiceRequest[]>(()=>load('/requests',[]));
+  const [leads,setLeads]=useState<Lead[]>(()=>load('/leads',[]));
  const [noticeItems,setNoticeItems]=useState<string[]>([]);
  const previousRequests=useRef<Record<string,number>>({});
  const firstRequestSnapshot=useRef(true);
@@ -288,11 +290,11 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
      if(!cancelled)setCloudReady(true);
    }
    })();return()=>{cancelled=true}},[]);
- const [page,setPage]=useState<'home'|'sites'|'visits'|'maintenance'|'delegates'|'requests'|'documents'|'invite'>('home');
+ const [page,setPage]=useState<'home'|'sites'|'visits'|'maintenance'|'delegates'|'requests'|'documents'|'invite'|'leads'>('home');
  const [requestSearch,setRequestSearch]=useState('');
  const [requestFilter,setRequestFilter]=useState('الكل');
  const [open,setOpen]=useState<string|null>(null),[menu,setMenu]=useState(false),[editing,setEditing]=useState<any>(null);
- const update=(setter:any,key:string,kind:'sites'|'visits'|'maintenance'|'delegates'|'requests')=>(value:any)=>{
+ const update=(setter:any,key:string,kind:'sites'|'visits'|'maintenance'|'delegates'|'requests'|'leads')=>(value:any)=>{
    setter(value);
    save(key,value);
    if(firebaseConfigured){
@@ -300,8 +302,8 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
      void Promise.all(records.map(item=>saveCloud(kind,item))).catch(err=>console.error('Firebase save failed',err));
    }
  };
- const removeCloudRecord=(kind:'sites'|'visits'|'maintenance'|'delegates'|'requests',id:string)=>{if(firebaseConfigured)void deleteCloud(kind,id).catch(err=>console.error('Firebase delete failed',err))};
- const setSitesSafe=update(setSites,'/sites','sites'),setVisitsSafe=update(setVisits,'/visits','visits'),setMaintenanceSafe=update(setMaintenance,'/maintenance','maintenance'),setDelegatesSafe=update(setDelegates,'/delegates','delegates'),setRequestsSafe=update(setRequests,'/requests','requests');
+ const removeCloudRecord=(kind:'sites'|'visits'|'maintenance'|'delegates'|'requests'|'leads',id:string)=>{if(firebaseConfigured)void deleteCloud(kind,id).catch(err=>console.error('Firebase delete failed',err))};
+ const setSitesSafe=update(setSites,'/sites','sites'),setVisitsSafe=update(setVisits,'/visits','visits'),setMaintenanceSafe=update(setMaintenance,'/maintenance','maintenance'),setDelegatesSafe=update(setDelegates,'/delegates','delegates'),setRequestsSafe=update(setRequests,'/requests','requests'),setLeadsSafe=update(setLeads,'/leads','leads');
  const expiryAlerts=useMemo(()=>{
    const alerts:string[]=[];
    sites.forEach(s=>{if(s.contractEnd){const d=daysUntil(s.contractEnd);const label=expiryLabel(d);if(label)alerts.push(`${label}: عقد ${s.facility||s.client} ينتهي في ${s.contractEnd}`)}});
@@ -309,7 +311,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
    return alerts;
  },[sites,maintenance]);
  const expiring=expiryAlerts.length;
- const nav=[['home','الرئيسية'],['sites','المواقع والمنشآت'],['visits','الزيارات'],['maintenance','صيانة الطفايات'],['delegates','المناديب'],['requests','طلبات العملاء'],['documents','إنشاء عقد ومشهد'],['invite','بوابة دعوة واتساب']] as const;
+ const nav=[['home','الرئيسية'],['leads','👤 عميل محتمل'],['sites','المواقع والمنشآت'],['visits','الزيارات'],['maintenance','صيانة الطفايات'],['delegates','المناديب'],['requests','طلبات العملاء'],['documents','إنشاء عقد ومشهد'],['invite','بوابة دعوة واتساب']] as const;
  const go=(p:any)=>{setPage(p);setMenu(false);setOpen(null);setEditing(null)};
  const add=(kind:string)=>{setEditing(null);setOpen(kind)};
  const remove=(kind:string,id:string)=>{if(!confirm('هل تريد حذف السجل؟'))return;if(kind==='site'){setSitesSafe(sites.filter(x=>x.id!==id));removeCloudRecord('sites',id)}if(kind==='visit'){setVisitsSafe(visits.filter(x=>x.id!==id));removeCloudRecord('visits',id)}if(kind==='maintenance'){setMaintenanceSafe(maintenance.filter(x=>x.id!==id));removeCloudRecord('maintenance',id)}if(kind==='delegate'){setDelegatesSafe(delegates.filter(x=>x.id!==id));removeCloudRecord('delegates',id)}};
@@ -494,6 +496,6 @@ function Empty(){return <div className="empty">لا توجد سجلات حتى �
 function Modal({title,close,children}:{title:string;close:()=>void;children:any}){return <div className="modalBg"><div className="modal"><div className="modalHead"><h2>{title}</h2><button onClick={close}>×</button></div>{children}</div></div>}
 function Input({label,value,onChange,type='text',required=false,placeholder}:{label:string;value:any;onChange:(v:string)=>void;type?:string;required?:boolean;placeholder?:string}){return <label>{label}<input type={type} value={value??''} onChange={e=>onChange(e.target.value)} required={required} placeholder={placeholder}/></label>}
 function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSave:(x:Site)=>void}){const [x,setX]=useState<Site>(initial||{id:uid(),client:'',facility:'',phone:'',address:'',contractEnd:'',extCount:0});return <Modal title={initial?'تعديل بيانات المنشأة':'إضافة منشأة'} close={close}><form onSubmit={e=>{e.preventDefault();onSave({...x,extCount:Number(x.extCount||0)})}}><Input label="اسم العميل" value={x.client} onChange={v=>setX({...x,client:v})} required/><Input label="اسم المنشأة" value={x.facility} onChange={v=>setX({...x,facility:v})} required/><Input label="رقم الجوال" value={x.phone} onChange={v=>setX({...x,phone:v})}/><Input label="العنوان" value={x.address} onChange={v=>setX({...x,address:v})}/><Input label="تاريخ انتهاء العقد" value={x.contractEnd} onChange={v=>setX({...x,contractEnd:v})} type="date"/><Input label="عدد الطفايات" value={x.extCount} onChange={v=>setX({...x,extCount:v as any})} type="number"/><button className="primary wide">حفظ المنشأة</button></form></Modal>}
-function VisitForm({sites,initial,close,onSave}:{sites:Site[];initial?:Visit|null;close:()=>void;onSave:(x:Visit)=>void}){const [x,setX]=useState<Visit>(initial||{id:uid(),siteId:sites[0]?.id||'',date:new Date().toISOString().slice(0,10),status:'مجدولة',notes:''});return <Modal title="تسجيل زيارة" close={close}><form onSubmit={e=>{e.preventDefault();onSave(x)}}><label>المنشأة<select value={x.siteId} onChange={e=>setX({...x,siteId:e.target.value})}>{sites.map(s=><option key={s.id} value={s.id}>{s.facility}</option>)}</select></label><Input label="التاريخ" value={x.date} onChange={v=>setX({...x,date:v})} type="date" required/><Input label="الحالة" value={x.status} onChange={v=>setX({...x,status:v})}/><Input label="ملاحظات" value={x.notes} onChange={v=>setX({...x,notes:v})}/><button className="primary wide" disabled={!sites.length}>حفظ الزيارة</button></form></Modal>}
+function LeadForm({close,onSave}:{close:()=>void;onSave:(x:Lead)=>void}){const [x,setX]=useState<Lead>({id:uid(),client:'',facility:'',phone:'',address:'',createdAt:Date.now()});return <Modal title="إضافة عميل محتمل" close={close}><form onSubmit={e=>{e.preventDefault();onSave({...x,createdAt:Date.now()})}}><Input label="اسم العميل" value={x.client} onChange={v=>setX({...x,client:v})} required/><Input label="اسم المنشأة" value={x.facility} onChange={v=>setX({...x,facility:v})} required/><Input label="رقم الهاتف / واتساب" value={x.phone} onChange={v=>setX({...x,phone:v})} required/><Input label="الموقع / العنوان" value={x.address} onChange={v=>setX({...x,address:v})} required/><button className="primary wide">حفظ العميل المحتمل</button></form></Modal>}\nfunction VisitForm({sites,initial,close,onSave}:{sites:Site[];initial?:Visit|null;close:()=>void;onSave:(x:Visit)=>void}){const [x,setX]=useState<Visit>(initial||{id:uid(),siteId:sites[0]?.id||'',date:new Date().toISOString().slice(0,10),status:'مجدولة',notes:''});return <Modal title="تسجيل زيارة" close={close}><form onSubmit={e=>{e.preventDefault();onSave(x)}}><label>المنشأة<select value={x.siteId} onChange={e=>setX({...x,siteId:e.target.value})}>{sites.map(s=><option key={s.id} value={s.id}>{s.facility}</option>)}</select></label><Input label="التاريخ" value={x.date} onChange={v=>setX({...x,date:v})} type="date" required/><Input label="الحالة" value={x.status} onChange={v=>setX({...x,status:v})}/><Input label="ملاحظات" value={x.notes} onChange={v=>setX({...x,notes:v})}/><button className="primary wide" disabled={!sites.length}>حفظ الزيارة</button></form></Modal>}
 function MaintenanceForm({sites,initial,close,onSave}:{sites:Site[];initial?:Maintenance|null;close:()=>void;onSave:(x:Maintenance)=>void}){const [x,setX]=useState<Maintenance>(initial||{id:uid(),siteId:sites[0]?.id||'',client:'',date:new Date().toISOString().slice(0,10),expiryDate:'',service:'فحص وصيانة الطفايات',count:1,technician:''});return <Modal title="تسجيل صيانة" close={close}><form onSubmit={e=>{e.preventDefault();onSave({...x,client:x.client?.trim()||'',count:Number(x.count||0)})}}><Input label="اسم العميل" value={x.client||''} onChange={v=>setX({...x,client:v})} required/><label>المنشأة<select value={x.siteId} onChange={e=>setX({...x,siteId:e.target.value})}>{sites.map(s=><option key={s.id} value={s.id}>{s.facility}</option>)}</select></label><Input label="الخدمة" value={x.service} onChange={v=>setX({...x,service:v})}/><Input label="التاريخ" value={x.date} onChange={v=>setX({...x,date:v})} type="date"/><Input label="تاريخ انتهاء الصيانة" value={x.expiryDate} onChange={v=>setX({...x,expiryDate:v})} type="date"/><Input label="عدد الطفايات" value={x.count} onChange={v=>setX({...x,count:v as any})} type="number"/><Input label="اسم الفني" value={x.technician} onChange={v=>setX({...x,technician:v})}/><button className="primary wide">حفظ</button></form></Modal>}
 function DelegateForm({initial,close,onSave}:{initial?:Delegate|null;close:()=>void;onSave:(x:Delegate)=>void}){const [x,setX]=useState<Delegate>(initial||{id:uid(),name:'',phone:'',password:'',active:true});return <Modal title="إضافة مندوب" close={close}><form onSubmit={e=>{e.preventDefault();onSave(x)}}><Input label="اسم المندوب" value={x.name} onChange={v=>setX({...x,name:v})} required/><Input label="رقم الجوال (اسم الدخول)" value={x.phone} onChange={v=>setX({...x,phone:v})} required/><Input label="كلمة مرور المندوب" value={x.password} onChange={v=>setX({...x,password:v})} required/><label>الحالة<select value={x.active?'active':'inactive'} onChange={e=>setX({...x,active:e.target.value==='active'})}><option value="active">نشط</option><option value="inactive">موقوف</option></select></label><button className="primary wide">حفظ المندوب</button></form></Modal>}

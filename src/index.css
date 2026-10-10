@@ -66,3 +66,11 @@
 .inviteMessage p:first-child{font-weight:800;color:#17683a}
 .invitePreview .panelTitle span{color:#16834b;font-weight:800}
 @media(max-width:760px){.inviteLayout{grid-template-columns:1fr}.invitePreview{order:2}.inviteHero h1{font-size:24px}}
+
+/* Delegate login and workspace */
+.segmentedLogin{display:flex;gap:8px;padding:5px;background:#f1f4f6;border:1px solid #e0e6eb;border-radius:12px;margin:12px 0 16px}
+.segmentedLogin button{flex:1;border:0;border-radius:9px;padding:10px 12px;background:transparent;color:#52606b;font:inherit;font-weight:800;cursor:pointer}
+.segmentedLogin button.active{background:#173b36;color:#fff;box-shadow:0 2px 7px #102c241c}
+.delegatePortal{width:min(1100px,100%);box-sizing:border-box}
+.delegatePortal .card{min-width:0}
+@media(max-width:600px){.delegatePortal .serviceTop{align-items:flex-start;gap:10px}.delegatePortal .serviceTop h1{font-size:23px}}

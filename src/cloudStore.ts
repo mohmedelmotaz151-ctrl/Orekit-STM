@@ -28,7 +28,7 @@ const recordsCollection = (kind: CloudCollection) => {
 };
 
 export async function loadCloud<T extends RecordData>(kind: CloudCollection): Promise<T[]> {
-  if (!firebaseConfigured || !db) return [];
+  if (!firebaseConfigured || !db) throw new Error('Firebase غير مهيأ: تحقق من api_key ومتغيرات البيئة في Vercel.');
   await ensureFirebaseAuth();
   const snap = await getDocs(recordsCollection(kind));
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as T));
@@ -39,7 +39,7 @@ export async function subscribeCloud<T extends RecordData>(
   onChange: (items: T[]) => void,
   onError?: (error: unknown) => void
 ) {
-  if (!firebaseConfigured || !db) return () => {};
+  if (!firebaseConfigured || !db) { const error = new Error('Firebase غير مهيأ'); onError?.(error); return () => {}; }
   try {
     await ensureFirebaseAuth();
     return onSnapshot(
@@ -54,7 +54,7 @@ export async function subscribeCloud<T extends RecordData>(
 }
 
 export async function saveCloud(kind: CloudCollection, item: RecordData) {
-  if (!firebaseConfigured || !db) return;
+  if (!firebaseConfigured || !db) throw new Error('Firebase غير مهيأ: لم يتم حفظ السجل. تحقق من متغيرات البيئة في Vercel.');
   await ensureFirebaseAuth();
   await setDoc(doc(db, 'orkeit_civil_defense', kind, 'records', item.id), item, { merge: true });
 }

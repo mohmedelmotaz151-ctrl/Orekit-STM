@@ -193,3 +193,42 @@ body{background:#fff;color:var(--orkeit-text)}
 .profileRequestsPanel{grid-column:1/-1}
 @media(max-width:760px){.siteProfileGrid{grid-template-columns:1fr}.siteProfileStats{grid-template-columns:repeat(2,minmax(0,1fr))}.siteProfileHero{grid-template-columns:1fr}.siteProfileHero>.secondaryBtn{grid-column:1}.siteProfileHero .siteCardActions{grid-column:1}.siteCardActions button{flex:1}.siteDetails{grid-template-columns:1fr 1fr}}
 @media(max-width:420px){.siteProfileStats>div{padding:11px}.siteProfileStats strong{font-size:22px}.siteDetails{grid-template-columns:1fr}.siteDetails .siteAddress{grid-column:auto}}
+
+
+/* Smart operations dashboard and in-app messaging */
+.smartMetricGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+.smartMetric{display:grid;gap:7px;text-align:right;padding:18px;background:#fff;border:1px solid #e3e8e4;border-radius:15px;color:#24352f;cursor:pointer;min-width:0;box-shadow:0 3px 12px #17382b08}
+.smartMetric span{font-size:13px;font-weight:800;color:#4f6259}
+.smartMetric strong{font-size:32px;color:#17483f;line-height:1.2}
+.smartMetric small{font-size:11px;color:#7b8780}
+.smartMetric.metricDanger{border-color:#efc9c3;background:#fff8f7}
+.smartMetric.metricDanger strong{color:#b33a31}
+.smartMetric.metricWarn{border-color:#ead9b2;background:#fffdf7}
+.smartMetric.metricWarn strong{color:#946d21}
+.dashboardLine{display:grid;gap:5px;padding:11px 0;border-bottom:1px solid #ecefe9}
+.dashboardLine:last-child{border-bottom:0}
+.dashboardLine b{font-size:13px;color:#263a32}
+.dashboardLine span{font-size:11px;color:#737f77;line-height:1.6}
+.delegateAchievement{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #ecefe9}
+.delegateAchievement>div{display:grid;gap:4px}
+.delegateAchievement b{font-size:13px}
+.delegateAchievement small{font-size:10px;color:#7b8780}
+.delegateAchievement>span{font-size:11px;color:#65736b;white-space:nowrap}
+.delegateAchievement strong{font-size:16px;color:#17483f}
+.messageCenter{margin:18px 0;min-width:0}
+.messageCenter .panelTitle{gap:10px;margin-bottom:14px}
+.messageCenter .panelTitle h2{margin:0 0 4px}
+.messageCenter .panelTitle small{display:block;color:#77827b;font-size:11px}
+.messageContactLabel{margin:12px 0}
+.messageContactLabel select{width:100%;margin-top:5px}
+.messageHistory{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow:auto;padding:12px;background:#f6f8f6;border:1px solid #e4eae5;border-radius:12px}
+.messageBubble{max-width:88%;padding:10px 12px;border-radius:13px;overflow-wrap:anywhere}
+.messageMine{align-self:flex-start;background:#e0efe7;border:1px solid #cce2d6;border-bottom-right-radius:4px}
+.messageTheirs{align-self:flex-end;background:#fff;border:1px solid #e2e7e3;border-bottom-left-radius:4px}
+.messageSender{font-size:10px;font-weight:900;color:#376452;margin-bottom:4px}
+.messageBubble p{margin:0;white-space:pre-wrap;line-height:1.65;font-size:13px;color:#26352e}
+.messageBubble time{display:block;margin-top:6px;font-size:9px;color:#7b8780}
+.messageComposer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end;margin-top:10px}
+.messageComposer textarea{width:100%;min-width:0;resize:vertical;font:inherit;border:1px solid #d5dcd7;border-radius:10px;padding:11px;background:#fff}
+.messageComposer .primary{white-space:nowrap}
+@media(max-width:760px){.smartMetricGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.smartMetric{padding:13px}.smartMetric strong{font-size:27px}.delegateAchievement{grid-template-columns:1fr 1fr;gap:8px}.delegateAchievement>div{grid-column:1/-1}.messageComposer{grid-template-columns:1fr}.messageComposer .primary{width:100%}.messageBubble{max-width:96%}}

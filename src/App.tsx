@@ -360,7 +360,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
      if(!cancelled)setCloudReady(true);
    }
    })();return()=>{cancelled=true}},[]);
- const [page,setPage]=useState<'home'|'sites'|'visits'|'maintenance'|'delegates'|'requests'|'documents'|'invite'|'leads'>('home');
+ const [page,setPage]=useState<'home'|'sites'|'siteProfile'|'visits'|'maintenance'|'delegates'|'requests'|'documents'|'invite'|'leads'>('home');
  const [requestSearch,setRequestSearch]=useState('');
  const [requestFilter,setRequestFilter]=useState('الكل');
  const [open,setOpen]=useState<string|null>(null),[menu,setMenu]=useState(false),[editing,setEditing]=useState<any>(null);

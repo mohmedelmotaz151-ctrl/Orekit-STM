@@ -158,3 +158,38 @@ body{background:#fff;color:var(--orkeit-text)}
 .notificationOpenHint{align-self:center;white-space:nowrap}
 .notificationPanel{z-index:1000}
 @media(max-width:600px){.notificationItemButton{font-size:12px!important;padding:10px!important}.notificationHeadActions button{font-size:11px}}
+
+
+/* Complete facility profile */
+.siteSummaryCard{display:flex;flex-direction:column;gap:5px}
+.siteCardActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.siteCardActions button{font:inherit;cursor:pointer}
+.siteProfilePage{display:grid;gap:16px;padding-bottom:30px}
+.siteProfileHero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;padding:clamp(16px,3vw,26px);border-radius:18px;background:linear-gradient(135deg,#123b34,#28675a);color:#fff}
+.siteProfileHero>.secondaryBtn{grid-column:1/-1;justify-self:start}
+.siteProfileHero h1{margin:4px 0 8px;color:#fff;font-size:clamp(23px,4vw,32px);overflow-wrap:anywhere}
+.siteProfileHero p{margin:4px 0;color:#e0ebe7}
+.siteProfileHero .eyebrow{color:#e0c17e;font-weight:800;letter-spacing:.08em}
+.siteProfileHero .siteCardActions{grid-column:1/-1}
+.siteProfileHero .secondaryBtn{background:#fff;color:#17483f;border-color:#ffffff}
+.siteProfileStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.siteProfileStats>div{display:grid;gap:5px;padding:15px;background:#f4f7f6;border:1px solid #e0e8e4;border-radius:13px}
+.siteProfileStats strong{font-size:25px;color:#17483f}
+.siteProfileStats span{font-size:12px;color:#68756f}
+.siteProfileGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.siteProfileGrid>.panel{min-width:0;padding:clamp(13px,2.5vw,20px)}
+.siteDetails{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px;margin:12px 0}
+.siteDetails>div{min-width:0;padding:11px 0;border-bottom:1px solid #e8eeeb}
+.siteDetails dt{font-size:11px;color:#74817b;margin-bottom:5px}
+.siteDetails dd{margin:0;font-size:13px;font-weight:750;overflow-wrap:anywhere;line-height:1.6}
+.siteDetails .siteAddress{grid-column:1/-1}
+.siteContactActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.siteContactActions a{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;background:#eaf3ef;color:#17483f;border:1px solid #d4e5dd;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:800}
+.profileRecord{padding:12px 0;border-bottom:1px solid #e8eeeb;overflow-wrap:anywhere}
+.profileRecord:last-child{border-bottom:0}
+.profileRecord strong{display:block;color:#17483f;font-size:14px}
+.profileRecord p{font-size:12px;line-height:1.65;margin:5px 0;color:#59665f}
+.profilePill{display:inline-flex;border-radius:20px;padding:4px 9px;background:#edf3ef;color:#225e46;font-size:11px;font-weight:800}
+.profileRequestsPanel{grid-column:1/-1}
+@media(max-width:760px){.siteProfileGrid{grid-template-columns:1fr}.siteProfileStats{grid-template-columns:repeat(2,minmax(0,1fr))}.siteProfileHero{grid-template-columns:1fr}.siteProfileHero>.secondaryBtn{grid-column:1}.siteProfileHero .siteCardActions{grid-column:1}.siteCardActions button{flex:1}.siteDetails{grid-template-columns:1fr 1fr}}
+@media(max-width:420px){.siteProfileStats>div{padding:11px}.siteProfileStats strong{font-size:22px}.siteDetails{grid-template-columns:1fr}.siteDetails .siteAddress{grid-column:auto}}

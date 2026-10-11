@@ -82,13 +82,32 @@ export default function App(){
  const [delegateUser,setDelegateUser]=useState<Delegate|null>(()=>{try{return JSON.parse(localStorage.getItem('orkeit-delegate-auth')||'null')}catch{return null}});
  if(customerPortal) return <CustomerPortal onBack={()=>setCustomerPortal(false)}/>;
  if(delegateUser) return <DelegatePortal delegate={delegateUser} onLogout={()=>{localStorage.removeItem('orkeit-delegate-auth');setDelegateUser(null)}}/>;
- if(!loggedIn) return <Login onLogin={()=>setLoggedIn(true)} onCustomer={()=>setCustomerPortal(true)} onDelegate={d=>{localStorage.setItem('orkeit-delegate-auth',JSON.stringify(d));setDelegateUser(d)}}/>;
+ if(!loggedIn) return <Login onLogin={()=>setLoggedIn(true)} onCustomer={()=>setCustomerPortal(true)} onCustomerLogin={u=>{localStorage.setItem(CUSTOMER_AUTH_KEY,JSON.stringify(u));setCustomerPortal(true)}} onDelegate={d=>{localStorage.setItem('orkeit-delegate-auth',JSON.stringify(d));setDelegateUser(d)}}/>;
  return <Dashboard onLogout={()=>{localStorage.removeItem(AUTH_KEY);setLoggedIn(false)}}/>;
 }
-function Login({onLogin,onCustomer,onDelegate}:{onLogin:()=>void;onCustomer:()=>void;onDelegate?:(d:Delegate)=>void}){
- const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState(''),[mode,setMode]=useState<'admin'|'delegate'>('admin'),[busy,setBusy]=useState(false);
- const submit=async(e:FormEvent)=>{e.preventDefault();setError('');if(mode==='admin'){if(username.trim()===USERNAME&&password===PASSWORD){localStorage.setItem(AUTH_KEY,'1');onLogin()}else setError('اسم المستخدم أو كلمة المرور غير صحيحة.');return;}setBusy(true);try{const local=load<Delegate[]>('/delegates',[]);let all=local;if(firebaseConfigured){try{all=await loadCloud<Delegate>('delegates')}catch{}}const d=all.find(x=>x.active&&x.phone.replace(/\\s+/g,'')===username.trim().replace(/\\s+/g,'')&&x.password===password);if(d){if(onDelegate)onDelegate(d);else setError('دخول المندوب غير متاح من هذه الشاشة.')}else setError('بيانات المندوب غير صحيحة أو الحساب موقوف.')}catch{setError('تعذر التحقق من الحساب. حاول مرة أخرى.')}finally{setBusy(false)}};
- return <div className="loginPage"><div className="loginCard"><div className="loginLogo">O</div><p className="eyebrow">ORKEIT SAFETY</p><h1>{mode==='admin'?'تسجيل الدخول':'دخول المندوب'}</h1><p className="loginHint">{mode==='admin'?'نظام زيارات الدفاع المدني':'منصة المندوب للزيارات وصيانة الطفايات'}</p><div className="segmentedLogin"><button type="button" className={mode==='admin'?'active':''} onClick={()=>{setMode('admin');setError('')}}>الإدارة</button><button type="button" className={mode==='delegate'?'active':''} onClick={()=>{setMode('delegate');setError('')}}>دخول المندوب</button></div><form onSubmit={submit}><label>{mode==='admin'?'اسم المستخدم':'رقم جوال المندوب'}<input inputMode="numeric" autoComplete="username" value={username} onChange={e=>setUsername(e.target.value)} required/></label><label>كلمة المرور<input type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} required/></label>{error&&<div className="error">{error}</div>}<button className="primary wide" disabled={busy}>{busy?'جارٍ التحقق...':mode==='admin'?'دخول إلى النظام':'دخول إلى منصة المندوب'}</button></form><div className="customerGate"><span>عميل وتريد طلب خدمة؟</span><button type="button" className="customerButton" onClick={onCustomer}>اطلب خدمة</button></div></div></div>;
+function Login({onLogin,onCustomer,onCustomerLogin,onDelegate}:{onLogin:()=>void;onCustomer:()=>void;onCustomerLogin:(u:any)=>void;onDelegate?:(d:Delegate)=>void}){
+ const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ const normalize=(value:string)=>value.trim().replace(/\\s+/g,'').replace(/[()\\-]/g,'');
+ const submit=async(e:FormEvent)=>{
+  e.preventDefault();setError('');
+  const enteredUser=normalize(username);
+  if(enteredUser===USERNAME&&password===PASSWORD){localStorage.setItem(AUTH_KEY,'1');onLogin();return;}
+  setBusy(true);
+  try{
+   const localDelegates=load<Delegate[]>('/delegates',[]);
+   let delegates=localDelegates;
+   if(firebaseConfigured){try{delegates=await loadCloud<Delegate>('delegates')}catch{delegates=localDelegates}}
+   const delegate=delegates.find(d=>d.active&&normalize(d.phone)===enteredUser&&d.password===password);
+   if(delegate){if(onDelegate)onDelegate(delegate);else setError('تعذر فتح حساب المندوب.');return;}
+   let customers:any[]=[];
+   try{customers=JSON.parse(localStorage.getItem(CUSTOMER_ACCOUNTS_KEY)||'[]')}catch{customers=[]}
+   const customer=customers.find(u=>normalize(String(u.phone||''))===enteredUser&&u.password===password);
+   if(customer){onCustomerLogin({id:customer.id,name:customer.name,phone:customer.phone});return;}
+   setError('اسم المستخدم أو رقم الجوال أو كلمة المرور غير صحيحة، أو أن الحساب موقوف.');
+  }catch(err){console.error('Unified login failed',err);setError('تعذر التحقق من الحساب. تحقق من الاتصال ثم حاول مرة أخرى.');}
+  finally{setBusy(false);}
+ };
+ return <div className="loginPage"><div className="loginCard"><div className="loginLogo">O</div><p className="eyebrow">ORKEIT SAFETY</p><h1>تسجيل الدخول</h1><p className="loginHint">أدخل اسم المستخدم أو رقم الجوال، وسيتعرف النظام تلقائيًا على نوع حسابك.</p><form onSubmit={submit}><label>اسم المستخدم / رقم الجوال<input autoComplete="username" value={username} onChange={e=>setUsername(e.target.value)} required/></label><label>كلمة المرور<input type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} required/></label>{error&&<div className="error">{error}</div>}<button className="primary wide" disabled={busy}>{busy?'جارٍ التحقق من الحساب...':'دخول'}</button></form><div className="customerGate"><span>عميل جديد أو تريد طلب خدمة؟</span><button type="button" className="customerButton" onClick={onCustomer}>اطلب خدمة</button></div></div></div>;
 }
 function DelegatePortal({delegate,onLogout}:{delegate:Delegate;onLogout:()=>void}){
  const [sites,setSites]=useState<Site[]>([]),[visits,setVisits]=useState<Visit[]>([]),[maintenance,setMaintenance]=useState<Maintenance[]>([]),[tab,setTab]=useState<'visits'|'maintenance'>('visits'),[loading,setLoading]=useState(true),[error,setError]=useState('');

@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const db = adminDb();
     const recipientType = userId ? 'customer' : 'admin';
     const type = data?.type === 'expiry' ? 'expiry' : userId ? 'status-change' : 'new-request';
-    const notificationId = `ntf-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const notificationId = data?.requestId ? `evt-${type}-${String(data.requestId)}-${String(data.updatedAt || 'latest')}`.slice(0, 140) : `ntf-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     await db.collection('orkeit_civil_defense').doc('notifications').collection('records').doc(notificationId).set({
       id: notificationId,
       recipientType,

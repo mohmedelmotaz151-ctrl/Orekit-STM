@@ -124,3 +124,25 @@ body{background:#fff;color:var(--orkeit-text)}
  .app .pageTitle h1{font-size:20px}
 }
 @media(max-width:340px){.app .grid{gap:6px}.app .card{padding:8px}.app .logo small{display:none}}
+
+
+/* Home quick-access tiles: clear category icons inspired by the supplied references */
+.app .quick button{display:grid;grid-template-columns:42px minmax(0,1fr) 12px;align-items:center;gap:10px;min-height:86px;text-align:right;font-weight:800;line-height:1.5;box-shadow:0 3px 12px #173e3508;transition:transform .16s ease,border-color .16s ease,background .16s ease}
+.app .quick button::before{content:"";width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#e7f0ed;border:1px solid #d7e5e0;font-size:22px;grid-column:1;grid-row:1}
+.app .quick button:nth-child(1)::before{content:"👤";background:#f1eee7;border-color:#e8dfcd}
+.app .quick button:nth-child(2)::before{content:"🧯"}
+.app .quick button:nth-child(3)::before{content:"📍"}
+.app .quick button:nth-child(4)::before{content:"📅"}
+.app .quick button:nth-child(5)::before{content:"🧑‍🔧"}
+.app .quick button:nth-child(6)::before{content:"🔔";background:#f7f0df;border-color:#eee0bb}
+.app .quick button:nth-child(7)::before{content:"📄"}
+.app .quick button:nth-child(8)::before{content:"💬";background:#e7f4eb;border-color:#d2e8d8}
+.app .quick button span{float:none;grid-column:3;grid-row:1;color:var(--orkeit-gold);font-size:23px}
+.app .quick button:hover{transform:translateY(-2px);border-color:#b9d0c8;background:#fff;box-shadow:0 7px 18px #173e3510}
+@media(max-width:700px){
+ .app .quick{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .app .quick button{grid-template-columns:32px minmax(0,1fr) 8px;gap:7px;min-height:82px;padding:11px;font-size:12px}
+ .app .quick button::before{width:32px;height:32px;border-radius:10px;font-size:18px}
+ .app .quick button span{font-size:19px}
+}
+@media(max-width:340px){.app .quick button{grid-template-columns:27px minmax(0,1fr) 7px;gap:5px;padding:8px;font-size:11px}.app .quick button::before{width:27px;height:27px;font-size:16px}}

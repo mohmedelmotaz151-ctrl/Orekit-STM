@@ -408,11 +408,13 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const [requestFilter,setRequestFilter]=useState('الكل');
  const [open,setOpen]=useState<string|null>(null),[menu,setMenu]=useState(false),[editing,setEditing]=useState<any>(null);
  const update=(setter:any,key:string,kind:'sites'|'visits'|'maintenance'|'delegates'|'requests'|'leads'|'contracts')=>(value:any)=>{
-   setter(value);
-   save(key,value);
+   const previous=load<any[]>(key,[]);
+   const next=value as any[];
+   setter(value);save(key,value);
    if(firebaseConfigured){
-     const records=value as any[];
-     void Promise.all(records.map(item=>saveCloud(kind,item))).catch(err=>console.error('Firebase save failed',err));
+     const changed=next.filter(item=>{const old=previous.find(x=>x.id===item.id);return !old||JSON.stringify(old)!==JSON.stringify(item)});
+     const audit=changed.map(item=>({id:uid(),action:previous.some(x=>x.id===item.id)?'update':'create',entity:kind,entityId:String(item.id),summary:'تعديل سجل '+kind+' — '+String(item.facility||item.client||item.customerName||item.name||item.id),actor:'admin',createdAt:Date.now()}));
+     void Promise.all([...next.map(item=>saveCloud(kind,item)),...audit.map(item=>saveCloud('auditLog',item))]).catch(err=>console.error('Firebase save/audit failed',err));
    }
  };
  const removeCloudRecord=(kind:'sites'|'visits'|'maintenance'|'delegates'|'requests'|'leads'|'contracts',id:string)=>{if(firebaseConfigured)void deleteCloud(kind,id).catch(err=>console.error('Firebase delete failed',err))};
@@ -444,7 +446,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const go=(p:any)=>{if(p==='documents'){window.location.href='https://contract-nine-sage.vercel.app/';return;}setPage(p);setMenu(false);setOpen(null);setEditing(null)};
  const add=(kind:string)=>{setEditing(null);setOpen(kind)};
  const verifyDeletePassword=()=>{const entered=window.prompt('أدخل كلمة سر الحذف للمتابعة:');if(entered===null)return false;if(entered!==('115'+'520')){window.alert('كلمة سر الحذف غير صحيحة. لم يتم حذف السجل.');return false;}return true};
-  const remove=(kind:string,id:string)=>{if(!verifyDeletePassword())return;if(kind==='site'){setSitesSafe(sites.filter(x=>x.id!==id));removeCloudRecord('sites',id)}if(kind==='visit'){setVisitsSafe(visits.filter(x=>x.id!==id));removeCloudRecord('visits',id)}if(kind==='maintenance'){setMaintenanceSafe(maintenance.filter(x=>x.id!==id));removeCloudRecord('maintenance',id)}if(kind==='delegate'){setDelegatesSafe(delegates.filter(x=>x.id!==id));removeCloudRecord('delegates',id)}};
+  const remove=(kind:string,id:string)=>{if(!verifyDeletePassword())return;const audit={id:uid(),action:'delete',entity:kind,entityId:id,summary:'حذف سجل '+kind+' — '+id,actor:'admin',createdAt:Date.now()};if(kind==='site'){setSitesSafe(sites.filter(x=>x.id!==id));removeCloudRecord('sites',id)}if(kind==='visit'){setVisitsSafe(visits.filter(x=>x.id!==id));removeCloudRecord('visits',id)}if(kind==='maintenance'){setMaintenanceSafe(maintenance.filter(x=>x.id!==id));removeCloudRecord('maintenance',id)}if(kind==='delegate'){setDelegatesSafe(delegates.filter(x=>x.id!==id));removeCloudRecord('delegates',id)}if(firebaseConfigured)void saveCloud('auditLog',audit).catch(e=>console.warn('Audit log failed',e))};if(kind==='site'){setSitesSafe(sites.filter(x=>x.id!==id));removeCloudRecord('sites',id)}if(kind==='visit'){setVisitsSafe(visits.filter(x=>x.id!==id));removeCloudRecord('visits',id)}if(kind==='maintenance'){setMaintenanceSafe(maintenance.filter(x=>x.id!==id));removeCloudRecord('maintenance',id)}if(kind==='delegate'){setDelegatesSafe(delegates.filter(x=>x.id!==id));removeCloudRecord('delegates',id)}};
  return <div className="app">
   <header><button className="menuBtn" onClick={()=>setMenu(!menu)}>☰</button><button type="button" className="logo logoButton" aria-label="الصفحة الرئيسية" onClick={()=>go("home")}><b>O</b><span><strong>ORKEIT</strong><small>زيارات الدفاع المدني</small></span></button><div className="headerTag">{firebaseConfigured&&cloudReady?"متصل بقاعدة البيانات":"وضع محلي — أكمل إعداد Firebase"}</div><NotificationBell items={[...notificationRecords,...noticeItems,...expiryAlerts]} title="مركز إشعارات النظام" onRead={markNotificationRead} onMarkAllRead={()=>void markAllNotificationsRead()} onSelect={item=>{const id=item.match(/ORK-\d{4}-\d+/)?.[0];if(id){setRequestSearch(id);go('requests');}else if(item.includes('صيانة طفايات'))go('maintenance');else go('sites');}}/><button className="logout" onClick={onLogout}>خروج</button></header>
   {menu&&<><div className="backdrop" onClick={()=>setMenu(false)}/><aside>{nav.map(([k,l])=><button className={page===k?'active':''} key={k} onClick={()=>go(k)}>{l}</button>)}</aside></>}

@@ -276,13 +276,12 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
    };
    const customer:CustomerRecord={id:user.id,name,phone,facility:req.facility,address:req.address,updatedAt:now};
    try{
-    if(firebaseConfigured){
-      // Save the request first so a customer-profile write cannot block the service request.
-      await saveCloud('requests',req);
-      try{ await saveCloud('customers',customer); }catch(customerError){ console.warn('Customer profile save failed:',customerError); }
-    } else {
-      console.warn('Firebase is not configured; request kept locally only.');
+    if(!firebaseConfigured){
+      throw new Error('Firebase غير مهيأ في نسخة الموقع؛ لم يتم إرسال الطلب إلى الإدارة. تحقق من متغيرات Firebase في Vercel ثم أعد المحاولة.');
     }
+    // لا نعلن نجاح الطلب إلا بعد تأكيد حفظه في Firestore.
+    await saveCloud('requests',req);
+    try{ await saveCloud('customers',customer); }catch(customerError){ console.warn('Customer profile save failed:',customerError); }
     setRequests(x=>[req,...x.filter(old=>old.id!==req.id)]);setSelectedService('');setSavedFacility({facility:req.facility,address:req.address});setForm({name,phone,facility:req.facility,address:req.address});
     try{
       const accounts=JSON.parse(localStorage.getItem(CUSTOMER_ACCOUNTS_KEY)||'[]');
@@ -358,6 +357,10 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  };
  useEffect(()=>{let unsub:(()=>void)|undefined;(async()=>{
    try{
+    if(!firebaseConfigured){
+      setRequestSyncError('Firebase غير مهيأ في نسخة الموقع؛ طلبات العملاء لن تصل إلى حساب الإدارة حتى ضبط متغيرات Firebase في Vercel.');
+      return;
+    }
     if(firebaseConfigured){
       unsub=await subscribeCloud<ServiceRequest>('requests',all=>{
        const sorted=[...all].sort((a,b)=>b.updatedAt-a.updatedAt);

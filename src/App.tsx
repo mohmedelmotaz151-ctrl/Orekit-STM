@@ -269,6 +269,7 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
   <div className="requestSection"><h2>متابعة طلباتي</h2>{loading&&<p>جاري تحميل الطلبات...</p>}{!loading&&!requests.length&&<div className="empty">لا توجد طلبات حتى الآن.</div>}
    {requests.map(r=><article className="requestCard" id={'request-'+r.id} key={r.id}><div className="requestHead"><strong>{r.service}</strong><span>{r.id}</span></div><p><b>المنشأة:</b> {r.facility}</p><p><b>الموقع:</b> {r.address}</p><p><b>تاريخ ووقت الطلب:</b> {new Date(r.createdAt||r.updatedAt||Date.now()).toLocaleString('ar-SA',{dateStyle:'medium',timeStyle:'short'})}</p><p>الحالة: <b>{r.status}</b></p><p>{r.note}</p><div className="timeline">{steps.map((s,i)=><span className={steps.indexOf(r.status)>=i?'done':''} key={s}>{s}</span>)}</div><small>آخر تحديث: {new Date(r.updatedAt).toLocaleString('ar-SA')}</small></article>)}
   </div>
+  <MessageCenter role="customer" userId={String(user.id)} userName={String(user.name||'العميل')}/>
  </div></div>;
 }
 function Dashboard({onLogout}:{onLogout:()=>void}){

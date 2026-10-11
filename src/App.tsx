@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState, useRef, type FormEvent } from 'react';
 import { deleteCloud, firebaseConfigured, loadCloud, saveCloud, subscribeCloud } from './cloudStore';
 import { enablePush, sendPush, startForegroundPushListener, unlockNotificationSound, playNotificationSound } from './push';
 
-type Site={id:string;client:string;facility:string;phone:string;address:string;contractEnd:string;extCount:number};
+type Site={id:string;client:string;facility:string;phone:string;address:string;contractEnd:string;extCount:number;email?:string;unified?:string;license?:string;notes?:string};
+type ContractRecord={id:string;siteId?:string;facility?:string;client?:string;contractNo?:string;startDate?:string;endDate?:string;status?:string;value?:string;scope?:string;updatedAt?:number};
 type Visit={id:string;siteId:string;date:string;status:string;notes:string};
 type Maintenance={id:string;siteId:string;client?:string;date:string;expiryDate:string;service:string;count:number;technician:string};
 type Delegate={id:string;name:string;phone:string;password:string;active:boolean};
@@ -254,6 +255,8 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const [sites,setSites]=useState<Site[]>(()=>load('/sites',[]));
  const [visits,setVisits]=useState<Visit[]>(()=>load('/visits',[]));
  const [maintenance,setMaintenance]=useState<Maintenance[]>(()=>load('/maintenance',[]));
+ const [contracts,setContracts]=useState<ContractRecord[]>(()=>load('/contracts',[]));
+ const [profileSiteId,setProfileSiteId]=useState<string|null>(null);
  const [delegates,setDelegates]=useState<Delegate[]>(()=>load('/delegates',[]));
  const [requests,setRequests]=useState<ServiceRequest[]>(()=>load('/requests',[]));
   const [leads,setLeads]=useState<Lead[]>(()=>load('/leads',[]));
@@ -319,16 +322,17 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  useEffect(()=>{let cancelled=false;(async()=>{
    if(!firebaseConfigured){setCloudReady(false);return}
    try{
-     const [cloudSites,cloudVisits,cloudMaintenance,cloudDelegates,cloudRequests]=await Promise.all([
+     const [cloudSites,cloudVisits,cloudMaintenance,cloudDelegates,cloudRequests,cloudContracts]=await Promise.all([
        loadCloud<Site>('sites'),
        loadCloud<Visit>('visits'),
        loadCloud<Maintenance>('maintenance'),
        loadCloud<Delegate>('delegates'),
-       loadCloud<ServiceRequest>('requests')
+       loadCloud<ServiceRequest>('requests'),
+       loadCloud<ContractRecord>('contracts')
      ]);
      if(cancelled)return;
 
-     const migrate = async <T extends {id:string}>(kind:'sites'|'visits'|'maintenance'|'delegates'|'requests', localKey:string, cloud:T[], local:T[], setState:(value:T[])=>void) => {
+     const migrate = async <T extends {id:string}>(kind:'sites'|'visits'|'maintenance'|'delegates'|'requests'|'contracts', localKey:string, cloud:T[], local:T[], setState:(value:T[])=>void) => {
        if(cloud.length > 0){
          setState(cloud);
          save(localKey, cloud);
@@ -349,6 +353,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
      await migrate('maintenance','/maintenance',cloudMaintenance,maintenance,setMaintenance);
      await migrate('delegates','/delegates',cloudDelegates,delegates,setDelegates);
      await migrate('requests','/requests',cloudRequests,requests,setRequests);
+     await migrate('contracts','/contracts',cloudContracts,contracts,setContracts);
    }catch(err){
      console.error('Firebase load failed',err);
    }finally{
@@ -359,7 +364,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const [requestSearch,setRequestSearch]=useState('');
  const [requestFilter,setRequestFilter]=useState('الكل');
  const [open,setOpen]=useState<string|null>(null),[menu,setMenu]=useState(false),[editing,setEditing]=useState<any>(null);
- const update=(setter:any,key:string,kind:'sites'|'visits'|'maintenance'|'delegates'|'requests'|'leads')=>(value:any)=>{
+ const update=(setter:any,key:string,kind:'sites'|'visits'|'maintenance'|'delegates'|'requests'|'leads'|'contracts')=>(value:any)=>{
    setter(value);
    save(key,value);
    if(firebaseConfigured){
@@ -367,8 +372,8 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
      void Promise.all(records.map(item=>saveCloud(kind,item))).catch(err=>console.error('Firebase save failed',err));
    }
  };
- const removeCloudRecord=(kind:'sites'|'visits'|'maintenance'|'delegates'|'requests'|'leads',id:string)=>{if(firebaseConfigured)void deleteCloud(kind,id).catch(err=>console.error('Firebase delete failed',err))};
- const setSitesSafe=update(setSites,'/sites','sites'),setVisitsSafe=update(setVisits,'/visits','visits'),setMaintenanceSafe=update(setMaintenance,'/maintenance','maintenance'),setDelegatesSafe=update(setDelegates,'/delegates','delegates'),setRequestsSafe=update(setRequests,'/requests','requests'),setLeadsSafe=update(setLeads,'/leads','leads');
+ const removeCloudRecord=(kind:'sites'|'visits'|'maintenance'|'delegates'|'requests'|'leads'|'contracts',id:string)=>{if(firebaseConfigured)void deleteCloud(kind,id).catch(err=>console.error('Firebase delete failed',err))};
+ const setSitesSafe=update(setSites,'/sites','sites'),setVisitsSafe=update(setVisits,'/visits','visits'),setMaintenanceSafe=update(setMaintenance,'/maintenance','maintenance'),setDelegatesSafe=update(setDelegates,'/delegates','delegates'),setRequestsSafe=update(setRequests,'/requests','requests'),setLeadsSafe=update(setLeads,'/leads','leads'),setContractsSafe=update(setContracts,'/contracts','contracts');
  const expiryAlerts=useMemo(()=>{
    const alerts:string[]=[];
    sites.forEach(s=>{if(s.contractEnd){const d=daysUntil(s.contractEnd);const label=expiryLabel(d);if(label)alerts.push(`${label}: عقد ${s.facility||s.client} ينتهي في ${s.contractEnd}`)}});

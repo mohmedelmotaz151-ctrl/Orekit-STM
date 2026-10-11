@@ -222,7 +222,7 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
       if(!found)updated.unshift({id:user.id,name,phone,facility:req.facility,address:req.address});
       localStorage.setItem(CUSTOMER_ACCOUNTS_KEY,JSON.stringify(updated));
     }catch{}
-    void sendPush({role:'admin'},'Orkeit — طلب خدمة جديد',`خدمة جديدة: ${req.service} — ${req.customerName} — ${req.facility}`,{requestId:req.id});
+    void sendPush({role:'admin'},'Orkeit — طلب خدمة جديد',`خدمة جديدة: ${req.service} — ${req.customerName} — ${req.facility}`,{requestId:req.id,updatedAt:String(req.updatedAt)});
     alert('تم إرسال الطلب بنجاح. رقم المتابعة: '+req.id);
    }catch(e){
     console.error('Service request save failed:',e);
@@ -552,7 +552,7 @@ function DocumentPaper({kind,form,stamp}:{kind:'contract'|'scene';form:any;stamp
 function RequestAdminCard({request,onSave,onDelete}:{request:ServiceRequest;onSave:(x:ServiceRequest)=>void;onDelete:()=>void}){
  const statuses=['جديد','قيد المراجعة','تم التسعير','تم اعتماد الطلب','جاري التنفيذ','مكتمل','مرفوض'];
  const [status,setStatus]=useState(request.status),[note,setNote]=useState(request.note),[saved,setSaved]=useState('');
- const saveIt=async()=>{const x={...request,status,note,updatedAt:Date.now()};onSave(x);try{if(firebaseConfigured)await saveCloud('requests',x);setSaved('تم التحديث بنجاح');void sendPush({userId:request.customerId},'Orkeit — تحديث طلبك',`تم تحديث الطلب ${request.id}: ${status}`,{requestId:request.id,status});}catch(e){console.error(e);setSaved('تم التحديث محليًا، تعذرت المزامنة');}};
+ const saveIt=async()=>{const x={...request,status,note,updatedAt:Date.now()};onSave(x);try{if(firebaseConfigured)await saveCloud('requests',x);setSaved('تم التحديث بنجاح');void sendPush({userId:request.customerId},'Orkeit — تحديث طلبك',`تم تحديث الطلب ${request.id}: ${status}`,{requestId:request.id,status,updatedAt:String(x.updatedAt)});}catch(e){console.error(e);setSaved('تم التحديث محليًا، تعذرت المزامنة');}};
  return <article className="card requestAdmin"><h3>{request.service}</h3><p><b>رقم الطلب:</b> {request.id}</p><p><b>تاريخ ووقت الطلب:</b> {new Date(request.createdAt||request.updatedAt||Date.now()).toLocaleString('ar-SA',{dateStyle:'medium',timeStyle:'short'})}</p><p><b>العميل:</b> {request.customerName} · {request.phone}</p><label>حالة الطلب<select value={status} onChange={e=>{setStatus(e.target.value);setSaved('')}}>{statuses.map(s=><option key={s}>{s}</option>)}</select></label><label>ملاحظة للعميل<textarea value={note} onChange={e=>{setNote(e.target.value);setSaved('')}} rows={3}/></label><button className="primary wide" onClick={()=>void saveIt()}>تحديث حالة الطلب</button>{saved&&<p className={saved.includes('بنجاح')?'saveSuccess':'saveWarning'} role="status">✓ {saved}</p>}<button className="delete" onClick={onDelete}>حذف الطلب</button></article>
 }
 function Stat({n,t}:{n:number;t:string}){return <div className="stat"><strong>{n}</strong><span>{t}</span></div>}

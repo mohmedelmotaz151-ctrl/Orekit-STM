@@ -9,4 +9,4 @@ export const app=firebaseConfigured?initializeApp(firebaseConfig):null;
 export const auth=app?getAuth(app):null;
 export const db=app?getFirestore(app):null;
 export const storage=app?getStorage(app):null;
-export async function ensureFirebaseAuth(){if(!auth||auth.currentUser)return;try{await signInAnonymously(auth)}catch(error){console.warn('Firebase anonymous authentication unavailable.',error)}}
+export async function ensureFirebaseAuth(){if(!firebaseConfigured||!auth)throw new Error('Firebase غير مهيأ: تحقق من api_key ومتغيرات Vercel.');if(auth.currentUser)return;try{await signInAnonymously(auth)}catch(error){console.error('Firebase anonymous authentication failed',error);throw error}}

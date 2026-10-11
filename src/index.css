@@ -74,3 +74,53 @@
 .delegatePortal{width:min(1100px,100%);box-sizing:border-box}
 .delegatePortal .card{min-width:0}
 @media(max-width:600px){.delegatePortal .serviceTop{align-items:flex-start;gap:10px}.delegatePortal .serviceTop h1{font-size:23px}}
+
+
+/* Orkeit mobile-first dashboard refresh: visual-only overrides; preserve data and workflows */
+:root{--orkeit-green:#17483f;--orkeit-green-deep:#10372f;--orkeit-gold:#c49a45;--orkeit-text:#202d36;--orkeit-muted:#6d7880;--orkeit-card:#f5f7f7;--orkeit-border:#e1e7e6}
+body{background:#fff;color:var(--orkeit-text)}
+.app{background:#fff;color:var(--orkeit-text)}
+.app>header{background:var(--orkeit-green-deep);border-bottom:3px solid var(--orkeit-gold);box-shadow:0 3px 14px #102e2812;padding-inline:clamp(10px,3vw,24px);gap:clamp(8px,1.5vw,14px)}
+.app .logo>b{background:var(--orkeit-gold);color:#fff;border-radius:12px;box-shadow:0 2px 6px #0002}
+.app .logo strong{letter-spacing:1.5px}
+.app .headerTag{color:#d8e6e2}
+.app .notificationBell{border-color:#45685f;background:#fff;color:var(--orkeit-green-deep)}
+.app .logout{border:1px solid #678178;background:#234d44;color:#fff;border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer}
+.app main{max-width:1180px;padding:clamp(14px,3vw,28px) clamp(10px,3vw,22px) 84px}
+.app .hero{background:linear-gradient(135deg,#17483f,#28665a);border:1px solid #d8e6e1;border-radius:20px;box-shadow:0 8px 24px #173e3510;padding:clamp(18px,4vw,30px)}
+.app .hero .primary,.app .primary{background:var(--orkeit-green);color:#fff}
+.app .hero .primary{background:var(--orkeit-gold);color:#fff}
+.app .stats{gap:10px}
+.app .stat,.app .panel,.app .card{background:var(--orkeit-card);border:1px solid var(--orkeit-border);border-radius:15px;box-shadow:0 2px 8px #1b383008}
+.app .stat{padding:clamp(12px,2.5vw,18px)}
+.app .stat strong{color:var(--orkeit-green);font-size:clamp(23px,4vw,30px)}
+.app .stat span,.app .card p{color:var(--orkeit-muted)}
+.app .panel{background:#fff;padding:clamp(14px,3vw,20px)}
+.app .quick{gap:10px}
+.app .quick button{background:#f5f8f7;border-color:#e0e9e6;border-radius:12px;padding:14px;color:var(--orkeit-text)}
+.app .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.app .card{min-width:0;padding:clamp(11px,2.5vw,17px);overflow-wrap:anywhere}
+.app .card h3{font-size:clamp(14px,2.5vw,17px);line-height:1.5;color:var(--orkeit-green);overflow-wrap:anywhere}
+.app .card p{font-size:clamp(11px,2vw,13px);line-height:1.6;overflow-wrap:anywhere}
+.app .badge{background:#e5efec;color:var(--orkeit-green);border:1px solid #d4e3de}
+.app .secondaryBtn{border:1px solid #d3e1dc;background:#fff;color:var(--orkeit-green);border-radius:9px;padding:9px 11px;font-weight:700;cursor:pointer}
+.app .delete{background:#fff0ee;border:1px solid #f0d4d0;color:#a33a31}
+.app aside{border-left:1px solid var(--orkeit-border);box-shadow:-12px 0 30px #102e2817}
+.app aside button.active,.app aside button:hover{background:#eaf2ef;color:var(--orkeit-green)}
+.app .pageTitle{gap:10px}
+.app .pageTitle h1{font-size:clamp(20px,4vw,28px);color:var(--orkeit-green)}
+.app .empty{background:#f7f9f8;border-color:#dce5e2}
+@media(max-width:700px){
+ .app>header{height:62px;gap:8px;padding-inline:10px}
+ .app .logo{gap:7px}.app .logo>b{width:34px;height:34px;font-size:20px;border-radius:10px}.app .logo strong{font-size:13px}.app .logo small{font-size:10px}
+ .app .headerTag{display:none}.app .notificationBell{padding:7px 9px;font-size:16px}.app .logout{padding:8px 9px;font-size:12px}
+ .app main{padding:14px 10px 76px}
+ .app .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .app .card{padding:11px;border-radius:13px}
+ .app .card .secondaryBtn,.app .card .delete,.app .leadActions button{max-width:100%;font-size:11px;padding:8px 9px;white-space:normal}
+ .app .hero{border-radius:16px;gap:12px}.app .hero h1{font-size:23px}.app .hero p{font-size:13px;line-height:1.7}
+ .app .quick{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .app .overviewGrid{grid-template-columns:1fr}
+ .app .pageTitle h1{font-size:20px}
+}
+@media(max-width:340px){.app .grid{gap:6px}.app .card{padding:8px}.app .logo small{display:none}}

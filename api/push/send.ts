@@ -13,7 +13,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Missing target or message' });
     }
 
-    const q = adminDb()
+    const db = adminDb();
+    const recipientType = userId ? 'customer' : 'admin';
+    const type = data?.type === 'expiry' ? 'expiry' : userId ? 'status-change' : 'new-request';
+    const notificationId = `ntf-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    await db.collection('orkeit_civil_defense').doc('notifications').collection('records').doc(notificationId).set({
+      id: notificationId,
+      recipientType,
+      ...(userId ? { recipientId: String(userId) } : {}),
+      title: String(title),
+      body: String(body),
+      type,
+      createdAt: Date.now(),
+      read: false,
+      ...(data?.requestId ? { relatedId: String(data.requestId) } : {}),
+    });
+
+    const q = db
       .collection('orkeit_civil_defense')
       .doc('push_tokens')
       .collection('records');

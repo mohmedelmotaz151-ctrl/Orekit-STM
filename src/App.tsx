@@ -119,6 +119,7 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
  const [isSubmitting,setIsSubmitting]=useState(false);
  const submittingRef=useRef(false);
  const [noticeItems,setNoticeItems]=useState<string[]>([]);
+ const [notificationRecords,setNotificationRecords]=useState<NotificationRecord[]>([]);
  const previous=useRef<Record<string,string>>({});
  const firstSnapshot=useRef(true);
  useEffect(()=>{void requestNotificationPermission(); void enablePush(user.id,'customer').catch(e=>console.warn('Push setup:',e)); void startForegroundPushListener().catch(()=>{});},[user.id]);
@@ -178,6 +179,16 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
    void run();
    return()=>{unsub?.()};
  },[user.id]);
+ useEffect(()=>{
+   let unsub:(()=>void)|undefined;
+   void subscribeCloud<NotificationRecord>('notifications',all=>{
+     const mine=all.filter(n=>n.recipientType==='customer'&&n.recipientId===user.id).sort((a,b)=>b.createdAt-a.createdAt).slice(0,30);
+     setNotificationRecords(mine);
+   },e=>console.warn('Customer notifications:',e)).then(fn=>{unsub=fn});
+   return()=>unsub?.();
+ },[user.id]);
+ const markNotificationRead=async(n:NotificationRecord)=>{if(n.read)return;const updated={...n,read:true};setNotificationRecords(items=>items.map(x=>x.id===n.id?updated:x));try{await saveCloud('notifications',updated)}catch(e){console.warn('Could not mark notification read',e)}};
+ const markAllNotificationsRead=async()=>{const unread=notificationRecords.filter(n=>!n.read);setNotificationRecords(items=>items.map(n=>({...n,read:true})));await Promise.all(unread.map(n=>saveCloud('notifications',{...n,read:true}).catch(e=>console.warn(e))))};
  const order=async()=>{
    if(submittingRef.current)return;
    submittingRef.current=true;
@@ -224,7 +235,7 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
  };
  const steps=['جديد','قيد المراجعة','تم التسعير','تم اعتماد الطلب','جاري التنفيذ','مكتمل'];
  return <div className="loginPage"><div className="servicesCard">
-  <div className="serviceTop"><div><p className="eyebrow">ORKEIT SAFETY</p><h1>خدمات الدفاع المدني</h1><p>مرحبًا {user.name}، اختر الخدمة المطلوبة.</p></div><div className="serviceActions"><NotificationBell items={noticeItems} title="تحديثات طلباتك" onSelect={item=>{const id=item.match(/ORK-\d{4}-\d+/)?.[0];if(id){document.getElementById('request-'+id)?.scrollIntoView({behavior:'smooth',block:'center'});}}}/><button className="switchAuth" onClick={onLogout}>خروج</button></div></div>
+  <div className="serviceTop"><div><p className="eyebrow">ORKEIT SAFETY</p><h1>خدمات الدفاع المدني</h1><p>مرحبًا {user.name}، اختر الخدمة المطلوبة.</p></div><div className="serviceActions"><NotificationBell items={[...notificationRecords,...noticeItems]} title="تحديثات طلباتك" onRead={markNotificationRead} onMarkAllRead={()=>void markAllNotificationsRead()} onSelect={item=>{const id=item.match(/ORK-\d{4}-\d+/)?.[0];if(id){document.getElementById('request-'+id)?.scrollIntoView({behavior:'smooth',block:'center'});}}}/><button className="switchAuth" onClick={onLogout}>خروج</button></div></div>
   {!selectedService?<><div className="serviceGrid">{services.map((x,i)=><button className="serviceItem" key={x} onClick={()=>setSelectedService(x)}><span>{String(i+1).padStart(2,'0')}</span><strong>{x}</strong><b>طلب الخدمة ←</b></button>)}</div></>:
   <section className="requestFormCard"><button className="backLink" type="button" onClick={()=>setSelectedService('')}>← العودة للخدمات</button><h2>إكمال إجراءات الطلب</h2><p>الخدمة المطلوبة: <b>{selectedService}</b></p>
    <label>اسم العميل<input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required/></label>
@@ -247,6 +258,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const [requests,setRequests]=useState<ServiceRequest[]>(()=>load('/requests',[]));
   const [leads,setLeads]=useState<Lead[]>(()=>load('/leads',[]));
  const [noticeItems,setNoticeItems]=useState<string[]>([]);
+ const [notificationRecords,setNotificationRecords]=useState<NotificationRecord[]>([]);
  const previousRequests=useRef<Record<string,number>>({});
  const firstRequestSnapshot=useRef(true);
  const [cloudReady,setCloudReady]=useState(false);
@@ -296,6 +308,14 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
     }
    }catch(e){console.error(e);void refreshRequests()}
   })();return()=>{unsub?.()};},[]);
+ useEffect(()=>{let unsub:(()=>void)|undefined;
+   void subscribeCloud<NotificationRecord>('notifications',all=>{
+     setNotificationRecords(all.filter(n=>n.recipientType==='admin').sort((a,b)=>b.createdAt-a.createdAt).slice(0,40));
+   },e=>console.warn('Admin notifications:',e)).then(fn=>{unsub=fn});
+   return()=>unsub?.();
+ },[]);
+ const markNotificationRead=async(n:NotificationRecord)=>{if(n.read)return;const updated={...n,read:true};setNotificationRecords(items=>items.map(x=>x.id===n.id?updated:x));try{await saveCloud('notifications',updated)}catch(e){console.warn('Could not mark notification read',e)}};
+ const markAllNotificationsRead=async()=>{const unread=notificationRecords.filter(n=>!n.read);setNotificationRecords(items=>items.map(n=>({...n,read:true})));await Promise.all(unread.map(n=>saveCloud('notifications',{...n,read:true}).catch(e=>console.warn(e))))};
  useEffect(()=>{let cancelled=false;(async()=>{
    if(!firebaseConfigured){setCloudReady(false);return}
    try{
@@ -362,7 +382,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const verifyDeletePassword=()=>{const entered=window.prompt('أدخل كلمة سر الحذف للمتابعة:');if(entered===null)return false;if(entered!==('115'+'520')){window.alert('كلمة سر الحذف غير صحيحة. لم يتم حذف السجل.');return false;}return true};
   const remove=(kind:string,id:string)=>{if(!verifyDeletePassword())return;if(kind==='site'){setSitesSafe(sites.filter(x=>x.id!==id));removeCloudRecord('sites',id)}if(kind==='visit'){setVisitsSafe(visits.filter(x=>x.id!==id));removeCloudRecord('visits',id)}if(kind==='maintenance'){setMaintenanceSafe(maintenance.filter(x=>x.id!==id));removeCloudRecord('maintenance',id)}if(kind==='delegate'){setDelegatesSafe(delegates.filter(x=>x.id!==id));removeCloudRecord('delegates',id)}};
  return <div className="app">
-  <header><button className="menuBtn" onClick={()=>setMenu(!menu)}>☰</button><button type="button" className="logo logoButton" aria-label="الصفحة الرئيسية" onClick={()=>go("home")}><b>O</b><span><strong>ORKEIT</strong><small>زيارات الدفاع المدني</small></span></button><div className="headerTag">{firebaseConfigured&&cloudReady?"متصل بقاعدة البيانات":"وضع محلي — أكمل إعداد Firebase"}</div><NotificationBell items={[...noticeItems,...expiryAlerts]} title="تنبيهات النظام" onSelect={item=>{const id=item.match(/ORK-\d{4}-\d+/)?.[0];if(id){setRequestSearch(id);go('requests');}else if(item.includes('صيانة طفايات'))go('maintenance');else go('sites');}}/><button className="logout" onClick={onLogout}>خروج</button></header>
+  <header><button className="menuBtn" onClick={()=>setMenu(!menu)}>☰</button><button type="button" className="logo logoButton" aria-label="الصفحة الرئيسية" onClick={()=>go("home")}><b>O</b><span><strong>ORKEIT</strong><small>زيارات الدفاع المدني</small></span></button><div className="headerTag">{firebaseConfigured&&cloudReady?"متصل بقاعدة البيانات":"وضع محلي — أكمل إعداد Firebase"}</div><NotificationBell items={[...notificationRecords,...noticeItems,...expiryAlerts]} title="مركز إشعارات النظام" onRead={markNotificationRead} onMarkAllRead={()=>void markAllNotificationsRead()} onSelect={item=>{const id=item.match(/ORK-\d{4}-\d+/)?.[0];if(id){setRequestSearch(id);go('requests');}else if(item.includes('صيانة طفايات'))go('maintenance');else go('sites');}}/><button className="logout" onClick={onLogout}>خروج</button></header>
   {menu&&<><div className="backdrop" onClick={()=>setMenu(false)}/><aside>{nav.map(([k,l])=><button className={page===k?'active':''} key={k} onClick={()=>go(k)}>{l}</button>)}</aside></>}
   <main>
    {page==='documents'&&<DocumentsPage/>}

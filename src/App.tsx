@@ -306,16 +306,45 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
  const steps=['جديد','قيد المراجعة','تم التسعير','تم اعتماد الطلب','جاري التنفيذ','مكتمل'];
  return <div className="loginPage"><div className="servicesCard">
   <div className="serviceTop"><div><p className="eyebrow">ORKEIT SAFETY</p><h1>خدمات الدفاع المدني</h1><p>مرحبًا {user.name}، اختر الخدمة المطلوبة.</p></div><div className="serviceActions"><NotificationBell items={[...notificationRecords,...noticeItems]} title="تحديثات طلباتك" onRead={markNotificationRead} onMarkAllRead={()=>void markAllNotificationsRead()} onSelect={item=>{const id=item.match(/ORK-\d{4}-\d+/)?.[0];if(id){document.getElementById('request-'+id)?.scrollIntoView({behavior:'smooth',block:'center'});}}}/><button className="profileOpenButton" type="button" onClick={()=>setShowProfile(v=>!v)}>{showProfile?"العودة للخدمات":"ملفي ومنشآتي"}</button><button className="switchAuth" onClick={onLogout}>خروج</button></div></div>
-  {!selectedService?<>{showProfile&&<CustomerProfile user={user} onClose={()=>setShowProfile(false)}/>}<div className="serviceGrid">{services.map((x,i)=><button className="serviceItem" key={x} onClick={()=>{setShowProfile(false);setSelectedService(x)}}><span>{String(i+1).padStart(2,'0')}</span><strong>{x}</strong><b>طلب الخدمة ←</b></button>)}</div></>:
-  <section className="requestFormCard"><button className="backLink" type="button" onClick={()=>setSelectedService('')}>← العودة للخدمات</button><h2>إكمال إجراءات الطلب</h2><p>الخدمة المطلوبة: <b>{selectedService}</b></p>
-   <label>اسم العميل<input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required/></label>
-   <label>رقم الجوال<input inputMode="tel" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} required/></label>
-   <label>اسم المنشأة<input value={form.facility} onChange={e=>setForm({...form,facility:e.target.value})} required/></label>
-   <label>موقع المنشأة / العنوان<textarea value={form.address} onChange={e=>setForm({...form,address:e.target.value})} rows={3} required/></label>
-   {savedFacility.facility&&<button className="switchAuth" type="button" onClick={()=>{if(form.facility===savedFacility.facility&&form.address===savedFacility.address){setForm({...form,facility:'',address:''})}else{setForm({...form,facility:savedFacility.facility,address:savedFacility.address})}}}>{form.facility===savedFacility.facility&&form.address===savedFacility.address?'＋ إضافة منشأة أخرى':'↩ استخدام المنشأة المحفوظة'}</button>}
-   <button className="primary wide" type="button" disabled={isSubmitting} onClick={()=>void order()}>{isSubmitting?'جارٍ إرسال الطلب…':'إرسال طلب الخدمة'}</button>
-  </section>}
-  <div className="requestSection"><h2>متابعة طلباتي</h2>{loading&&<p>جاري تحميل الطلبات...</p>}{!loading&&!requests.length&&<div className="empty">لا توجد طلبات حتى الآن.</div>}
+  {!selectedService ? (
+   <>
+    {showProfile && <CustomerProfile user={user} onClose={() => setShowProfile(false)} />}
+    <div className="serviceGrid">
+     {services.map((x, i) => (
+      <button className="serviceItem" key={x} onClick={() => { setShowProfile(false); setSelectedService(x); }}>
+       <span>{String(i + 1).padStart(2, '0')}</span>
+       <strong>{x}</strong>
+       <b>طلب الخدمة ←</b>
+      </button>
+     ))}
+    </div>
+   </>
+  ) : (
+   <section className="requestFormCard">
+    <button className="backLink" type="button" onClick={() => setSelectedService('')}>← العودة للخدمات</button>
+    <h2>إكمال إجراءات الطلب</h2>
+    <p>الخدمة المطلوبة: <b>{selectedService}</b></p>
+    <label>اسم العميل<input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required /></label>
+    <label>رقم الجوال<input inputMode="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required /></label>
+    <label>اسم المنشأة<input value={form.facility} onChange={e => setForm({ ...form, facility: e.target.value })} required /></label>
+    <label>موقع المنشأة / العنوان<textarea value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} rows={3} required /></label>
+    {savedFacility.facility && (
+     <button className="switchAuth" type="button" onClick={() => {
+      if (form.facility === savedFacility.facility && form.address === savedFacility.address) {
+       setForm({ ...form, facility: '', address: '' });
+      } else {
+       setForm({ ...form, facility: savedFacility.facility, address: savedFacility.address });
+      }
+     }}>
+      {form.facility === savedFacility.facility && form.address === savedFacility.address ? '＋ إضافة منشأة أخرى' : '↩ استخدام المنشأة المحفوظة'}
+     </button>
+    )}
+    <button className="primary wide" type="button" disabled={isSubmitting} onClick={() => void order()}>
+     {isSubmitting ? 'جارٍ إرسال الطلب…' : 'إرسال طلب الخدمة'}
+    </button>
+   </section>
+  )}
+  <div className="requestSection">  <div className="requestSection"><h2>متابعة طلباتي</h2>{loading&&<p>جاري تحميل الطلبات...</p>}{!loading&&!requests.length&&<div className="empty">لا توجد طلبات حتى الآن.</div>}
    {requests.map(r=><article className="requestCard" id={'request-'+r.id} key={r.id}><div className="requestHead"><strong>{r.service}</strong><span>{r.id}</span></div><p><b>المنشأة:</b> {r.facility}</p><p><b>الموقع:</b> {r.address}</p><p><b>تاريخ ووقت الطلب:</b> {new Date(r.createdAt||r.updatedAt||Date.now()).toLocaleString('ar-SA',{dateStyle:'medium',timeStyle:'short'})}</p><p>الحالة: <b>{r.status}</b></p><p>{r.note}</p><div className="timeline">{steps.map((s,i)=><span className={steps.indexOf(r.status)>=i?'done':''} key={s}>{s}</span>)}</div><small>آخر تحديث: {new Date(r.updatedAt).toLocaleString('ar-SA')}</small></article>)}
   </div>
   <MessageCenter role="customer" userId={String(user.id)} userName={String(user.name||'العميل')}/>

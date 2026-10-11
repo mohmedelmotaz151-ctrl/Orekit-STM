@@ -50,7 +50,7 @@ function NotificationBell({items,title='الإشعارات',onSelect,onRead,onMa
  const unread=items.filter(x=>typeof x!=='string'&&!x.read).length;
  return <div className="notificationWrap">
    <button type="button" className="notificationBell" onClick={()=>{unlockNotificationSound();setOpen(!open);void requestNotificationPermission()}} aria-label={title}>🔔{unread>0&&<span>{unread>99?'99+':unread}</span>}</button>
-   {open&&<div className="notificationPanel"><div className="notificationHead"><strong>{title}</strong><div className="notificationHeadActions">{unread>0&&onMarkAllRead&&<button type="button" onClick={onMarkAllRead}>قراءة الكل</button>}<button type="button" onClick={()=>setOpen(false)}>×</button></div></div>{items.length?<>{items.slice(0,20).map((x,i)=>{const record=typeof x==='string'?null:x;const text=typeof x==='string'?x:`${x.title}: ${x.body}`;return <button type="button" className={'notificationItem notificationItemButton'+(record&&!record.read?' notificationUnread':'')} key={record?.id||i} onClick={()=>{setOpen(false);if(record)onRead?.(record);onSelect?.(text)}}><span className="notificationItemText">{record?'🔔':'⚠️'} {text}</span><span className="notificationOpenHint">فتح ←</span><small>{record?new Date(record.createdAt).toLocaleString('ar-SA',{dateStyle:'short',timeStyle:'short'}):''}</small></button>})}</>:<div className="empty">لا توجد إشعارات.</div>}<small>إشعارات الهاتف تحتاج إلى السماح بها من إعدادات الجهاز.</small></div>}
+   {open&&<div className="notificationPanel"><div className="notificationHead"><strong>{title}</strong><div className="notificationHeadActions">{unread>0&&onMarkAllRead&&<button type="button" onClick={onMarkAllRead}>قراءة الكل</button>}<button type="button" onClick={()=>setOpen(false)}>×</button></div></div>{items.length?<>{items.slice(0,20).map((x,i)=>{const record:NotificationRecord|null=typeof x==='string'?null:x;const text:string=record?`${record.title}: ${record.body}`:String(x);return <button type="button" className={'notificationItem notificationItemButton'+(record&&!record.read?' notificationUnread':'')} key={record?.id||i} onClick={()=>{setOpen(false);if(record)onRead?.(record);onSelect?.(text)}}><span className="notificationItemText">{record?'🔔':'⚠️'} {text}</span><span className="notificationOpenHint">فتح ←</span><small>{record?new Date(record.createdAt).toLocaleString('ar-SA',{dateStyle:'short',timeStyle:'short'}):''}</small></button>})}</>:<div className="empty">لا توجد إشعارات.</div>}<small>إشعارات الهاتف تحتاج إلى السماح بها من إعدادات الجهاز.</small></div>}
  </div>
 }
 
@@ -400,7 +400,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
      if(!cancelled)setCloudReady(true);
    }
    })();return()=>{cancelled=true}},[]);
- const [page,setPage]=useState<'home'|'sites'|'siteProfile'|'visits'|'maintenance'|'delegates'|'requests'|'documents'|'invite'|'leads'>('home');
+ const [page,setPage]=useState<'home'|'sites'|'siteProfile'|'visits'|'maintenance'|'delegates'|'requests'|'documents'|'invite'|'leads'|'messages'>('home');
  const [requestSearch,setRequestSearch]=useState('');
  const [requestFilter,setRequestFilter]=useState('الكل');
  const [open,setOpen]=useState<string|null>(null),[menu,setMenu]=useState(false),[editing,setEditing]=useState<any>(null);

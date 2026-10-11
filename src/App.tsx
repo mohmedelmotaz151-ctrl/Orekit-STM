@@ -10,6 +10,7 @@ type Delegate={id:string;name:string;phone:string;password:string;active:boolean
 type ServiceRequest={id:string;customerId:string;customerName:string;phone:string;service:string;facility:string;address:string;status:string;note:string;createdAt:number;updatedAt:number};
 type CustomerRecord={id:string;name:string;phone:string;facility:string;address:string;updatedAt:number};
 type Lead={id:string;client:string;facility:string;phone:string;address:string;createdAt:number};
+type NotificationRecord={id:string;recipientType:'admin'|'customer';recipientId?:string;title:string;body:string;type:'new-request'|'status-change'|'expiry'|'system';createdAt:number;read:boolean;relatedId?:string};
 
 const KEY='orkeit-civil-defense-v1';
 const AUTH_KEY='orkeit-civil-defense-auth';
@@ -43,12 +44,12 @@ const requestNotificationPermission=async()=>{
    try{await Notification.requestPermission()}catch{}
  }
 };
-function NotificationBell({items,title='الإشعارات',onSelect}:{items:string[];title?:string;onSelect?:(item:string)=>void}){
+function NotificationBell({items,title='الإشعارات',onSelect,onRead,onMarkAllRead}:{items:Array<string|NotificationRecord>;title?:string;onSelect?:(item:string)=>void;onRead?:(item:NotificationRecord)=>void;onMarkAllRead?:()=>void}){
  const [open,setOpen]=useState(false);
- const count=items.length;
+ const unread=items.filter(x=>typeof x==='string'||!x.read).length;
  return <div className="notificationWrap">
-   <button type="button" className="notificationBell" onClick={()=>{unlockNotificationSound();setOpen(!open);void requestNotificationPermission()}} aria-label={title}>🔔{count>0&&<span>{count>99?'99+':count}</span>}</button>
-   {open&&<div className="notificationPanel"><div className="notificationHead"><strong>{title}</strong><button onClick={()=>setOpen(false)}>×</button></div>{count?<>{items.slice(0,12).map((x,i)=><button type="button" className="notificationItem notificationItemButton" key={i} onClick={()=>{setOpen(false);onSelect?.(x)}}>⚠️ {x}<span className="notificationOpenHint">فتح ←</span></button>)}</>:<div className="empty">لا توجد إشعارات جديدة.</div>}<small>اضغط الجرس للسماح بإشعارات الجهاز.</small></div>}
+   <button type="button" className="notificationBell" onClick={()=>{unlockNotificationSound();setOpen(!open);void requestNotificationPermission()}} aria-label={title}>🔔{unread>0&&<span>{unread>99?'99+':unread}</span>}</button>
+   {open&&<div className="notificationPanel"><div className="notificationHead"><strong>{title}</strong><div className="notificationHeadActions">{unread>0&&onMarkAllRead&&<button type="button" onClick={onMarkAllRead}>قراءة الكل</button>}<button type="button" onClick={()=>setOpen(false)}>×</button></div></div>{items.length?<>{items.slice(0,20).map((x,i)=>{const record=typeof x==='string'?null:x;const text=record?`${record.title}: ${record.body}`:x;return <button type="button" className={'notificationItem notificationItemButton'+(record&&!record.read?' notificationUnread':'')} key={record?.id||i} onClick={()=>{setOpen(false);if(record)onRead?.(record);onSelect?.(text)}}><span className="notificationItemText">{record?'🔔':'⚠️'} {text}</span><span className="notificationOpenHint">فتح ←</span><small>{record?new Date(record.createdAt).toLocaleString('ar-SA',{dateStyle:'short',timeStyle:'short'}):''}</small></button>})}</>:<div className="empty">لا توجد إشعارات.</div>}<small>إشعارات الهاتف تحتاج إلى السماح بها من إعدادات الجهاز.</small></div>}
  </div>
 }
 

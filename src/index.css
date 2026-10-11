@@ -315,3 +315,69 @@ input:focus,select:focus,textarea:focus{outline:0;border-color:var(--ork-navy);b
 .paperBody h3{border-right-color:var(--ork-red)}
 .infoGrid b,.detailsTable b{color:var(--ork-navy)}
 @media(max-width:700px){header{padding-inline:12px}.logo strong{font-size:14px}.headerTag{display:none}.hero{border-radius:17px;padding:22px}.stat,.panel,.card{border-radius:13px}}
+
+
+/* Orkeit brand reference alignment: navy / red / white, preserve app architecture */
+:root{--ork-navy:#0B2D5B;--ork-navy-deep:#062044;--ork-red:#E11D2E;--ork-white:#FFFFFF;--ork-bg:#F5F7FA;--ork-border:#DCE4EF;--ork-muted:#64748B}
+html,body,#root{font-family:Tahoma,"Cairo",Arial,sans-serif}
+body{background:#F5F7FA;color:#0B2D5B}
+header{background:linear-gradient(110deg,#062044,#0B2D5B)!important;border-bottom:3px solid #E11D2E!important;color:#fff}
+.logo>b,.loginLogo{background:#E11D2E!important;color:#fff!important;border:2px solid #fff2}
+.logo strong{color:#fff}
+.logo small{color:#E8EFF9}
+.menuBtn,.logout{border-color:#ffffff45!important;color:#fff}
+aside{background:#fff;border-left:3px solid #E11D2E;box-shadow:0 14px 38px #06204424}
+aside button{color:#0B2D5B}
+aside button.active,aside button:hover{color:#E11D2E;background:#F0F4FA;border-right:3px solid #E11D2E}
+main{color:#1D2E47}
+.hero{background:linear-gradient(125deg,#062044,#0B2D5B 70%,#16477F)!important;border-color:#234d7d!important;color:#fff}
+.hero h1,.hero p:not(.eyebrow){color:#fff}
+.hero .eyebrow{color:#ffbdc4}
+.primary{background:#0B2D5B!important;color:#fff!important;border:1px solid #0B2D5B!important}
+.primary:hover{background:#16477F!important}
+.hero .primary,.messageComposer .primary{background:#E11D2E!important;border-color:#E11D2E!important}
+.heroGhost{background:#ffffff10!important;border:1px solid #ffffff80!important;color:#fff!important}
+.stat,.panel,.card,.smartMetric,.loginCard,.servicesCard{background:#fff;border-color:#DCE4EF!important;box-shadow:0 6px 22px #0620440c}
+.stat{border-top:3px solid #0B2D5B!important}
+.stat strong,.smartMetric strong,.smartMetric b{color:#0B2D5B}
+.panel h2,.pageTitle h1,.card h3,.panelTitle h2{color:#0B2D5B}
+.smartMetric.metricDanger{border-color:#F2BEC5!important;background:#FFF6F7!important}
+.smartMetric.metricDanger strong{color:#E11D2E}
+input,select,textarea{border-color:#CBD7E7!important;background:#fff!important;color:#172B46!important;border-radius:9px}
+input:focus,select:focus,textarea:focus{border-color:#0B2D5B!important;box-shadow:0 0 0 3px #0B2D5B18!important;outline:0}
+button,a,.serviceItem,.documentChoice{transition:background-color .16s,border-color .16s,box-shadow .16s}
+.secondaryBtn,.textBtn,.backLink,.switchAuth{color:#0B2D5B}
+.secondaryBtn{background:#fff;border-color:#CBD7E7}
+.secondaryBtn:hover{background:#F0F4FA}
+.delete,.error{background:#FFF0F2!important;color:#B51224!important;border-color:#F8CDD3!important}
+.badge,.profilePill{background:#EDF3FC;color:#0B2D5B}
+.loginPage{background:radial-gradient(circle at 12% 10%,#17477d 0,transparent 35%),linear-gradient(140deg,#061D3B,#0B2D5B)!important}
+.loginCard,.servicesCard{border-top:4px solid #E11D2E!important}
+.loginCard h1,.servicesCard h1{color:#0B2D5B}
+.loginCard .eyebrow,.servicesCard .eyebrow{color:#E11D2E}
+.loginCard .primary,.servicesCard .primary{background:#0B2D5B!important}
+.customerButton{border-color:#E11D2E!important;color:#E11D2E!important;background:#fff!important}
+.customerButton:hover{background:#FFF1F3!important}
+.notificationBell{background:#ffffff12!important;border-color:#ffffff55!important;color:#fff!important}
+.notificationPanel{background:#fff;border-color:#DCE4EF;box-shadow:0 18px 48px #061D3B30}
+.notificationHead{color:#0B2D5B!important}
+.notificationItem,.notificationItemButton{color:#182B45!important}
+.notificationItem small{color:#64748B!important}
+.notificationItemButton:hover{background:#EDF3FC!important}
+.notificationWrap .notificationBell span{background:#E11D2E!important}
+.messageHistory{background:#F3F6FB!important;border-color:#DCE4EF!important}
+.messageMine{background:#EAF1FC!important;border-color:#CBDCF3!important}
+.messageTheirs{background:#fff!important;border-color:#DCE4EF!important}
+.messageSender{color:#0B2D5B!important}
+.messageBubble p{color:#182B45!important}
+.requestCard,.requestFormCard{background:#F8FAFD!important;border-color:#DCE4EF!important}
+.timeline span.done{background:#0B2D5B!important}
+.formSectionTitle{color:#0B2D5B!important;border-color:#DCE4EF!important}
+.documentChoice{background:#fff!important;border-color:#DCE4EF!important}
+.documentChoice span{color:#E11D2E!important}
+.officialArabic,.officialEnglish,.officialLogo strong,.officialLogoMark{color:#0B2D5B!important;border-color:#0B2D5B!important}
+.officialLine{background:#E11D2E!important}
+.officialStamp{color:#E11D2E!important;border-color:#E11D2E!important}
+.paperBody h3{border-right-color:#E11D2E!important}
+.infoGrid b,.detailsTable b{color:#0B2D5B!important}
+@media(max-width:700px){header{background:linear-gradient(110deg,#062044,#0B2D5B)!important}.hero{border-radius:17px}.stat,.panel,.card{border-radius:13px}}

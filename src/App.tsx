@@ -114,10 +114,40 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
  const [loading,setLoading]=useState(true);
  const [selectedService,setSelectedService]=useState('');
  const [form,setForm]=useState({name:user.name||'',phone:user.phone||'',facility:'',address:''});
+ const [savedFacility,setSavedFacility]=useState({facility:'',address:''});
+ const [isSubmitting,setIsSubmitting]=useState(false);
+ const submittingRef=useRef(false);
  const [noticeItems,setNoticeItems]=useState<string[]>([]);
  const previous=useRef<Record<string,string>>({});
  const firstSnapshot=useRef(true);
  useEffect(()=>{void requestNotificationPermission(); void enablePush(user.id,'customer').catch(e=>console.warn('Push setup:',e)); void startForegroundPushListener().catch(()=>{});},[user.id]);
+ useEffect(()=>{
+   let cancelled=false;
+   const restoreProfile=async()=>{
+    try{
+      let profile:CustomerRecord|undefined;
+      if(firebaseConfigured){
+        const customers=await loadCloud<CustomerRecord>('customers');
+        profile=customers.find(x=>x.id===user.id)||customers.find(x=>x.phone===user.phone);
+        if(!profile){
+          const priorRequests=await loadCloud<ServiceRequest>('requests');
+          const previous=priorRequests.filter(x=>x.customerId===user.id||x.phone===user.phone).sort((a,b)=>b.createdAt-a.createdAt)[0];
+          if(previous) profile={id:user.id,name:previous.customerName,phone:previous.phone,facility:previous.facility,address:previous.address,updatedAt:previous.updatedAt};
+        }
+      }
+      if(!profile){
+        try{const local=JSON.parse(localStorage.getItem(CUSTOMER_ACCOUNTS_KEY)||'[]');const found=local.find((x:any)=>x.id===user.id||x.phone===user.phone);if(found)profile=found;}catch{}
+      }
+      if(!cancelled&&profile){
+        const facility=String(profile.facility||''),address=String(profile.address||'');
+        setSavedFacility({facility,address});
+        setForm(prev=>({...prev,name:prev.name||profile!.name||user.name||'',phone:prev.phone||profile!.phone||user.phone||'',facility:prev.facility||facility,address:prev.address||address}));
+      }
+    }catch(e){console.warn('Customer profile restore failed:',e)}
+   };
+   void restoreProfile();
+   return()=>{cancelled=true};
+ },[user.id,user.phone,user.name]);
  useEffect(()=>{
    let unsub:(()=>void)|undefined;
    const run=async()=>{
@@ -148,9 +178,13 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
    return()=>{unsub?.()};
  },[user.id]);
  const order=async()=>{
+   if(submittingRef.current)return;
+   submittingRef.current=true;
+   setIsSubmitting(true);
    const name=form.name.trim(),phone=form.phone.trim().replace(/\\s+/g,'');
    if(!selectedService||!name||!phone||!form.facility.trim()||!form.address.trim()){
-     alert('أكمل الاسم ورقم الجوال واسم المنشأة وموقعها.');return;
+     alert('أكمل الاسم ورقم الجوال واسم المنشأة وموقعها.');
+     submittingRef.current=false;setIsSubmitting(false);return;
    }
    const now=Date.now();
    const req:ServiceRequest={
@@ -168,7 +202,14 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
     } else {
       console.warn('Firebase is not configured; request kept locally only.');
     }
-    setRequests(x=>[req,...x]);setSelectedService('');setForm({name,phone,facility:'',address:''});
+    setRequests(x=>[req,...x.filter(old=>old.id!==req.id)]);setSelectedService('');setSavedFacility({facility:req.facility,address:req.address});setForm({name,phone,facility:req.facility,address:req.address});
+    try{
+      const accounts=JSON.parse(localStorage.getItem(CUSTOMER_ACCOUNTS_KEY)||'[]');
+      const found=accounts.some((x:any)=>x.id===user.id||x.phone===phone);
+      const updated=accounts.map((x:any)=>(x.id===user.id||x.phone===phone)?{...x,name,phone,facility:req.facility,address:req.address}:x);
+      if(!found)updated.unshift({id:user.id,name,phone,facility:req.facility,address:req.address});
+      localStorage.setItem(CUSTOMER_ACCOUNTS_KEY,JSON.stringify(updated));
+    }catch{}
     void sendPush({role:'admin'},'Orkeit — طلب خدمة جديد',`خدمة جديدة: ${req.service} — ${req.customerName} — ${req.facility}`,{requestId:req.id});
     alert('تم إرسال الطلب بنجاح. رقم المتابعة: '+req.id);
    }catch(e){
@@ -176,6 +217,8 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
     const err=e as {code?:string;message?:string};
     const detail=err?.code ? `رمز الخطأ: ${err.code}` : (err?.message || 'خطأ غير معروف');
     alert('تعذر إرسال الطلب.\\n\\n'+detail+'\\n\\nتأكد من اتصال Firebase وFirestore ثم حاول مرة أخرى.');
+   }finally{
+    submittingRef.current=false;setIsSubmitting(false);
    }
  };
  const steps=['جديد','قيد المراجعة','تم التسعير','تم اعتماد الطلب','جاري التنفيذ','مكتمل'];
@@ -187,7 +230,8 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
    <label>رقم الجوال<input inputMode="tel" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} required/></label>
    <label>اسم المنشأة<input value={form.facility} onChange={e=>setForm({...form,facility:e.target.value})} required/></label>
    <label>موقع المنشأة / العنوان<textarea value={form.address} onChange={e=>setForm({...form,address:e.target.value})} rows={3} required/></label>
-   <button className="primary wide" type="button" onClick={()=>void order()}>إرسال طلب الخدمة</button>
+   {savedFacility.facility&&<button className="switchAuth" type="button" onClick={()=>{if(form.facility===savedFacility.facility&&form.address===savedFacility.address){setForm({...form,facility:'',address:''})}else{setForm({...form,facility:savedFacility.facility,address:savedFacility.address})}}}>{form.facility===savedFacility.facility&&form.address===savedFacility.address?'＋ إضافة منشأة أخرى':'↩ استخدام المنشأة المحفوظة'}</button>}
+   <button className="primary wide" type="button" disabled={isSubmitting} onClick={()=>void order()}>{isSubmitting?'جارٍ إرسال الطلب…':'إرسال طلب الخدمة'}</button>
   </section>}
   <div className="requestSection"><h2>متابعة طلباتي</h2>{loading&&<p>جاري تحميل الطلبات...</p>}{!loading&&!requests.length&&<div className="empty">لا توجد طلبات حتى الآن.</div>}
    {requests.map(r=><article className="requestCard" id={'request-'+r.id} key={r.id}><div className="requestHead"><strong>{r.service}</strong><span>{r.id}</span></div><p><b>المنشأة:</b> {r.facility}</p><p><b>الموقع:</b> {r.address}</p><p>الحالة: <b>{r.status}</b></p><p>{r.note}</p><div className="timeline">{steps.map((s,i)=><span className={steps.indexOf(r.status)>=i?'done':''} key={s}>{s}</span>)}</div><small>آخر تحديث: {new Date(r.updatedAt).toLocaleString('ar-SA')}</small></article>)}

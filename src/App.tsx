@@ -55,6 +55,26 @@ function NotificationBell({items,title='الإشعارات',onSelect,onRead,onMa
 }
 
 
+type MessageRecord={id:string;threadId:string;senderType:'admin'|'customer'|'delegate';senderId:string;senderName:string;recipientType:'admin'|'customer'|'delegate';recipientId:string;recipientName:string;body:string;createdAt:number;read:boolean};
+type MessageContact={id:string;threadId:string;kind:'customer'|'delegate';name:string;phone?:string;facility?:string};
+
+function MessageCenter({role,userId,userName,contacts=[]}:{role:'admin'|'customer'|'delegate';userId:string;userName:string;contacts?:MessageContact[]}){
+ const [records,setRecords]=useState<MessageRecord[]>([]);
+ const [selected,setSelected]=useState(contacts[0]?.threadId||'');
+ const [body,setBody]=useState('');
+ const [busy,setBusy]=useState(false);
+ const [error,setError]=useState('');
+ useEffect(()=>{if(role==='admin'&&contacts.length&&!contacts.some(c=>c.threadId===selected))setSelected(contacts[0].threadId)},[role,contacts,selected]);
+ useEffect(()=>{let stopped=false;let unsub:(()=>void)|undefined;void subscribeCloud<MessageRecord>('messages',all=>{if(!stopped)setRecords(all.sort((a,b)=>a.createdAt-b.createdAt))},e=>{console.error('Message subscription failed',e);if(!stopped)setError('تعذر تحميل المحادثات. تحقق من اتصال قاعدة البيانات.')}).then(fn=>{if(stopped)fn();else unsub=fn});return()=>{stopped=true;unsub?.()}},[]);
+ const threadId=role==='admin'?selected:`${role}:${userId}`;
+ const current=records.filter(m=>m.threadId===threadId);
+ const contact=contacts.find(c=>c.threadId===selected);
+ const send=async(e:FormEvent)=>{e.preventDefault();const text=body.trim();if(!text||!threadId||busy)return;setBusy(true);setError('');const recipientType=role==='admin'?(contact?.kind||'customer'):'admin';const recipientId=role==='admin'?(contact?.id||''):'admin';const recipientName=role==='admin'?(contact?.name||''):'الإدارة';const msg:MessageRecord={id:uid(),threadId,senderType:role,senderId:userId,senderName:userName,recipientType,recipientId,recipientName,body:text,createdAt:Date.now(),read:false};setRecords(prev=>[...prev,msg]);setBody('');try{await saveCloud('messages',msg)}catch(e){console.error('Message send failed',e);setRecords(prev=>prev.filter(m=>m.id!==msg.id));setBody(text);setError('تعذر إرسال الرسالة. تحقق من الاتصال والصلاحيات ثم أعد المحاولة.')}finally{setBusy(false)}};
+ const unread=role==='admin'?records.filter(m=>m.recipientType==='admin'&&!m.read).length:current.filter(m=>m.recipientId===userId&&!m.read).length;
+ return <section className="panel messageCenter" dir="rtl"><div className="panelTitle"><div><h2>{role==='admin'?'مركز الرسائل':'الرسائل مع الإدارة'}</h2><small>{role==='admin'?'مراسلة العملاء والمناديب من داخل التطبيق':'يمكنك إرسال رسالة والرد على الإدارة'}</small></div><span>{unread?unread+' غير مقروءة':'محادثات مباشرة'}</span></div>{role==='admin'&&<label className="messageContactLabel">اختر العميل أو المندوب<select value={selected} onChange={e=>setSelected(e.target.value)}><option value="">اختر محادثة</option>{contacts.map(c=><option key={c.threadId} value={c.threadId}>{c.kind==='delegate'?'مندوب':'عميل'}: {c.name}{c.facility?' — '+c.facility:''}{records.some(m=>m.threadId===c.threadId&&m.recipientType==='admin'&&!m.read)?' • رسالة جديدة':''}</option>)}</select></label>}{role==='admin'&&!contact?<div className="emptyMini">أضف طلب عميل أو مندوبًا أولًا لبدء محادثة.</div>:<><div className="messageHistory" aria-live="polite">{current.map(m=><article key={m.id} className={'messageBubble '+(m.senderType===role?'messageMine':'messageTheirs')}><div className="messageSender">{m.senderName||'مستخدم'}</div><p>{m.body}</p><time>{new Date(m.createdAt).toLocaleString('ar-SA',{dateStyle:'short',timeStyle:'short'})}</time></article>)}{!current.length&&<div className="emptyMini">لا توجد رسائل في هذه المحادثة بعد.</div>}</div><form className="messageComposer" onSubmit={send}><textarea rows={2} maxLength={2000} value={body} onChange={e=>setBody(e.target.value)} placeholder="اكتب رسالتك هنا..." required/><button className="primary" disabled={busy||!body.trim()}>{busy?'جارٍ الإرسال…':'إرسال الرسالة'}</button></form></>}{error&&<p className="error">{error}</p>}</section>
+}
+
+
 
 export default function App(){
  const [loggedIn,setLoggedIn]=useState(()=>localStorage.getItem(AUTH_KEY)==='1');

@@ -312,7 +312,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  },[sites,maintenance]);
  const expiring=expiryAlerts.length;
  const nav=[['home','الرئيسية'],['leads','👤 عميل محتمل'],['sites','المواقع والمنشآت'],['visits','الزيارات'],['maintenance','صيانة الطفايات'],['delegates','المناديب'],['requests','طلبات العملاء'],['documents','إنشاء عقد ومشهد'],['invite','بوابة دعوة واتساب']] as const;
- const go=(p:any)=>{setPage(p);setMenu(false);setOpen(null);setEditing(null)};
+ const go=(p:any)=>{if(p==='documents'){window.location.href='https://contract-nine-sage.vercel.app/';return;}setPage(p);setMenu(false);setOpen(null);setEditing(null)};
  const add=(kind:string)=>{setEditing(null);setOpen(kind)};
  const remove=(kind:string,id:string)=>{if(!confirm('هل تريد حذف السجل؟'))return;if(kind==='site'){setSitesSafe(sites.filter(x=>x.id!==id));removeCloudRecord('sites',id)}if(kind==='visit'){setVisitsSafe(visits.filter(x=>x.id!==id));removeCloudRecord('visits',id)}if(kind==='maintenance'){setMaintenanceSafe(maintenance.filter(x=>x.id!==id));removeCloudRecord('maintenance',id)}if(kind==='delegate'){setDelegatesSafe(delegates.filter(x=>x.id!==id));removeCloudRecord('delegates',id)}};
  return <div className="app">

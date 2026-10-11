@@ -432,3 +432,14 @@ button,a,.serviceItem,.documentChoice{transition:background-color .16s,border-co
 .maintenanceMapActions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
 .maintenanceMapActions button{flex:1;min-width:150px}
 .maintenanceCoordinates{font-size:12px;color:#31577f;background:#eef5ff;padding:9px 11px;border-radius:8px;overflow-wrap:anywhere}
+
+/* Facility-linked PDF document archive */
+.archiveForm input[type="file"]{width:100%;min-width:0;padding:10px;background:#fffdf9;border:1px dashed #b9a67e;border-radius:10px}
+.archiveForm label small{font-size:11px;color:#707986;font-weight:400}
+.archiveForm button:disabled{opacity:.65;cursor:wait}
+.archiveCompact{min-width:0}
+.archiveCompact .archiveForm{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));padding:12px;margin:12px 0}
+.archiveCompact .archiveForm .archiveWide{grid-column:1/-1}
+.archiveCompact .archiveCard h3{overflow-wrap:anywhere}
+.archiveCompact .archiveActions a{display:inline-flex;align-items:center;justify-content:center;border:1px solid #d7dce2;border-radius:9px;padding:9px 12px;color:#26313d;background:#fff;text-decoration:none;font-size:13px;font-weight:700}
+@media(max-width:640px){.archiveCompact .archiveForm{grid-template-columns:1fr}.archiveCompact .archiveForm .archiveWide{grid-column:auto}}

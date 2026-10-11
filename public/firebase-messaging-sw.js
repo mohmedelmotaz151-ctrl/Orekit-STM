@@ -17,8 +17,8 @@ messaging.onBackgroundMessage((payload) => {
   const body = payload.notification?.body || payload.data?.body || 'لديك إشعار جديد';
   self.registration.showNotification(title, {
     body,
-    icon: '/pwa-192x192.png',
-    badge: '/pwa-192x192.png',
+    icon: '/icon-192.svg',
+    badge: '/icon-192.svg',
     tag: payload.data?.tag || 'orkeit-notification',
     renotify: true,
     vibrate: [200, 100, 200, 100, 300],

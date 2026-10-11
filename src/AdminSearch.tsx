@@ -1,6 +1,6 @@
 import {useState} from 'react';
 type Site={id:string;client:string;facility:string;phone:string;address:string};
-type Row={id:string;siteId?:string;client?:string;facility?:string;phone?:string;contractNo?:string;status?:string;date?:string;startDate?:string;endDate?:string;name?:string;service?:string;customerName?:string;technician?:string;notes?:string;delegateId?:string;createdAt?:number;updatedAt?:number};
+type Row={id:string;siteId?:string;client?:string;facility?:string;phone?:string;contractNo?:string;status?:string;date?:string;startDate?:string;endDate?:string;expiryDate?:string;name?:string;service?:string;customerName?:string;technician?:string;notes?:string;delegateId?:string;createdAt?:number;updatedAt?:number};
 type Delegate={id:string;name:string};
 export default function AdminSearch({sites,visits,maintenance,contracts,requests,delegates,onOpenSite,onOpenRequests}:{sites:Site[];visits:Row[];maintenance:Row[];contracts:Row[];requests:Row[];delegates:Delegate[];onOpenSite:(id:string)=>void;onOpenRequests:()=>void}){
  const [q,setQ]=useState(''),[status,setStatus]=useState('الكل'),[delegate,setDelegate]=useState('الكل'),[from,setFrom]=useState(''),[to,setTo]=useState('');

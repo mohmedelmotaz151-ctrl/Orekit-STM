@@ -426,3 +426,9 @@ button,a,.serviceItem,.documentChoice{transition:background-color .16s,border-co
 .customerTrackingCard small{color:#77849a;font-size:10px}
 .customerProfileNotice{display:inline-flex;padding:10px 12px}
 @media(max-width:720px){.customerProfileHead,.customerProfileSectionHead{align-items:flex-start;flex-direction:column}.customerIdentity{grid-template-columns:1fr}.customerIdentityFields{grid-template-columns:1fr}.customerIdentityFields .primary{width:100%}.customerProfileCounts{grid-template-columns:repeat(2,minmax(0,1fr))}.customerFacilityGrid,.customerTrackingGrid{grid-template-columns:1fr}.customerTrackingGrid>.customerProfileSection:last-child{grid-column:auto}.customerFacilityForm{grid-template-columns:1fr}.customerFacilityForm>label:nth-child(2){grid-column:auto}.customerCoords{grid-template-columns:1fr}.customerFacilityForm .customerFacilityActions{grid-column:auto}.customerFacilityActions button{flex:1}.customerProfileSection{padding:12px}}
+
+
+/* Google Maps and manual facility fields in extinguisher maintenance */
+.maintenanceMapActions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
+.maintenanceMapActions button{flex:1;min-width:150px}
+.maintenanceCoordinates{font-size:12px;color:#31577f;background:#eef5ff;padding:9px 11px;border-radius:8px;overflow-wrap:anywhere}

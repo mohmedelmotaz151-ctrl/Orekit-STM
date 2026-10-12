@@ -529,7 +529,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
   <nav className="mobileAppBar" aria-label="تنقل التطبيق">
     <button type="button" onClick={()=>go("home")} aria-label="الرئيسية"><span>⌂</span><small>الرئيسية</small></button>
     <button type="button" onClick={()=>setMenu(!menu)} aria-label="القائمة"><span>☰</span><small>القائمة</small></button>
-    <div className="mobileDockBell"><NotificationBell items={[...notificationRecords,...noticeItems,...expiryAlerts]} title="الإشعارات" onRead={markNotificationRead} onMarkAllRead={()=>void markAllNotificationsRead()} onSelect={item=>{const id=item.match(/ORK-\\d{4}-\\d+/)?.[0];if(id){setRequestSearch(id);go('requests');}else if(item.includes('صيانة طفايات'))go('maintenance');else go('sites');}}/></div>
+    <div className="mobileDockBell"><NotificationBell items={[...notificationRecords,...noticeItems,...expiryAlerts]} title="الإشعارات" onRead={markNotificationRead} onMarkAllRead={()=>void markAllNotificationsRead()} onSelect={item=>{const id=item.match(/ORK-\d{4}-\d+/)?.[0];if(id){setRequestSearch(id);go('requests');}else if(item.includes('صيانة طفايات'))go('maintenance');else go('sites');}}/></div>
     <button type="button" onClick={onLogout} aria-label="تسجيل الخروج"><span>↪</span><small>خروج</small></button>
   </nav>
   {open==='lead'&&<LeadForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setLeadsSafe([x,...leads.filter(l=>l.id!==x.id)]);setOpen(null)}}/>}\n  {open==='site'&&<SiteForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setSitesSafe([x,...sites.filter(s=>s.id!==x.id)]);setOpen(null)}}/>}

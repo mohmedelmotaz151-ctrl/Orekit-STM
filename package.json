@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "node scripts/generate-pwa-icon.mjs",
     "prebuild": "node scripts/generate-pwa-icon.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",

@@ -180,7 +180,7 @@ function CustomerAuth({onBack,onLogin}:{onBack:()=>void;onLogin:(u:any)=>void}){
  return <div className="loginPage"><div className="loginCard"><button type="button" className="backLink" onClick={onBack}>← العودة</button><div className="loginLogo">O</div><p className="eyebrow">ORKEIT SAFETY</p><h1>{mode==='login'?'تسجيل دخول العميل':'إنشاء حساب عميل'}</h1><p className="loginHint">بعد الدخول ستظهر لك خدمات الدفاع المدني.</p>{mode==='register'&&<label>اسم العميل<input value={name} onChange={e=>setName(e.target.value)} required/></label>}<label>رقم الجوال<input inputMode="tel" value={phone} onChange={e=>setPhone(e.target.value)} required/></label><label>كلمة المرور<input type="password" value={password} onChange={e=>setPassword(e.target.value)} required/></label>{error&&<div className="error">{error}</div>}<button type="button" className="primary wide" onClick={submit}>{mode==='login'?'دخول':'إنشاء الحساب'}</button><button type="button" className="switchAuth" onClick={()=>{setMode(mode==='login'?'register':'login');setError('')}}>{mode==='login'?'ليس لديك حساب؟ إنشاء حساب':'لديك حساب؟ تسجيل الدخول'}</button></div></div>;
 }
 function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
- const services=['عقد صيانة أنظمة الدفاع المدني','فحص وصيانة طفايات الحريق','صيانة نظام إنذار الحريق','صيانة مضخات الحريق','توريد وتركيب معدات السلامة','طلب زيارة وفحص للمنشأة'];
+ const services=['عقد صيانة أنظمة الدفاع المدني','فحص وصيانة طفايات الحريق','صيانة نظام إنذار الحريق','صيانة مضخات الحريق','توريد وتركيب معدات السلامة','طلب زيارة وفحص للمنشأة','طلب سعر'];
  const [requests,setRequests]=useState<ServiceRequest[]>([]);
  const [loading,setLoading]=useState(true);
  const [selectedService,setSelectedService]=useState('');
@@ -311,7 +311,7 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
     {showProfile && <CustomerProfile user={user} onClose={() => setShowProfile(false)} />}
     <div className="serviceGrid">
      {services.map((x, i) => (
-      <button className="serviceItem" key={x} onClick={() => { setShowProfile(false); setSelectedService(x); }}>
+      <button className="serviceItem" key={x} onClick={() => { setShowProfile(false); if(x==='طلب سعر'){window.location.href='https://profile-five-kappa-47.vercel.app/#credentials';return;} setSelectedService(x); }}>
        <span>{String(i + 1).padStart(2, '0')}</span>
        <strong>{x}</strong>
        <b>طلب الخدمة ←</b>

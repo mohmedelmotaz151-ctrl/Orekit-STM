@@ -93,7 +93,7 @@ export default function App(){
 }
 function Login({onLogin,onCustomer,onCustomerLogin,onDelegate}:{onLogin:()=>void;onCustomer:()=>void;onCustomerLogin:(u:any)=>void;onDelegate?:(d:Delegate)=>void}){
  const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false);
- const normalize=(value:string)=>value.trim().replace(/\\s+/g,'').replace(/[()\\-]/g,'');
+ const normalize=(value:string)=>value.trim().replace(/\s+/g,'').replace(/[()-]/g,'');
  const submit=async(e:FormEvent)=>{
   e.preventDefault();setError('');
   const enteredUser=normalize(username);
@@ -156,7 +156,7 @@ function CustomerAuth({onBack,onLogin}:{onBack:()=>void;onLogin:(u:any)=>void}){
  const submit=(e:FormEvent)=>{
    e.preventDefault();
    setError('');
-   const normalizedPhone=phone.trim().replace(/\\s+/g,'');
+   const normalizedPhone=phone.trim().replace(/\s+/g,'');
    const list=get();
    if(mode==='register'){
      if(!name.trim()||!normalizedPhone||password.length<4){setError('أدخل البيانات المطلوبة وكلمة مرور لا تقل عن 4 أحرف.');return}
@@ -264,7 +264,7 @@ function CustomerServices({user,onLogout}:{user:any;onLogout:()=>void}){
    if(submittingRef.current)return;
    submittingRef.current=true;
    setIsSubmitting(true);
-   const name=form.name.trim(),phone=form.phone.trim().replace(/\\s+/g,'');
+   const name=form.name.trim(),phone=form.phone.trim().replace(/\s+/g,'');
    if(!selectedService||!name||!phone||!form.facility.trim()||!form.address.trim()){
      alert('أكمل الاسم ورقم الجوال واسم المنشأة وموقعها.');
      submittingRef.current=false;setIsSubmitting(false);return;
@@ -535,7 +535,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
   {open==='lead'&&<LeadForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setLeadsSafe([x,...leads.filter(l=>l.id!==x.id)]);setOpen(null)}}/>}\n  {open==='site'&&<SiteForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setSitesSafe([x,...sites.filter(s=>s.id!==x.id)]);setOpen(null)}}/>}
   {open==='visit'&&<VisitForm sites={sites} delegates={delegates} initial={editing} close={()=>setOpen(null)} onSave={x=>{setVisitsSafe([x,...visits.filter(v=>v.id!==x.id)]);setOpen(null)}}/>}
   {open==='maintenance'&&<MaintenanceForm sites={sites} delegates={delegates} initial={editing} close={()=>setOpen(null)} onSave={x=>{setMaintenanceSafe([x,...maintenance.filter(m=>m.id!==x.id)]);setOpen(null)}}/>}
-  {open==='delegate'&&<DelegateForm initial={editing} close={()=>setOpen(null)} onSave={async x=>{if(!firebaseConfigured)throw new Error('Firebase غير مهيأ؛ لم يتم إنشاء الحساب. اضبط متغيرات Firebase في Vercel ثم أعد المحاولة.');const duplicate=delegates.some(d=>d.id!==x.id&&d.phone.replace(/[\\s()\\-]/g,'')===x.phone.replace(/[\\s()\\-]/g,''));if(duplicate)throw new Error('رقم الجوال مستخدم بالفعل لحساب مندوب آخر.');await saveCloud('delegates',x);const next=[x,...delegates.filter(d=>d.id!==x.id)];setDelegates(next);save('/delegates',next);try{await saveCloud('auditLog',{id:uid(),action:editing?'update':'create',entity:'delegates',entityId:x.id,summary:(editing?'تعديل حساب المندوب — ':'إنشاء حساب المندوب — ')+x.name,actor:'admin',createdAt:Date.now()})}catch(e){console.warn('Delegate audit log failed',e)}setOpen(null)}}/>}
+  {open==='delegate'&&<DelegateForm initial={editing} close={()=>setOpen(null)} onSave={async x=>{if(!firebaseConfigured)throw new Error('Firebase غير مهيأ؛ لم يتم إنشاء الحساب. اضبط متغيرات Firebase في Vercel ثم أعد المحاولة.');const duplicate=delegates.some(d=>d.id!==x.id&&d.phone.replace(/[\s()-]/g,'')===x.phone.replace(/[\s()-]/g,''));if(duplicate)throw new Error('رقم الجوال مستخدم بالفعل لحساب مندوب آخر.');await saveCloud('delegates',x);const next=[x,...delegates.filter(d=>d.id!==x.id)];setDelegates(next);save('/delegates',next);try{await saveCloud('auditLog',{id:uid(),action:editing?'update':'create',entity:'delegates',entityId:x.id,summary:(editing?'تعديل حساب المندوب — ':'إنشاء حساب المندوب — ')+x.name,actor:'admin',createdAt:Date.now()})}catch(e){console.warn('Delegate audit log failed',e)}setOpen(null)}}/>}
  </div>
 }
 
@@ -729,7 +729,7 @@ function DelegateForm({initial,close,onSave}:{initial?:Delegate|null;close:()=>v
  const [x,setX]=useState<Delegate>(initial||{id:uid(),name:'',phone:'',password:'',active:true});
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
- const submit=async(e:FormEvent)=>{e.preventDefault();if(busy)return;setBusy(true);setError('');try{const clean={...x,name:x.name.trim(),phone:x.phone.trim().replace(/\\s+/g,'').replace(/[()\\-]/g,''),password:x.password};if(!clean.name||!clean.phone||!clean.password)throw new Error('أكمل اسم المندوب ورقم الجوال وكلمة المرور.');await onSave(clean)}catch(err){console.error('Delegate account creation failed',err);setError(err instanceof Error?err.message:'تعذر إنشاء حساب المندوب. تحقق من اتصال Firebase والصلاحيات.')}finally{setBusy(false)}};
+ const submit=async(e:FormEvent)=>{e.preventDefault();if(busy)return;setBusy(true);setError('');try{const clean={...x,name:x.name.trim(),phone:x.phone.trim().replace(/\s+/g,'').replace(/[()-]/g,''),password:x.password};if(!clean.name||!clean.phone||!clean.password)throw new Error('أكمل اسم المندوب ورقم الجوال وكلمة المرور.');await onSave(clean)}catch(err){console.error('Delegate account creation failed',err);setError(err instanceof Error?err.message:'تعذر إنشاء حساب المندوب. تحقق من اتصال Firebase والصلاحيات.')}finally{setBusy(false)}};
  return <Modal title={initial?'تعديل حساب المندوب':'إنشاء حساب مندوب'} close={close}><form onSubmit={e=>void submit(e)}>
   <Input label="اسم المندوب" value={x.name} onChange={v=>setX({...x,name:v})} required/>
   <Input label="رقم الجوال (اسم الدخول)" value={x.phone} onChange={v=>setX({...x,phone:v})} required/>

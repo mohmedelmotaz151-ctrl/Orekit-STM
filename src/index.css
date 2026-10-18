@@ -524,3 +524,26 @@ input:focus,select:focus,textarea:focus{border-color:var(--orkeit-navy)!importan
 .pageTitle h1,.panel h2,.panel h3{color:var(--orkeit-navy)}
 a{color:var(--orkeit-navy)}
 @media(max-width:700px){.mobileAppBar{background:rgba(11,45,91,.98)!important}.mobileAppBar>button>small{color:#fff}.mobileAppBar>button:active{background:#ffffff20}}
+
+/* Orkeit SVG icon system */
+.orkeitIcon{display:inline-block;flex:0 0 auto;vertical-align:middle}
+.brandMark{display:inline-flex;align-items:center;justify-content:center;color:#fff}
+header .logo .brandMark{width:42px;height:42px;border-radius:12px;background:#ffffff12;border:1px solid #ffffff30}
+aside button{display:flex;align-items:center;gap:12px;text-align:right}
+aside button .orkeitIcon{color:#0B2D5B}
+aside button.active .orkeitIcon{color:#E11D2E}
+.loginLogo{display:flex;align-items:center;justify-content:center;color:#fff;background:#0B2D5B;border-radius:20px;width:82px;height:82px;margin:0 auto 12px;box-shadow:0 8px 20px #0b2d5b26}
+.heroActions button{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.smartMetric{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding-top:16px}
+.smartMetric .metricIcon{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:13px;background:#0B2D5B0d;color:#0B2D5B;margin-bottom:4px}
+.smartMetric.metricDanger .metricIcon,.smartMetric.metricWarn .metricIcon{background:#E11D2E12;color:#E11D2E}
+.notificationItemText{display:flex;align-items:center;gap:8px}
+.notificationItemText .orkeitIcon{color:#0B2D5B}
+.notificationItemButton{gap:8px}
+.mobileAppBar>button>.orkeitIcon{color:#fff}
+button.primary .orkeitIcon,button.heroGhost .orkeitIcon{color:currentColor}
+@media(max-width:700px){
+ aside button{min-height:46px;padding:12px}
+ .smartMetric .metricIcon{width:38px;height:38px}
+ .heroActions button{min-height:44px}
+}

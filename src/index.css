@@ -547,3 +547,23 @@ button.primary .orkeitIcon,button.heroGhost .orkeitIcon{color:currentColor}
  .smartMetric .metricIcon{width:38px;height:38px}
  .heroActions button{min-height:44px}
 }
+
+/* Orkeit financial accounting */
+.financePage .pageTitle{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.financePage .pageTitle h1{display:flex;align-items:center;gap:10px}
+.financePage .pageTitle p{margin:6px 0 0;color:#64748b}
+.financeSummary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0}
+.financeStat{background:#fff;border:1px solid #dce4ee;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:9px;box-shadow:0 4px 18px #0b2d5b0b}
+.financeStat>span{color:#52647b;font-size:14px}.financeStat strong{font-size:clamp(20px,3vw,29px);color:#0B2D5B;overflow-wrap:anywhere}.financeStat small{color:#64748b}
+.financeStat.incomeStat{border-top:4px solid #16845b}.financeStat.incomeStat strong,.incomeText{color:#16845b!important}
+.financeStat.expenseStat{border-top:4px solid #E11D2E}.financeStat.expenseStat strong,.expenseText{color:#E11D2E!important}
+.financeStat.netStat{border-top:4px solid #0B2D5B}.financeStat.negativeNet{border-top:4px solid #E11D2E}.financeStat.negativeNet strong{color:#E11D2E}
+.financeFormPanel,.financeLedger{padding:20px;margin:16px 0}.financeFormPanel h2,.financeLedger h2{margin:0 0 16px;color:#0B2D5B}
+.financeForm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.financeForm>label,.financeLedgerHead label{display:flex;flex-direction:column;gap:7px;font-weight:600;color:#243b58;font-size:14px}
+.financeForm input,.financeLedgerHead input,.financeLedgerHead select{width:100%;min-height:43px;padding:9px 11px;border:1px solid #d8e1ed;border-radius:10px;background:#fff}
+.financeTypeSwitch{grid-column:1/-1;display:flex;gap:10px}.financeTypeSwitch button{flex:1;min-height:44px;border:1px solid #dce4ee;border-radius:10px;background:#f7f9fc;color:#0B2D5B;font-weight:700}.financeTypeSwitch button.selectedIncome{background:#e9f7f0;border-color:#16845b;color:#16845b}.financeTypeSwitch button.selectedExpense{background:#fff0f1;border-color:#E11D2E;color:#E11D2E}
+.financeFormActions{grid-column:1/-1;display:flex;gap:10px}.financeFormActions button{min-height:43px;padding:0 18px}
+.financeLedgerHead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.financeLedgerHead>div{display:flex;gap:10px}.financeLedgerHead label{min-width:130px}
+.financeTableWrap{overflow-x:auto;width:100%}.financeTable{width:100%;border-collapse:collapse;min-width:650px}.financeTable th,.financeTable td{padding:13px 11px;text-align:right;border-bottom:1px solid #e7edf4;vertical-align:middle}.financeTable th{font-size:13px;color:#52647b;background:#f7f9fc}.financeTable td strong,.financeTable td small{display:block}.financeTable td small{color:#64748b;margin-top:4px;max-width:260px;overflow-wrap:anywhere}.financeBadge{display:inline-block;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:700}.badgeIncome{background:#e9f7f0;color:#16845b}.badgeExpense{background:#fff0f1;color:#E11D2E}.financeActions{display:flex;gap:7px}.financeActions button{padding:7px 10px;white-space:nowrap}
+.financeError,.financeWarning{padding:12px 14px;border-radius:10px;background:#fff0f1;color:#a51b2a;border:1px solid #fecdd3}.financeWarning{background:#fff8e6;color:#805b12;border-color:#f3d99a}
+@media(max-width:650px){.financeSummary{grid-template-columns:1fr;gap:10px}.financeStat{padding:15px}.financeForm{grid-template-columns:1fr}.financeForm>label,.financeTypeSwitch,.financeFormActions{grid-column:1}.financeLedgerHead{align-items:stretch}.financeLedgerHead>div{width:100%}.financeLedgerHead label{min-width:0;flex:1}.financeFormPanel,.financeLedger{padding:14px}.financePage .pageTitle>.secondaryBtn{width:100%}}

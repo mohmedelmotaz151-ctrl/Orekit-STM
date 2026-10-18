@@ -83,13 +83,12 @@ function MessageCenter({role,userId,userName,contacts=[]}:{role:'admin'|'custome
 
 
 
-export default 
 type FinanceEntry={id:string;kind:'income'|'expense';amount:number;category:string;description:string;date:string;createdAt:number;updatedAt:number};
 function FinancePage(){
  const [entries,setEntries]=useState<FinanceEntry[]>(()=>{try{return JSON.parse(localStorage.getItem('orkeit-finance-v1')||'[]')}catch{return []}});
  const [loading,setLoading]=useState(true),[error,setError]=useState(''),[saving,setSaving]=useState(false);
  const [kind,setKind]=useState<'income'|'expense'>('income'),[amount,setAmount]=useState(''),[category,setCategory]=useState(''),[description,setDescription]=useState(''),[date,setDate]=useState(new Date().toISOString().slice(0,10)),[editing,setEditing]=useState<string|null>(null),[filter,setFilter]=useState<'all'|'income'|'expense'>('all'),[month,setMonth]=useState('');
- useEffect(()=>{let active=true;(async()=>{try{if(firebaseConfigured){const cloud=await loadCloud<FinanceEntry>('finance');if(active){setEntries(cloud.sort((x,y)=>y.date.localeCompare(x.date)||y.createdAt-x.createdAt);localStorage.setItem('orkeit-finance-v1',JSON.stringify(cloud));}}}catch(e){if(active)setError('تعذر تحميل الحسابات من قاعدة البيانات. '+(e instanceof Error?e.message:''));}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
+ useEffect(()=>{let active=true;(async()=>{try{if(firebaseConfigured){const cloud=await loadCloud<FinanceEntry>('finance');if(active){setEntries(cloud.sort((x,y)=>y.date.localeCompare(x.date)||y.createdAt-x.createdAt));localStorage.setItem('orkeit-finance-v1',JSON.stringify(cloud));}}}catch(e){if(active)setError('تعذر تحميل الحسابات من قاعدة البيانات. '+(e instanceof Error?e.message:''));}finally{if(active)setLoading(false)}})();return()=>{active=false}},[]);
  const visible=entries.filter(x=>(filter==='all'||x.kind===filter)&&(!month||x.date.startsWith(month))).sort((x,y)=>y.date.localeCompare(x.date)||y.createdAt-x.createdAt);
  const income=visible.filter(x=>x.kind==='income').reduce((s,x)=>s+x.amount,0),expense=visible.filter(x=>x.kind==='expense').reduce((s,x)=>s+x.amount,0),net=income-expense;
  const fmt=(n:number)=>new Intl.NumberFormat('ar-SA',{style:'currency',currency:'SAR',maximumFractionDigits:2}).format(n);
@@ -105,7 +104,7 @@ function FinancePage(){
  {!firebaseConfigured&&<p className="financeWarning">تنبيه: Firebase غير مهيأ؛ السجلات الجديدة محفوظة على هذا الجهاز فقط ولن تتزامن مع الأجهزة الأخرى.</p>}</section>;
 }
 
-function App(){
+export default function App(){
  const [loggedIn,setLoggedIn]=useState(()=>localStorage.getItem(AUTH_KEY)==='1');
  const [customerPortal,setCustomerPortal]=useState(false);
  const [delegateUser,setDelegateUser]=useState<Delegate|null>(()=>{try{return JSON.parse(localStorage.getItem('orkeit-delegate-auth')||'null')}catch{return null}});

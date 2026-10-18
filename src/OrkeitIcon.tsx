@@ -1,6 +1,6 @@
 import React from 'react';
 
-type IconName='shield'|'home'|'search'|'archive'|'chart'|'history'|'messages'|'user'|'building'|'visit'|'fire'|'users'|'requests'|'contract'|'whatsapp'|'info'|'menu'|'logout'|'bell'|'clock'|'check'|'wrench'|'helmet'|'engineering'|'quality'|'handshake'|'target'|'map'|'phone'|'document';
+type IconName='shield'|'home'|'search'|'archive'|'chart'|'history'|'messages'|'user'|'building'|'visit'|'fire'|'users'|'requests'|'contract'|'whatsapp'|'info'|'menu'|'logout'|'bell'|'clock'|'check'|'wrench'|'helmet'|'engineering'|'quality'|'handshake'|'target'|'map'|'phone'|'document'|'finance';
 const paths:Record<IconName,React.ReactNode>={
 shield:<><path d="M12 3 20 6v5c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></>,
 home:<><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-6h6v6"/></>,
@@ -31,9 +31,10 @@ handshake:<><path d="m3 9 4-4 5 2 5-2 4 4-5 8-4-2-4 2z"/><path d="m7 5 5 5 5-5M9
 target:<><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></>,
 map:<><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></>,
 phone:<><path d="M6 3h4l2 5-3 2a14 14 0 0 0 5 5l2-3 5 2v4c0 2-2 3-4 2C9 18 5 14 3 7 2 5 4 3 6 3z"/></>,
-document:<><path d="M5 3h10l4 4v14H5z"/><path d="M15 3v5h4M8 12h8M8 16h8"/></>
+document:<><path d="M5 3h10l4 4v14H5z"/><path d="M15 3v5h4M8 12h8M8 16h8"/></>,
+finance:<><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3M16 15h1"/><path d="M7 3v2M17 3v2"/></>
 };
-const names:Record<string,IconName>={home:'home',search:'search',archive:'archive',reports:'chart',audit:'history',messages:'messages',leads:'user',sites:'building',visits:'visit',maintenance:'fire',delegates:'users',requests:'requests',documents:'contract',invite:'whatsapp',about:'info',siteProfile:'building',shield:'shield'};
+const names:Record<string,IconName>={home:'home',search:'search',archive:'archive',reports:'chart',audit:'history',messages:'messages',leads:'user',sites:'building',visits:'visit',maintenance:'fire',delegates:'users',requests:'requests',documents:'contract',invite:'whatsapp',about:'info',siteProfile:'building',finance:'finance',shield:'shield'};
 export function OrkeitIcon({name,size=22,className='',title}:{name:string;size?:number;className?:string;title?:string}){
  const key=(name in paths?name:names[name]||'shield') as IconName;
  return <svg className={'orkeitIcon '+className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" role={title?'img':'presentation'} aria-label={title} aria-hidden={title?undefined:true}>{title&&<title>{title}</title>}{paths[key]}</svg>;

@@ -102,7 +102,7 @@ function Login({onLogin,onCustomer,onCustomerLogin,onDelegate}:{onLogin:()=>void
   try{
    const localDelegates=load<Delegate[]>('/delegates',[]);
    let delegates=localDelegates;
-   if(firebaseConfigured){try{delegates=await loadCloud<Delegate>('delegates')}catch{delegates=localDelegates}}
+   if(firebaseConfigured){delegates=await loadCloud<Delegate>('delegates')}else{delegates=localDelegates}
    const delegate=delegates.find(d=>d.active&&normalize(d.phone)===enteredUser&&d.password===password);
    if(delegate){if(onDelegate)onDelegate(delegate);else setError('تعذر فتح حساب المندوب.');return;}
    let customers:any[]=[];
@@ -535,7 +535,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
   {open==='lead'&&<LeadForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setLeadsSafe([x,...leads.filter(l=>l.id!==x.id)]);setOpen(null)}}/>}\n  {open==='site'&&<SiteForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setSitesSafe([x,...sites.filter(s=>s.id!==x.id)]);setOpen(null)}}/>}
   {open==='visit'&&<VisitForm sites={sites} delegates={delegates} initial={editing} close={()=>setOpen(null)} onSave={x=>{setVisitsSafe([x,...visits.filter(v=>v.id!==x.id)]);setOpen(null)}}/>}
   {open==='maintenance'&&<MaintenanceForm sites={sites} delegates={delegates} initial={editing} close={()=>setOpen(null)} onSave={x=>{setMaintenanceSafe([x,...maintenance.filter(m=>m.id!==x.id)]);setOpen(null)}}/>}
-  {open==='delegate'&&<DelegateForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setDelegatesSafe([x,...delegates.filter(d=>d.id!==x.id)]);setOpen(null)}}/>}
+  {open==='delegate'&&<DelegateForm initial={editing} close={()=>setOpen(null)} onSave={async x=>{if(!firebaseConfigured)throw new Error('Firebase غير مهيأ؛ لم يتم إنشاء الحساب. اضبط متغيرات Firebase في Vercel ثم أعد المحاولة.');const duplicate=delegates.some(d=>d.id!==x.id&&d.phone.replace(/[\\s()\\-]/g,'')===x.phone.replace(/[\\s()\\-]/g,''));if(duplicate)throw new Error('رقم الجوال مستخدم بالفعل لحساب مندوب آخر.');await saveCloud('delegates',x);const next=[x,...delegates.filter(d=>d.id!==x.id)];setDelegates(next);save('/delegates',next);try{await saveCloud('auditLog',{id:uid(),action:editing?'update':'create',entity:'delegates',entityId:x.id,summary:(editing?'تعديل حساب المندوب — ':'إنشاء حساب المندوب — ')+x.name,actor:'admin',createdAt:Date.now()})}catch(e){console.warn('Delegate audit log failed',e)}setOpen(null)}}/>}
  </div>
 }
 
@@ -725,6 +725,19 @@ function MaintenanceForm({sites,delegates,initial,close,onSave}:{sites:Site[];de
  <Input label="اسم الفني" value={x.technician} onChange={v=>setX({...x,technician:v})}/>
  <button className="primary wide">حفظ سجل الصيانة</button></form></Modal>
 }
-function DelegateForm({initial,close,onSave}:{initial?:Delegate|null;close:()=>void;onSave:(x:Delegate)=>void}){const [x,setX]=useState<Delegate>(initial||{id:uid(),name:'',phone:'',password:'',active:true});return <Modal title="إضافة مندوب" close={close}><form onSubmit={e=>{e.preventDefault();onSave(x)}}><Input label="اسم المندوب" value={x.name} onChange={v=>setX({...x,name:v})} required/><Input label="رقم الجوال (اسم الدخول)" value={x.phone} onChange={v=>setX({...x,phone:v})} required/><Input label="كلمة مرور المندوب" value={x.password} onChange={v=>setX({...x,password:v})} required/><label>الحالة<select value={x.active?'active':'inactive'} onChange={e=>setX({...x,active:e.target.value==='active'})}><option value="active">نشط</option><option value="inactive">موقوف</option></select></label><button className="primary wide">حفظ المندوب</button></form></Modal>}
+function DelegateForm({initial,close,onSave}:{initial?:Delegate|null;close:()=>void;onSave:(x:Delegate)=>Promise<void>}) {
+ const [x,setX]=useState<Delegate>(initial||{id:uid(),name:'',phone:'',password:'',active:true});
+ const [busy,setBusy]=useState(false);
+ const [error,setError]=useState('');
+ const submit=async(e:FormEvent)=>{e.preventDefault();if(busy)return;setBusy(true);setError('');try{const clean={...x,name:x.name.trim(),phone:x.phone.trim().replace(/\\s+/g,'').replace(/[()\\-]/g,''),password:x.password};if(!clean.name||!clean.phone||!clean.password)throw new Error('أكمل اسم المندوب ورقم الجوال وكلمة المرور.');await onSave(clean)}catch(err){console.error('Delegate account creation failed',err);setError(err instanceof Error?err.message:'تعذر إنشاء حساب المندوب. تحقق من اتصال Firebase والصلاحيات.')}finally{setBusy(false)}};
+ return <Modal title={initial?'تعديل حساب المندوب':'إنشاء حساب مندوب'} close={close}><form onSubmit={e=>void submit(e)}>
+  <Input label="اسم المندوب" value={x.name} onChange={v=>setX({...x,name:v})} required/>
+  <Input label="رقم الجوال (اسم الدخول)" value={x.phone} onChange={v=>setX({...x,phone:v})} required/>
+  <Input label="كلمة مرور المندوب" value={x.password} onChange={v=>setX({...x,password:v})} required/>
+  <label>الحالة<select value={x.active?'active':'inactive'} onChange={e=>setX({...x,active:e.target.value==='active'})}><option value="active">نشط</option><option value="inactive">موقوف</option></select></label>
+  {error&&<p className="error" role="alert">{error}</p>}
+  <button className="primary wide" disabled={busy}>{busy?'جارٍ إنشاء الحساب وحفظه…':'حفظ حساب المندوب'}</button>
+ </form></Modal>
+}
 
 function AuditLogPage(){const [items,setItems]=useState<Array<{id:string;summary:string;entity:string;action:string;actor:string;createdAt:number}>>([]);useEffect(()=>{void loadCloud<any>('auditLog').then(rows=>setItems(rows.sort((a,b)=>b.createdAt-a.createdAt))).catch(e=>console.warn('Audit log load failed',e))},[]);return <section className="panel" dir="rtl"><h1>سجل التعديلات</h1><p>الأحداث المسجلة عند إنشاء السجلات أو تعديلها أو حذفها.</p>{items.slice(0,250).map(x=><article className="dashboardLine" key={x.id}><b>{x.summary||x.entity+' '+x.action}</b><span>{x.actor||'مستخدم'} · {new Date(x.createdAt).toLocaleString('ar-SA')}</span></article>)}{!items.length&&<p className="emptyMini">لا توجد أحداث مسجلة حتى الآن.</p>}</section>}

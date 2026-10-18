@@ -501,3 +501,26 @@ button{ -webkit-tap-highlight-color:transparent }
   .smartMetric{padding:12px!important}
   .mobileAppBar{padding-left:8px;padding-right:8px}
 }
+
+
+/* Orkeit brand refresh — visual-only overrides; existing routes, forms and data behavior remain unchanged. */
+:root{--orkeit-navy:#0B2D5B;--orkeit-red:#E11D2E;--orkeit-white:#FFFFFF;--orkeit-ink:#15345d;--orkeit-border:#dce4ee;--orkeit-soft:#f4f7fb}
+html,body,#root{font-family:"Tahoma","Arial",sans-serif}
+body{background:#f5f7fb;color:#17304f}
+header,.mobileAppBar{background:var(--orkeit-navy)!important}
+header{box-shadow:0 3px 14px #0b2d5b18}
+button{transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #e11d2e55;outline-offset:2px}
+button.primary,.primaryButton,.btnPrimary,.quick button:first-child{background:var(--orkeit-navy)}
+button.danger,.btnDanger,.secondaryButtonRed{background:var(--orkeit-red)}
+.panel,.card,.stat,.modal,.loginCard,.servicesCard,.documentPaper{border-color:var(--orkeit-border);box-shadow:0 4px 18px #0b2d5b0b}
+.panel,.card,.stat{border-radius:16px}
+input,select,textarea{border-color:#d8e1ed!important;border-radius:10px!important;background:#fff}
+input:focus,select:focus,textarea:focus{border-color:var(--orkeit-navy)!important;box-shadow:0 0 0 3px #0b2d5b12}
+.notificationBell{color:var(--orkeit-white)}
+.notificationBell span{background:var(--orkeit-red)!important}
+.notificationPanel{border:1px solid var(--orkeit-border);border-radius:15px;box-shadow:0 14px 40px #071a3440}
+.notificationHead{background:var(--orkeit-navy);color:#fff}
+.pageTitle h1,.panel h2,.panel h3{color:var(--orkeit-navy)}
+a{color:var(--orkeit-navy)}
+@media(max-width:700px){.mobileAppBar{background:rgba(11,45,91,.98)!important}.mobileAppBar>button>small{color:#fff}.mobileAppBar>button:active{background:#ffffff20}}

@@ -84,8 +84,62 @@ function MessageCenter({role,userId,userName,contacts=[]}:{role:'admin'|'custome
  const current=records.filter(m=>m.threadId===threadId);
  const contact=contacts.find(c=>c.threadId===selected);
  const send=async(e:FormEvent)=>{e.preventDefault();const text=body.trim();if(!text||!threadId||busy)return;setBusy(true);setError('');const recipientType=role==='admin'?(contact?.kind||'customer'):'admin';const recipientId=role==='admin'?(contact?.id||''):'admin';const recipientName=role==='admin'?(contact?.name||''):'الإدارة';const msg:MessageRecord={id:uid(),threadId,senderType:role,senderId:userId,senderName:userName,recipientType,recipientId,recipientName,body:text,createdAt:Date.now(),read:false};setRecords(prev=>[...prev,msg]);setBody('');try{await saveCloud('messages',msg)}catch(e){console.error('Message send failed',e);setRecords(prev=>prev.filter(m=>m.id!==msg.id));setBody(text);setError('تعذر إرسال الرسالة. تحقق من الاتصال والصلاحيات ثم أعد المحاولة.')}finally{setBusy(false)}};
- const unread=role==='admin'?records.filter(m=>m.recipientType==='admin'&&!m.read).length:current.filter(m=>m.recipientId===userId&&!m.read).length;
- return <section className="panel messageCenter" dir="rtl"><div className="panelTitle"><div><h2>{role==='admin'?'مركز الرسائل':'الرسائل مع الإدارة'}</h2><small>{role==='admin'?'مراسلة العملاء والمناديب من داخل التطبيق':'يمكنك إرسال رسالة والرد على الإدارة'}</small></div><span>{unread?unread+' غير مقروءة':'محادثات مباشرة'}</span></div>{role==='admin'&&<label className="messageContactLabel">اختر العميل أو المندوب<select value={selected} onChange={e=>setSelected(e.target.value)}><option value="">اختر محادثة</option>{contacts.map(c=><option key={c.threadId} value={c.threadId}>{c.kind==='delegate'?'مندوب':'عميل'}: {c.name}{c.facility?' — '+c.facility:''}{records.some(m=>m.threadId===c.threadId&&m.recipientType==='admin'&&!m.read)?' • رسالة جديدة':''}</option>)}</select></label>}{role==='admin'&&!contact?<div className="emptyMini">أضف طلب عميل أو مندوبًا أولًا لبدء محادثة.</div>:<><div className="messageHistory" aria-live="polite">{current.map(m=><article key={m.id} className={'messageBubble '+(m.senderType===role?'messageMine':'messageTheirs')}><div className="messageSender">{m.senderName||'مستخدم'}</div><p>{m.body}</p><time>{new Date(m.createdAt).toLocaleString('ar-SA',{dateStyle:'short',timeStyle:'short'})}</time></article>)}{!current.length&&<div className="emptyMini">لا توجد رسائل في هذه المحادثة بعد.</div>}</div><form className="messageComposer" onSubmit={send}><textarea rows={2} maxLength={2000} value={body} onChange={e=>setBody(e.target.value)} placeholder="اكتب رسالتك هنا..." required/><button className="primary" disabled={busy||!body.trim()}>{busy?'جارٍ الإرسال…':'إرسال الرسالة'}</button></form></>}{error&&<p className="error">{error}</p>}</section>
+ const unread = role === 'admin'
+   ? records.filter((message) => message.recipientType === 'admin' && !message.read).length
+   : current.filter((message) => message.recipientId === userId && !message.read).length;
+
+ return (
+   <section className="panel messageCenter" dir="rtl">
+     <div className="panelTitle">
+       <div>
+         <h2>{role === 'admin' ? 'مركز الرسائل' : 'الرسائل مع الإدارة'}</h2>
+         <small>{role === 'admin' ? 'مراسلة العملاء والمناديب من داخل التطبيق' : 'يمكنك إرسال رسالة والرد على الإدارة'}</small>
+       </div>
+       <span>{unread ? unread + ' غير مقروءة' : 'محادثات مباشرة'}</span>
+     </div>
+     {role === 'admin' && (
+       <label className="messageContactLabel">
+         اختر العميل أو المندوب
+         <select value={selected} onChange={(event) => setSelected(event.target.value)}>
+           <option value="">اختر محادثة</option>
+           {contacts.map((item) => (
+             <option key={item.threadId} value={item.threadId}>
+               {item.kind === 'delegate' ? 'مندوب' : 'عميل'}: {item.name}
+               {item.facility ? ' — ' + item.facility : ''}
+               {records.some((message) => message.threadId === item.threadId && message.recipientType === 'admin' && !message.read) ? ' • رسالة جديدة' : ''}
+             </option>
+           ))}
+         </select>
+       </label>
+     )}
+     {role === 'admin' && !contact ? (
+       <div className="emptyMini">أضف طلب عميل أو مندوبًا أولًا لبدء محادثة.</div>
+     ) : (
+       <>
+         <div className="messageHistory" aria-live="polite">
+           {current.map((message) => (
+             <article
+               key={message.id}
+               className={'messageBubble ' + (message.senderType === role ? 'messageMine' : 'messageTheirs')}
+             >
+               <div className="messageSender">{message.senderName || 'مستخدم'}</div>
+               <p>{message.body}</p>
+               <time>{new Date(message.createdAt).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' })}</time>
+             </article>
+           ))}
+           {!current.length && <div className="emptyMini">لا توجد رسائل في هذه المحادثة بعد.</div>}
+         </div>
+         <form className="messageComposer" onSubmit={send}>
+           <textarea rows={2} maxLength={2000} value={body} onChange={(event) => setBody(event.target.value)} placeholder="اكتب رسالتك هنا..." required />
+           <button className="primary" disabled={busy || !body.trim()}>
+             {busy ? 'جارٍ الإرسال…' : 'إرسال الرسالة'}
+           </button>
+         </form>
+       </>
+     )}
+     {error && <p className="error">{error}</p>}
+   </section>
+ );
 }
 
 

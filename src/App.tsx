@@ -46,19 +46,56 @@ const exportExcel=(filename:string,rows:string[][])=>{
   const exportedAt=new Date().toLocaleString('ar-SA');
   const isFinance=/finance|محاسبة/i.test(filename);
   const reportTitle=isFinance?'تقرير المحاسبة المالية':'تقرير طلبات خدمات أوريكيت';
-  const amountColumn=headers.findIndex(h=>/المبلغ|amount|ريال/i.test(h));
+  let outputHeaders=headers;
+  let outputRows:any[][]=[];
+  if(isFinance){
+    outputHeaders=['التاريخ','التصنيف','الوصف','الدخل (ر.س)','الخرج (ر.س)'];
+    outputRows=dataRows.map(row=>{
+      const isIncome=String(row[1]||'').trim()==='دخل';
+      const value=Number(row[4]||0);
+      return [row[0]||'',row[2]||'',row[3]||'',isIncome?value:'',isIncome?'':value];
+    });
+    const summaryValue=(label:string)=>{const found=summaryRows.find(row=>row.includes(label));return found?Number(found[rowLastIndex(found)]||0):0};
+    outputRows.push(
+      ['إجمالي الدخل','','',summaryValue('إجمالي الدخل'),''],
+      ['إجمالي الخرج','','','',summaryValue('إجمالي الخرج')],
+      ['صافي الحساب','','',summaryValue('صافي الحساب'),'']
+    );
+  }else{
+    outputRows=dataRows.map(row=>row.map(value=>value));
+  }
+  function rowLastIndex(row:string[]){return row.length-1}
   const aoa:any[][]=[
     ['شركة أوريكيت للمقاولات العامة'],
     [reportTitle+' — تم التصدير: '+exportedAt],
     [],
-    headers,
-    ...dataRows.map(row=>row.map((value,index)=>index===amountColumn&&value!==''&&Number.isFinite(Number(value))?Number(value):value)),
-    ...summaryRows.map(row=>[row.slice(0,-1).filter(Boolean).join(' '),...Array(Math.max(0,headers.length-2)).fill(''),row[row.length-1]!==''&&Number.isFinite(Number(row[row.length-1]))?Number(row[row.length-1]):row[row.length-1]])
+    outputHeaders,
+    ...outputRows
   ];
   const worksheet=XLSX.utils.aoa_to_sheet(aoa);
   worksheet['!views']=[{rightToLeft:true}];
-  worksheet['!cols']=headers.map((header,index)=>({wch:Math.min(36,Math.max(14,...[header,...dataRows.map(row=>String(row[index]??''))].map(value=>String(value).length+2)))}));
-  worksheet['!merges']=[{s:{r:0,c:0},e:{r:0,c:Math.max(0,headers.length-1)}},{s:{r:1,c:0},e:{r:1,c:Math.max(0,headers.length-1)}}];
+  worksheet['!cols']=outputHeaders.map((header,index)=>({wch:Math.min(30,Math.max(11,...[header,...outputRows.map(row=>String(row[index]??''))].map(value=>value.length+1)))}));
+  worksheet['!merges']=[{s:{r:0,c:0},e:{r:0,c:Math.max(0,outputHeaders.length-1)}},{s:{r:1,c:0},e:{r:1,c:Math.max(0,outputHeaders.length-1)}}];
+  const border={top:{style:'thin',color:{rgb:'FFD1D9E6'}},bottom:{style:'thin',color:{rgb:'FFD1D9E6'}},left:{style:'thin',color:{rgb:'FFD1D9E6'}},right:{style:'thin',color:{rgb:'FFD1D9E6'}}};
+  const styleCell=(r:number,c:number,style:any)=>{const cell=worksheet[XLSX.utils.encode_cell({r,c})];if(cell)cell.s={...(cell.s||{}),...style,border};};
+  for(let c=0;c<outputHeaders.length;c++){
+    const headerStyle:any={font:{name:'Arial',sz:10,bold:true,color:{rgb:'FFFFFFFF'}},alignment:{horizontal:'center',vertical:'center',wrapText:true},fill:{patternType:'solid',fgColor:{rgb:isFinance&&c===3?'FF16803C':isFinance&&c===4?'FF1769AA':'FF243B64'}}};
+    styleCell(3,c,headerStyle);
+  }
+  for(let r=4;r<aoa.length;r++){
+    for(let c=0;c<outputHeaders.length;c++){
+      const cell=worksheet[XLSX.utils.encode_cell({r,c})];
+      if(!cell)continue;
+      const isSummary=isFinance&&r>=4+dataRows.length;
+      const isAmount=isFinance&&(c===3||c===4);
+      cell.s={font:{name:'Arial',sz:9,color:{rgb:isSummary?'FFB91C1C':'FF243044'},bold:isSummary},alignment:{horizontal:isAmount?'center':'right',vertical:'center',wrapText:true},border,fill:{patternType:'solid',fgColor:{rgb:isSummary?'FFFFE5E5':(r%2===0?'FFF2F6FA':'FFFFFFFF')}}};
+      if(isAmount&&cell.v!==''&&typeof cell.v==='number')cell.z='#,##0.00';
+      if(isFinance&&c===3&&cell.v!==''&&!isSummary)cell.s.fill={patternType:'solid',fgColor:{rgb:'FFE7F6EC'}};
+      if(isFinance&&c===4&&cell.v!==''&&!isSummary)cell.s.fill={patternType:'solid',fgColor:{rgb:'FFE6F1FC'}};
+      if(isSummary&&c===0)cell.s={...cell.s,alignment:{horizontal:'right',vertical:'center'},font:{name:'Arial',sz:9,bold:true,color:{rgb:'FFB91C1C'}}};
+    }
+  }
+  worksheet['!rows']=[{hpt:25},{hpt:20},{hpt:6},{hpt:22},...outputRows.map((_,index)=>({hpt:18}))];
   const workbook=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook,worksheet,'تقرير أوريكيت');
   const safeName=filename.replace(/\.(csv|xlsx?|html?)$/i,'')+'.xlsx';

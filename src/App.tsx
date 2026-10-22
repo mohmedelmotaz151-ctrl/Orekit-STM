@@ -7,6 +7,7 @@ import DocumentArchive from './DocumentArchive';
 import AdminReports from './AdminReports';
 import CustomerProfile from './CustomerProfile';
 import { OrkeitIcon } from './OrkeitIcon';
+import * as XLSX from 'xlsx';
 
 type Site={id:string;client:string;facility:string;phone:string;address:string;contractEnd:string;extCount:number;email?:string;unified?:string;license?:string;notes?:string;ownerDelegateId?:string;createdByRole?:'admin'|'delegate'|'customer'};
 type ContractRecord={id:string;siteId?:string;facility?:string;client?:string;contractNo?:string;startDate?:string;endDate?:string;status?:string;value?:string;scope?:string;updatedAt?:number};

@@ -38,19 +38,29 @@ const expiryLabel=(days:number)=>{
  return '';
 };
 const exportExcel=(filename:string,rows:string[][])=>{
-  const escapeHtml=(value:unknown)=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  const summaryStart=rows.findIndex(row=>row.some(cell=>['إجمالي الدخل','إجمالي الخرج','صافي الحساب'].includes(cell)));
   const headers=rows[0]||[];
-  const bodyRows=rows.slice(1,summaryStart<0?rows.length:summaryStart);
+  const summaryStart=rows.findIndex(row=>row.some(cell=>['إجمالي الدخل','إجمالي الخرج','صافي الحساب'].includes(cell)));
+  const dataRows=rows.slice(1,summaryStart<0?rows.length:summaryStart);
   const summaryRows=summaryStart<0?[]:rows.slice(summaryStart);
-  const tableRows=bodyRows.map((row,index)=>'<tr>'+headers.map((_,col)=>'<td class="'+(col===4?'amount':'')+'">'+escapeHtml(row[col]??'')+'</td>').join('')+'</tr>').join('');
-  const summaries=summaryRows.map(row=>'<tr class="summary"><td colspan="'+Math.max(1,headers.length-1)+'">'+escapeHtml(row.slice(0,-1).filter(Boolean).join(' '))+'</td><td class="amount">'+escapeHtml(row[row.length-1]??'')+'</td></tr>').join('');
-  const html='<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>body{font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#17233b}h1{color:#142b4a;text-align:center;font-size:20pt}p{color:#555;text-align:center}table{border-collapse:collapse;width:100%;direction:rtl}th{background:#142b4a;color:#fff;font-weight:bold;padding:10px;border:1px solid #c8d0dc;text-align:center}td{padding:8px;border:1px solid #c8d0dc;text-align:right}tr:nth-child(even) td{background:#f3f6fa}.amount{text-align:left;mso-number-format:"#,##0.00";white-space:nowrap}.summary td{background:#e7edf5;font-weight:bold;border-top:2px solid #142b4a}.summary:last-child td{background:#fbe9e9;color:#8e1b2b;font-size:12pt}</style></head><body><h1>شركة أوريكيت للمقاولات العامة</h1><p>تقرير المحاسبة المالية — تم التصدير: '+escapeHtml(new Date().toLocaleString('ar-SA'))+'</p><table><thead><tr>'+headers.map(h=>'<th>'+escapeHtml(h)+'</th>').join('')+'</tr></thead><tbody>'+tableRows+summaries+'</tbody></table></body></html>';
-  const blob=new Blob(['\\uFEFF',html],{type:'application/vnd.ms-excel;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=filename.replace(/\\.(csv|xlsx?)$/i,'')+'.xls';document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+  const exportedAt=new Date().toLocaleString('ar-SA');
+  const amountColumn=headers.findIndex(h=>/المبلغ|amount|ريال/i.test(h));
+  const aoa:any[][]=[
+    ['شركة أوريكيت للمقاولات العامة'],
+    ['تقرير المحاسبة المالية — تم التصدير: '+exportedAt],
+    [],
+    headers,
+    ...dataRows.map(row=>row.map((value,index)=>index===amountColumn&&value!==''&&Number.isFinite(Number(value))?Number(value):value)),
+    ...summaryRows.map(row=>[row.slice(0,-1).filter(Boolean).join(' '),...Array(Math.max(0,headers.length-2)).fill(''),row[row.length-1]!==''&&Number.isFinite(Number(row[row.length-1]))?Number(row[row.length-1]):row[row.length-1]])
+  ];
+  const worksheet=XLSX.utils.aoa_to_sheet(aoa);
+  worksheet['!views']=[{rightToLeft:true}];
+  worksheet['!cols']=headers.map((header,index)=>({wch:Math.min(36,Math.max(14,...[header,...dataRows.map(row=>String(row[index]??''))].map(value=>String(value).length+2)))}));
+  worksheet['!merges']=[{s:{r:0,c:0},e:{r:0,c:Math.max(0,headers.length-1)}},{s:{r:1,c:0},e:{r:1,c:Math.max(0,headers.length-1)}}];
+  const workbook=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook,worksheet,'تقرير أوريكيت');
+  const safeName=filename.replace(/\.(csv|xlsx?|html?)$/i,'')+'.xlsx';
+  XLSX.writeFile(workbook,safeName,{bookType:'xlsx',compression:true});
 };
-
 const notifyOutside=(title:string,body:string)=>{playNotificationSound();if(typeof window!=='undefined' && 'Notification' in window && Notification.permission==='granted'){try{new Notification(title,{body,icon:'/pwa-192x192.png',tag:title})}catch{}}};
 const requestNotificationPermission=async()=>{
  if(typeof window!=='undefined' && 'Notification' in window && Notification.permission==='default'){

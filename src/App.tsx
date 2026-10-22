@@ -44,10 +44,12 @@ const exportExcel=(filename:string,rows:string[][])=>{
   const dataRows=rows.slice(1,summaryStart<0?rows.length:summaryStart);
   const summaryRows=summaryStart<0?[]:rows.slice(summaryStart);
   const exportedAt=new Date().toLocaleString('ar-SA');
+  const isFinance=/finance|محاسبة/i.test(filename);
+  const reportTitle=isFinance?'تقرير المحاسبة المالية':'تقرير طلبات خدمات أوريكيت';
   const amountColumn=headers.findIndex(h=>/المبلغ|amount|ريال/i.test(h));
   const aoa:any[][]=[
     ['شركة أوريكيت للمقاولات العامة'],
-    ['تقرير المحاسبة المالية — تم التصدير: '+exportedAt],
+    [reportTitle+' — تم التصدير: '+exportedAt],
     [],
     headers,
     ...dataRows.map(row=>row.map((value,index)=>index===amountColumn&&value!==''&&Number.isFinite(Number(value))?Number(value):value)),

@@ -5,6 +5,7 @@ import { enablePush, sendPush, startForegroundPushListener, unlockNotificationSo
 import AdminSearch from './AdminSearch';
 import DocumentArchive from './DocumentArchive';
 import AdminReports from './AdminReports';
+import CashAccounting from './CashAccounting';
 import CustomerProfile from './CustomerProfile';
 import { OrkeitIcon } from './OrkeitIcon';
 import * as XLSX from 'xlsx-js-style';
@@ -596,7 +597,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
      if(!cancelled)setCloudReady(true);
    }
    })();return()=>{cancelled=true}},[]);
- const [page,setPage]=useState<'home'|'sites'|'siteProfile'|'visits'|'maintenance'|'delegates'|'requests'|'documents'|'invite'|'leads'|'messages'|'search'|'archive'|'reports'|'audit'|'finance'>('home');
+ const [page,setPage]=useState<'home'|'sites'|'siteProfile'|'visits'|'maintenance'|'delegates'|'requests'|'documents'|'invite'|'leads'|'messages'|'search'|'archive'|'reports'|'audit'|'finance'|'cashAccounting'>('home');
  const [requestSearch,setRequestSearch]=useState('');
  const [requestFilter,setRequestFilter]=useState('الكل');
  const [open,setOpen]=useState<string|null>(null),[menu,setMenu]=useState(false),[editing,setEditing]=useState<any>(null);
@@ -635,7 +636,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const profileMaintenance=profileSite?maintenance.filter(m=>m.siteId===profileSite.id).sort((a,b)=>String(b.date).localeCompare(String(a.date))):[];
  const profileContracts=profileSite?contracts.filter(c=>c.siteId===profileSite.id||(!c.siteId&&String(c.facility||'').trim()===profileSite.facility.trim())).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)):[];
  const profileRequests=profileSite?requests.filter(r=>(r.facility||'').trim()===profileSite.facility.trim()||(profileSite.phone&&r.phone===profileSite.phone)).sort((a,b)=>b.updatedAt-a.updatedAt):[];
- const nav=[['home','الرئيسية'],['search','بحث شامل'],['archive','أرشيف المستندات'],['reports','التقارير الإدارية'],['audit','سجل التعديلات'],['finance','المحاسبة المالية'],['messages','مركز الرسائل'],['leads','عميل محتمل'],['sites','المواقع والمنشآت'],['visits','الزيارات'],['maintenance','صيانة الطفايات'],['delegates','المناديب'],['requests','طلبات العملاء'],['documents','إنشاء عقد ومشهد'],['invite','بوابة دعوة واتساب'],['about','من نحن']] as const;
+ const nav=[['home','الرئيسية'],['search','بحث شامل'],['archive','أرشيف المستندات'],['reports','التقارير الإدارية'],['audit','سجل التعديلات'],['finance','المحاسبة المالية'],['cashAccounting','المحاسبة النقدية'], ['messages','مركز الرسائل'],['leads','عميل محتمل'],['sites','المواقع والمنشآت'],['visits','الزيارات'],['maintenance','صيانة الطفايات'],['delegates','المناديب'],['requests','طلبات العملاء'],['documents','إنشاء عقد ومشهد'],['invite','بوابة دعوة واتساب'],['about','من نحن']] as const;
  const go=(p:any)=>{if(p==='documents'){window.location.href='https://contract-nine-sage.vercel.app/';return;}if(p==='about'){window.location.href='https://profile-five-kappa-47.vercel.app/#credentials';return;}setPage(p);setMenu(false);setOpen(null);setEditing(null)};
  const add=(kind:string)=>{setEditing(null);setOpen(kind)};
  const verifyDeletePassword=()=>{const entered=window.prompt('أدخل كلمة سر الحذف للمتابعة:');if(entered===null)return false;if(entered!==('115'+'520')){window.alert('كلمة سر الحذف غير صحيحة. لم يتم حذف السجل.');return false;}return true};
@@ -645,6 +646,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
   {menu&&<><div className="backdrop" onClick={()=>setMenu(false)}/><aside>{nav.map(([k,l])=><button className={page===k?'active':''} key={k} onClick={()=>go(k)}><OrkeitIcon name={k} size={20}/><span>{l}</span></button>)}</aside></>}
   <main>
    {page==='finance'&&<FinancePage/>}
+   {page==='cashAccounting'&&<CashAccounting/>}
    {page==='messages'&&<MessageCenter role="admin" userId="admin" userName="إدارة Orkeit" contacts={messageContacts}/>}
    {page==='search'&&<AdminSearch sites={sites} visits={visits} maintenance={maintenance} contracts={contracts} requests={requests} delegates={delegates} onOpenSite={id=>{setProfileSiteId(id);setPage('siteProfile')}} onOpenRequests={()=>setPage('requests')}/>}
    {page==='archive'&&<DocumentArchive sites={sites}/>}

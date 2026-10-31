@@ -676,7 +676,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
    {page==='documents'&&<DocumentsPage/>}
    {page==='invite'&&<WhatsAppInvitePage sites={sites}/>} 
    {page==='home'&&<><section className="hero"><div><p className="eyebrow">ORKEIT SAFETY • SMART CONTROL CENTER</p><h1>لوحة التحكم الذكية</h1><p>ملخص يومي للزيارات والطلبات والعقود والصيانة وأداء فريق العمل.</p></div><div className="heroActions"><button className="primary" onClick={()=>add('site')}><OrkeitIcon name="building" size={19}/> إضافة منشأة</button><button className="heroGhost" onClick={()=>go('messages')}><OrkeitIcon name="messages" size={19}/> مركز الرسائل</button><button className="heroGhost" onClick={()=>go('requests')}><OrkeitIcon name="requests" size={19}/> طلبات العملاء</button></div></section><div className="smartMetricGrid"><button className="smartMetric" onClick={()=>go('visits')}><span className="metricIcon"><OrkeitIcon name="visit" size={23}/></span><span>زيارات اليوم</span><strong>{todaysVisits.length}</strong><small>زيارات مجدولة اليوم</small></button><button className={'smartMetric '+(overdueVisits.length?'metricDanger':'')} onClick={()=>go('visits')}><span className="metricIcon"><OrkeitIcon name="clock" size={23}/></span><span>زيارات متأخرة</span><strong>{overdueVisits.length}</strong><small>تحتاج إلى متابعة</small></button><button className="smartMetric" onClick={()=>go('requests')}><span className="metricIcon"><OrkeitIcon name="requests" size={23}/></span><span>طلبات جديدة</span><strong>{newRequests.length}</strong><small>بانتظار المعالجة</small></button><button className="smartMetric" onClick={()=>go('requests')}><span className="metricIcon"><OrkeitIcon name="wrench" size={23}/></span><span>قيد التنفيذ</span><strong>{inProgressRequests.length}</strong><small>طلبات نشطة</small></button><button className={'smartMetric '+(nearContracts.length?'metricWarn':'')} onClick={()=>go('sites')}><span className="metricIcon"><OrkeitIcon name="contract" size={23}/></span><span>عقود قريبة الانتهاء</span><strong>{nearContracts.length}</strong><small>خلال 30 يومًا أو منتهية</small></button><button className={'smartMetric '+(dueMaintenance.length?'metricWarn':'')} onClick={()=>go('maintenance')}><span className="metricIcon"><OrkeitIcon name="fire" size={23}/></span><span>طفايات تحتاج صيانة</span><strong>{dueMaintenance.length}</strong><small>مواعيد صيانة خلال 30 يومًا أو متأخرة</small></button></div><div className="stats"><Stat n={sites.length} t="المنشآت"/><Stat n={visits.length} t="إجمالي الزيارات"/><Stat n={maintenance.length} t="سجلات الصيانة"/><Stat n={expiring} t="تنبيهات قريبة"/></div><section className="overviewGrid"><div className="panel"><div className="panelTitle"><h2>الزيارات التي تحتاج متابعة</h2><button className="textBtn" onClick={()=>go('visits')}>عرض الزيارات</button></div>{[...overdueVisits,...todaysVisits].slice(0,6).map(v=><article className="dashboardLine" key={v.id}><b>{sites.find(x=>x.id===v.siteId)?.facility||'منشأة غير محددة'}</b><span>{v.date} · {v.status}</span></article>)}{!overdueVisits.length&&!todaysVisits.length&&<div className="emptyMini">لا توجد زيارات اليوم أو زيارات متأخرة.</div>}</div><div className="panel"><div className="panelTitle"><h2>آخر طلبات العملاء</h2><button className="textBtn" onClick={()=>go('requests')}>عرض الكل</button></div>{requests.slice(0,5).map(r=><button className="recentRequest" key={r.id} onClick={()=>go('requests')}><span><b>{r.service}</b><small>{r.customerName} • {r.facility}</small></span><em>{r.status}</em></button>)}{!requests.length&&<div className="emptyMini">لا توجد طلبات بعد.</div>}</div></section><section className="overviewGrid"><div className="panel"><div className="panelTitle"><h2>العقود والصيانة القريبة</h2><span>{nearContracts.length+dueMaintenance.length}</span></div>{nearContracts.slice(0,5).map(c=><article className="dashboardLine" key={c.kind+c.id}><b>{c.name}</b><span>{c.kind} · {c.date} · {daysUntil(c.date)<0?'منتهي':'متبقي '+daysUntil(c.date)+' يوم'}</span></article>)}{dueMaintenance.slice(0,5).map(m=><article className="dashboardLine" key={'m'+m.id}><b>{m.client||sites.find(x=>x.id===m.siteId)?.facility||'منشأة'}</b><span>صيانة طفايات · {m.expiryDate} · {daysUntil(m.expiryDate)<0?'متأخرة':'قريبة'}</span></article>)}{!nearContracts.length&&!dueMaintenance.length&&<div className="emptyMini">لا توجد عقود أو صيانة قريبة من الاستحقاق.</div>}</div><div className="panel"><div className="panelTitle"><h2>إنجازات المندوبين</h2><button className="textBtn" onClick={()=>go('delegates')}>إدارة الفريق</button></div>{delegatePerformance.map(x=><article className="delegateAchievement" key={x.delegate.id}><div><b>{x.delegate.name}</b><small>{x.delegate.active?'مندوب نشط':'حساب موقوف'}</small></div><span><strong>{x.visits}</strong> زيارات مكتملة</span><span><strong>{x.maintenance}</strong> عمليات صيانة</span></article>)}{!delegates.length&&<div className="emptyMini">أضف المناديب وعيّنهم للزيارات والصيانة لاحتساب الإنجازات.</div>}</div></section><section className="panel"><div className="panelTitle"><h2>الوصول السريع</h2><button className="textBtn" onClick={()=>go('messages')}>مركز الرسائل ←</button></div><div className="quick">{nav.slice(1).map(([k,l])=><button key={k} onClick={()=>go(k)}>{l}<span>›</span></button>)}</div></section><MessageCenter role="admin" userId="admin" userName="إدارة Orkeit" contacts={messageContacts}/></>}
-   {page==='leads'&&<ListPage title="العملاء المحتملون" add={()=>add('lead')}><div className="grid">{leads.map(l=><article className="card" key={l.id}><h3>{l.client}</h3><p>المنشأة: {l.facility}</p><p>الهاتف: {l.phone}</p><p>الموقع: {l.address}</p><div className="leadActions"><button type="button" className="secondaryBtn" onClick={()=>{setEditing(l);setOpen('lead')}}>✏️ تعديل</button><button type="button" className="primary" onClick={()=>{const digits=l.phone.replace(/[^0-9]/g,'');const wa=digits.startsWith('0')?'966'+digits.slice(1):digits;const message=`مرحبًا بكم في *${l.facility||'منشأتكم الكريمة'}* 🌹\n\nالأستاذ/ ${l.client||'مسؤول المنشأة'} المحترم،\nتحية طيبة من *شركة أوريكيت للمقاولات العامة | Orkeit*.\n\n🛡️ *خدماتنا تشمل:*\n• خدمات السلامة ومتطلبات الدفاع المدني.\n• صيانة وفحص طفايات الحريق.\n• أنظمة الإنذار والإطفاء.\n• عقود الصيانة الدورية.\n• تجهيزات ومستلزمات السلامة للمنشآت التجارية.\n\n⭐ نسعى إلى مساعدتكم في متابعة احتياجات السلامة بمنشأتكم، ويسعدنا التعرف على متطلباتكم وتقديم عرض سعر مناسب للخدمات المطلوبة.\n${l.address?'📍 الموقع: '+l.address+'\n':''}\n📲 *للتواصل والاستفسار:*\n0555334577\n0500052629\n\n*أوريكيت للمقاولات العامة | Orkeit*\nالسلامة مسؤولية، والاحترافية التزام.\n\nإذا لم تكن الخدمة ضمن اهتماماتكم، نعتذر عن الإزعاج ونتمنى لكم التوفيق.`;window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer')}}>مراسلة واتساب</button><button type="button" className="secondaryBtn" onClick={()=>{const site:Site={id:uid(),client:l.client,facility:l.facility,phone:l.phone,address:l.address,contractEnd:'',extCount:0};setSitesSafe([site,...sites]);setLeadsSafe(leads.filter(x=>x.id!==l.id));removeCloudRecord('leads',l.id);setPage('sites')}}>إضافة إلى المواقع والمنشآت</button><button type="button" className="delete" onClick={()=>{if(!verifyDeletePassword())return;setLeadsSafe(leads.filter(x=>x.id!==l.id));removeCloudRecord('leads',l.id)}}>حذف</button></div></article>)}</div>{!leads.length&&<Empty/>}</ListPage>}\n   {page==='sites'&&<ListPage title="المواقع والمنشآت" add={()=>add('site')}><div className="grid">{sites.map(s=><article className="card siteSummaryCard" key={s.id}><h3>{s.facility||'منشأة'}</h3><p>العميل: {s.client||'—'}</p><p>الهاتف: {s.phone||'—'}</p><p>الموقع: {s.address||'—'}</p><p>الطفايات: {s.extCount||0}</p>{s.contractEnd&&<p>انتهاء العقد: {s.contractEnd}</p>}<div className="siteCardActions"><button className="primary" type="button" onClick={()=>{setProfileSiteId(s.id);setPage('siteProfile')}}>📂 فتح ملف المنشأة</button><button className="secondaryBtn" type="button" onClick={()=>{setEditing(s);setOpen('site')}}>✏️ تعديل</button><button className="delete" type="button" onClick={()=>remove('site',s.id)}>حذف</button></div></article>)}</div>{!sites.length&&<Empty/>}</ListPage>}
+   {page==='leads'&&<ListPage title="العملاء المحتملون" add={()=>add('lead')}><div className="grid">{leads.map(l=><article className="card" key={l.id}><h3>{l.client}</h3><p>المنشأة: {l.facility}</p><p>الهاتف: {l.phone}</p><p>الموقع: {l.address}</p><div className="leadActions"><button type="button" className="secondaryBtn" onClick={()=>{setEditing(l);setOpen('lead')}}>✏️ تعديل</button><button type="button" className="primary" onClick={()=>{const digits=l.phone.replace(/[^0-9]/g,'');const wa=digits.startsWith('0')?'966'+digits.slice(1):digits;const message=`مرحبًا بكم في *${l.facility||'منشأتكم الكريمة'}* 🌹\n\nالأستاذ/ ${l.client||'مسؤول المنشأة'} المحترم،\nتحية طيبة من *شركة أوريكيت للمقاولات العامة | Orkeit*.\n\n🛡️ *خدماتنا تشمل:*\n• خدمات السلامة ومتطلبات الدفاع المدني.\n• صيانة وفحص طفايات الحريق.\n• أنظمة الإنذار والإطفاء.\n• عقود الصيانة الدورية.\n• تجهيزات ومستلزمات السلامة للمنشآت التجارية.\n\n⭐ نسعى إلى مساعدتكم في متابعة احتياجات السلامة بمنشأتكم، ويسعدنا التعرف على متطلباتكم وتقديم عرض سعر مناسب للخدمات المطلوبة.\n${l.address?'📍 الموقع: '+l.address+'\n':''}\n📲 *للتواصل والاستفسار:*\n0555334577\n0500052629\n\n*أوريكيت للمقاولات العامة | Orkeit*\nالسلامة مسؤولية، والاحترافية التزام.\n\nإذا لم تكن الخدمة ضمن اهتماماتكم، نعتذر عن الإزعاج ونتمنى لكم التوفيق.`;window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer')}}>مراسلة واتساب</button><button type="button" className="secondaryBtn" onClick={()=>{const site:Site={id:uid(),client:l.client,facility:l.facility,phone:l.phone,address:l.address,contractEnd:'',extCount:0};setSitesSafe([site,...sites]);setLeadsSafe(leads.filter(x=>x.id!==l.id));removeCloudRecord('leads',l.id);setPage('sites')}}>إضافة إلى المواقع والمنشآت</button><button type="button" className="delete" onClick={()=>{if(!verifyDeletePassword())return;setLeadsSafe(leads.filter(x=>x.id!==l.id));removeCloudRecord('leads',l.id)}}>حذف</button></div></article>)}</div>{!leads.length&&<Empty/>}</ListPage>}\n   {page==='sites'&&<SiteDirectory sites={sites} onAdd={()=>add('site')} onOpen={s=>{setProfileSiteId(s.id);setPage('siteProfile')}} onEdit={s=>{setEditing(s);setOpen('site')}} onDelete={id=>remove('site',id)}/>}
    {page==='siteProfile'&&<section className="siteProfilePage">{!profileSite?<div className="panel"><h2>لم يتم العثور على المنشأة</h2><button className="secondaryBtn" onClick={()=>setPage('sites')}>العودة إلى المنشآت</button></div>:<><div className="siteProfileHero"><button className="secondaryBtn" onClick={()=>setPage('sites')}>← العودة إلى المنشآت</button><div><p className="eyebrow">ORKEIT • FACILITY PROFILE</p><h1>{profileSite.facility||'ملف المنشأة'}</h1><p>{profileSite.client||'اسم العميل غير مسجل'} · {profileSite.phone||'لا يوجد رقم اتصال'}</p></div><div className="siteCardActions"><button className="primary" onClick={()=>{setEditing(profileSite);setOpen('site')}}>✏️ تعديل بيانات المنشأة</button><button className="secondaryBtn" onClick={()=>{setEditing({id:uid(),siteId:profileSite.id,date:new Date().toISOString().slice(0,10),status:'مجدولة',notes:''});setOpen('visit')}}>＋ تسجيل زيارة</button><button className="secondaryBtn" onClick={()=>{setOpen('maintenance');setEditing(null)}}>＋ تسجيل صيانة</button></div></div><div className="siteProfileStats"><div><strong>{profileVisits.length}</strong><span>الزيارات</span></div><div><strong>{profileContracts.length+(profileContracts.length===0&&profileSite.contractEnd?1:0)}</strong><span>العقود</span></div><div><strong>{profileMaintenance.length}</strong><span>عمليات الصيانة</span></div><div><strong>{profileRequests.length}</strong><span>الطلبات</span></div></div><div className="siteProfileGrid"><section className="panel"><div className="panelTitle"><h2>بيانات المنشأة</h2><span>الملف الأساسي</span></div><dl className="siteDetails"><div><dt>اسم المنشأة</dt><dd>{profileSite.facility||'—'}</dd></div><div><dt>اسم العميل / جهة الاتصال</dt><dd>{profileSite.client||'—'}</dd></div><div><dt>رقم الهاتف</dt><dd>{profileSite.phone||'—'}</dd></div><div><dt>البريد الإلكتروني</dt><dd>{profileSite.email||'غير مسجل'}</dd></div><div><dt>الرقم الموحد</dt><dd>{profileSite.unified||'غير مسجل'}</dd></div><div><dt>حالة الترخيص</dt><dd>{profileSite.license||'غير محددة'}</dd></div><div><dt>عدد الطفايات</dt><dd>{profileSite.extCount||0}</dd></div><div><dt>انتهاء العقد المسجل</dt><dd>{profileSite.contractEnd||'غير مسجل'}</dd></div><div className="siteAddress"><dt>الموقع / العنوان</dt><dd>{profileSite.address||'غير مسجل'}</dd></div></dl><div className="siteContactActions">{profileSite.phone&&<><a href={'tel:'+profileSite.phone}>اتصال بالعميل</a><a target="_blank" rel="noreferrer" href={'https://wa.me/'+profileSite.phone.replace(/[^0-9]/g,'')}>واتساب</a></>}{profileSite.address&&<a target="_blank" rel="noreferrer" href={'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(profileSite.address)}>فتح الموقع على الخريطة</a>}</div></section><section className="panel"><div className="panelTitle"><h2>العقود</h2><span>{profileContracts.length+(profileSite.contractEnd?1:0)}</span></div>{profileSite.contractEnd&&<article className="profileRecord"><strong>عقد الصيانة المسجل للمنشأة</strong><p>تاريخ الانتهاء: {profileSite.contractEnd}</p><span className="profilePill">{daysUntil(profileSite.contractEnd)<0?'منتهي':daysUntil(profileSite.contractEnd)<=30?'قريب الانتهاء':'ساري'}</span></article>}{profileContracts.map(c=><article className="profileRecord" key={c.id}><strong>{c.contractNo||'عقد صيانة'}</strong><p>{c.scope||'نطاق العمل غير محدد'}</p><p>من {c.startDate||'—'} إلى {c.endDate||'—'}</p><span className="profilePill">{c.status||'مسجل'}</span></article>)}{!profileContracts.length&&!profileSite.contractEnd&&<p className="muted">لا توجد عقود مرتبطة بهذه المنشأة حتى الآن.</p>}</section><DocumentArchive sites={[profileSite]} siteId={profileSite.id} compact/><section className="panel"><div className="panelTitle"><h2>الزيارات السابقة</h2><span>{profileVisits.length}</span></div>{profileVisits.map(v=><article className="profileRecord" key={v.id}><strong>{v.date||'تاريخ غير محدد'}</strong><p>الحالة: {v.status||'—'}</p><p>{v.notes||'لا توجد ملاحظات مسجلة'}</p></article>)}{!profileVisits.length&&<p className="muted">لا توجد زيارات مسجلة لهذه المنشأة.</p>}</section><section className="panel"><div className="panelTitle"><h2>سجل الصيانة</h2><span>{profileMaintenance.length}</span></div>{profileMaintenance.map(m=><article className="profileRecord" key={m.id}><strong>{m.service||'صيانة'}</strong><p>التاريخ: {m.date||'—'} · العدد: {m.count||0}</p><p>الفني: {m.technician||'—'}</p><p>تاريخ انتهاء الصيانة: {m.expiryDate||'—'}</p></article>)}{!profileMaintenance.length&&<p className="muted">لا توجد سجلات صيانة مرتبطة بهذه المنشأة.</p>}</section><section className="panel profileRequestsPanel"><div className="panelTitle"><h2>طلبات العملاء</h2><span>{profileRequests.length}</span></div>{profileRequests.map(r=><article className="profileRecord" key={r.id}><strong>{r.service}</strong><p>رقم الطلب: {r.id}</p><p>الحالة: {r.status}</p><p>تاريخ الطلب: {new Date(r.createdAt||r.updatedAt).toLocaleString('ar-SA',{dateStyle:'medium',timeStyle:'short'})}</p><p>{r.note}</p><button className="textBtn" onClick={()=>{setRequestSearch(r.id);setPage('requests')}}>فتح الطلب في الإدارة ←</button></article>)}{!profileRequests.length&&<p className="muted">لا توجد طلبات مرتبطة بهذه المنشأة. تتم المطابقة باسم المنشأة أو رقم الهاتف.</p>}</section></div></>}</section>}
    {page==='visits'&&<ListPage title="الزيارات" add={()=>add('visit')}><div className="grid">{visits.map(v=>{const s=sites.find(x=>x.id===v.siteId);return <Card key={v.id} title={s?.facility||'موقع محذوف'} lines={[v.date,v.status,v.notes]} del={()=>remove('visit',v.id)}/>})}</div>{!visits.length&&<Empty/>}</ListPage>}
    {page==='maintenance'&&<ListPage title="صيانة الطفايات" add={()=>add('maintenance')}><div className="grid">{maintenance.map(m=><Card key={m.id} title={m.facility||sites.find(s=>s.id===m.siteId)?.facility||m.client||'منشأة'} lines={[m.client?'العميل: '+m.client:'','المنشأة: '+(m.facility||sites.find(s=>s.id===m.siteId)?.facility||'—'),m.address?'الموقع: '+m.address:'',m.service,m.date,'الفني: '+m.technician,'انتهاء الصيانة: '+(m.expiryDate||'—')]} badge={'العدد: '+m.count} edit={()=>{setEditing(m);setOpen('maintenance')}} del={()=>remove('maintenance',m.id)}/>)}</div>{!maintenance.length&&<Empty/>}</ListPage>}
@@ -856,49 +856,110 @@ function Card({title,lines,badge,del,edit}:{title:string;lines:string[];badge?:s
 function Empty(){return <div className="empty">لا توجد سجلات حتى الآن.</div>}
 function Modal({title,close,children}:{title:string;close:()=>void;children:any}){return <div className="modalBg"><div className="modal"><div className="modalHead"><h2>{title}</h2><button onClick={close}>×</button></div>{children}</div></div>}
 function Input({label,value,onChange,type='text',required=false,placeholder}:{label:string;value:any;onChange:(v:string)=>void;type?:string;required?:boolean;placeholder?:string}){return <label>{label}<input type={type} value={value??''} onChange={e=>onChange(e.target.value)} required={required} placeholder={placeholder}/></label>}
+function SiteDirectory({sites,onAdd,onOpen,onEdit,onDelete}:{sites:Site[];onAdd:()=>void;onOpen:(site:Site)=>void;onEdit:(site:Site)=>void;onDelete:(id:string)=>void}){
+ const [query,setQuery]=useState('');
+ const [contractFilter,setContractFilter]=useState('all');
+ const [sort,setSort]=useState('recent');
+ const filtered=useMemo(()=>{
+  const q=query.trim().toLocaleLowerCase('ar');
+  return sites.filter(s=>{
+   const matches=!q||[s.facility,s.client,s.phone,s.address,s.contractNo,s.unified,s.license,s.email].some(v=>String(v||'').toLocaleLowerCase('ar').includes(q));
+   const days=s.contractEnd?daysUntil(s.contractEnd):null;
+   const status=days===null?'missing':days<0?'expired':days<=30?'soon':'active';
+   return matches&&(contractFilter==='all'||status===contractFilter);
+  }).sort((a,b)=>sort==='name'?String(a.facility||'').localeCompare(String(b.facility||''),'ar'):sort==='expiry'?String(a.contractEnd||'9999').localeCompare(String(b.contractEnd||'9999')):0);
+ },[sites,query,contractFilter,sort]);
+ const count=(fn:(s:Site)=>boolean)=>sites.filter(fn).length;
+ const expired=count(s=>!!s.contractEnd&&daysUntil(s.contractEnd)<0);
+ const soon=count(s=>!!s.contractEnd&&daysUntil(s.contractEnd)>=0&&daysUntil(s.contractEnd)<=30);
+ const active=count(s=>!!s.contractEnd&&daysUntil(s.contractEnd)>30);
+ return <section className="siteDirectory">
+  <div className="siteDirectoryHero"><div><span className="siteDirectoryEyebrow">ORKEIT • FACILITY MANAGEMENT</span><h1>المواقع والمنشآت</h1><p>ملفات موحّدة لبيانات العملاء والعقود ومعلومات التواصل والمواقع.</p></div><button type="button" className="primary siteAddButton" onClick={onAdd}>＋ إضافة منشأة جديدة</button></div>
+  <div className="siteDirectoryMetrics">
+   <button type="button" className="siteMetric" onClick={()=>setContractFilter('all')}><span className="siteMetricIcon"><OrkeitIcon name="building" size={21}/></span><span>إجمالي المنشآت</span><strong>{sites.length}</strong><small>جميع الملفات المسجلة</small></button>
+   <button type="button" className="siteMetric siteMetricGood" onClick={()=>setContractFilter('active')}><span className="siteMetricIcon"><OrkeitIcon name="shield" size={21}/></span><span>عقود سارية</span><strong>{active}</strong><small>أكثر من 30 يومًا</small></button>
+   <button type="button" className="siteMetric siteMetricWarn" onClick={()=>setContractFilter('soon')}><span className="siteMetricIcon"><OrkeitIcon name="clock" size={21}/></span><span>قريبة الانتهاء</span><strong>{soon}</strong><small>خلال 30 يومًا</small></button>
+   <button type="button" className="siteMetric siteMetricDanger" onClick={()=>setContractFilter('expired')}><span className="siteMetricIcon"><OrkeitIcon name="alert-triangle" size={21}/></span><span>عقود منتهية</span><strong>{expired}</strong><small>تحتاج إلى متابعة</small></button>
+  </div>
+  <div className="siteDirectoryToolbar"><label className="siteSearch"><OrkeitIcon name="search" size={19}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="ابحث باسم المنشأة أو العميل أو الهاتف أو العنوان أو رقم العقد…"/></label><label className="siteFilterLabel"><span>حالة العقد</span><select value={contractFilter} onChange={e=>setContractFilter(e.target.value)}><option value="all">كل المنشآت</option><option value="active">عقد ساري</option><option value="soon">قريب الانتهاء</option><option value="expired">منتهي</option><option value="missing">بدون تاريخ انتهاء</option></select></label><label className="siteFilterLabel"><span>ترتيب العرض</span><select value={sort} onChange={e=>setSort(e.target.value)}><option value="recent">الافتراضي</option><option value="name">اسم المنشأة</option><option value="expiry">تاريخ انتهاء العقد</option></select></label></div>
+  <div className="siteDirectoryResults"><strong>{filtered.length} منشأة</strong><span>{query?'نتائج البحث':'بيانات المنشآت المسجلة'}</span><button type="button" className="textBtn" onClick={()=>{setQuery('');setContractFilter('all');setSort('recent')}}>إعادة ضبط الفلاتر</button></div>
+  {filtered.length?<div className="siteDirectoryGrid">{filtered.map(s=>{
+   const days=s.contractEnd?daysUntil(s.contractEnd):null;
+   const status=days===null?{label:'لم يُحدد انتهاء العقد',kind:'missing'}:days<0?{label:'العقد منتهٍ',kind:'expired'}:days<=30?{label:days===0?'ينتهي اليوم':'ينتهي خلال '+days+' يومًا',kind:'soon'}:{label:'العقد ساري',kind:'active'};
+   return <article className="siteDirectoryCard" key={s.id}>
+    <div className="siteCardTop"><div className="siteBuildingMark"><OrkeitIcon name="building" size={24}/></div><div className="siteCardHeading"><h2>{s.facility||'منشأة دون اسم'}</h2><p>{s.client||'اسم العميل غير مسجل'}</p></div><span className={'siteContractStatus '+status.kind}>{status.label}</span></div>
+    <div className="siteCardDetails">
+     <div><span className="siteDetailIcon"><OrkeitIcon name="phone" size={16}/></span><span><small>رقم التواصل</small><strong>{s.phone||'غير مسجل'}</strong></span></div>
+     <div><span className="siteDetailIcon"><OrkeitIcon name="map-pin" size={16}/></span><span><small>العنوان / الموقع</small><strong>{s.address||'لم يُحدد العنوان'}</strong></span></div>
+     <div><span className="siteDetailIcon"><OrkeitIcon name="file-text" size={16}/></span><span><small>رقم العقد</small><strong>{s.contractNo||'غير مسجل'}</strong></span></div>
+     <div><span className="siteDetailIcon"><OrkeitIcon name="calendar" size={16}/></span><span><small>انتهاء العقد</small><strong>{s.contractEnd||'غير مسجل'}</strong></span></div>
+    </div>
+    <div className="siteCardFooter"><span className="siteExtinguisherCount"><OrkeitIcon name="fire" size={16}/> {s.extCount||0} طفاية</span><div className="siteCardActions"><button type="button" className="primary" onClick={()=>onOpen(s)}>فتح الملف <span>←</span></button><button type="button" className="secondaryBtn" onClick={()=>onEdit(s)} aria-label="تعديل المنشأة">✏️</button><button type="button" className="delete" onClick={()=>onDelete(s.id)}>حذف</button></div></div>
+   </article>
+  })}</div>:<div className="siteDirectoryEmpty"><span><OrkeitIcon name="building" size={32}/></span><h2>{sites.length?'لا توجد نتائج مطابقة':'ابدأ بإضافة أول منشأة'}</h2><p>{sites.length?'غيّر كلمات البحث أو الفلاتر لعرض منشآت أخرى.':'أضف بيانات العميل والعنوان ورقم الهاتف والعقد لتكوين ملف متكامل.'}</p>{sites.length?<button className="secondaryBtn" onClick={()=>{setQuery('');setContractFilter('all')}}>مسح البحث والفلاتر</button>:<button className="primary" onClick={onAdd}>＋ إضافة منشأة</button>}</div>}
+ </section>;
+}
 function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSave:(x:Site)=>void}) {
  const [x,setX]=useState<Site>(initial||{id:uid(),client:'',facility:'',phone:'',address:'',contractEnd:'',extCount:0});
  const [scanOpen,setScanOpen]=useState(false);
  const applyBarcode=(raw:string)=>{
   let data:any=null;
-  try { data=JSON.parse(raw); } catch {}
-  if(!data && (raw.slice(0,7)==='http://' || raw.slice(0,8)==='https://')) {
-   try { const u=new URL(raw); data=Object.fromEntries(u.searchParams.entries()); } catch {}
+  const source=raw.trim();
+  try { data=JSON.parse(source); } catch {}
+  if(!data && /^https?:\/\//i.test(source)) {
+   try {
+    const u=new URL(source);
+    data=Object.fromEntries(u.searchParams.entries());
+    if(!Object.keys(data).length&&u.hash.includes('?')) data=Object.fromEntries(new URLSearchParams(u.hash.slice(u.hash.indexOf('?')+1)).entries());
+   } catch {}
   }
-  if(!data && raw.includes('|')) {
-   const p=raw.split('|'); data={client:p[0],facility:p[1],phone:p[2],address:p[3],contractEnd:p[4],unified:p[5]};
+  if(!data && source.includes('|')) {
+   const p=source.split('|');
+   data={client:p[0],facility:p[1],phone:p[2],address:p[3],contractEnd:p[4],unified:p[5],contractNo:p[6],contractDate:p[7],email:p[8],license:p[9],extCount:p[10]};
   }
-  const pick=(...keys:string[])=>{for(const key of keys){const val=data?.[key];if(val!==undefined&&val!==null&&String(val).trim())return String(val).trim();}return '';};
-   const dateRaw=pick('contractEnd','endDate','expiryDate','contractExpiry','contract_expiry','expirationDate','validUntil','expiry','تاريخ_الانتهاء','تاريخ_انتهاء_العقد','انتهاء_العقد');
-   const contractDateRaw=pick('contractDate','date','issueDate','startDate','تاريخ_العقد','تاريخ');
-   const contractNo=pick('contractNo','contractNumber','contract_number','number','رقم_العقد');
-   const normalizeDate=(value:string)=>{
-    if(!value)return '';
-    const clean=value.trim();
-    const iso=clean.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-    if(iso)return iso[1]+'-'+iso[2].padStart(2,'0')+'-'+iso[3].padStart(2,'0');
-    const parts=clean.split(/[/.]/);
-    if(parts.length===3){
-     if(parts[2].length===4)return parts[2]+'-'+parts[1].padStart(2,'0')+'-'+parts[0].padStart(2,'0');
-     if(parts[0].length===4)return parts[0]+'-'+parts[1].padStart(2,'0')+'-'+parts[2].padStart(2,'0');
-    }
-    return '';
-   };
-   const expiryDate=normalizeDate(dateRaw);
-   const signedDate=normalizeDate(contractDateRaw);
-   setX(prev=>({...prev,
-    client:pick('client','customer','customerName','owner','اسم_العميل')||prev.client,
-    facility:pick('facility','establishment','establishmentName','name','site','اسم_المنشأة')||prev.facility||pick('client','customer','customerName','owner','اسم_العميل')||(!data?raw:''),
-    phone:pick('phone','mobile','contact','clientPhone','رقم_الجوال','جوال_العميل')||prev.phone,
-    address:pick('address','location','city','العنوان','الموقع')||prev.address,
-    contractNo:contractNo||prev.contractNo,
-    contractDate:signedDate||prev.contractDate,
-    contractEnd:expiryDate||prev.contractEnd,
-    unified:pick('unified','unifiedNumber','commercialNumber','commercialRegOrId','رقم_موحد','السجل_التجاري')||prev.unified,
-    license:pick('license','licenseStatus','حالة_الترخيص')||prev.license,
-    barcode:raw
-   }));
-setScanOpen(false);
+  if(typeof data==='string'){try{data=JSON.parse(data)}catch{}}
+  const pick=(...keys:string[])=>{
+   const sources=[data,data?.facilityDetails,data?.facilityData,data?.establishment,data?.customer,data?.client,data?.contract,data?.contact,data?.addressDetails];
+   for(const key of keys)for(const src of sources){const val=src?.[key];if(val!==undefined&&val!==null&&String(val).trim()&&typeof val!=='object')return String(val).trim();}
+   return '';
+  };
+  const joinAddress=[pick('address','fullAddress','locationAddress','siteAddress','العنوان','عنوان_المنشأة'),pick('street','streetName','شارع'),pick('district','neighborhood','حي'),pick('city','مدينة','المدينة'),pick('region','province','منطقة')].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join('، ');
+  const dateRaw=pick('contractEnd','endDate','expiryDate','contractExpiry','contract_expiry','expirationDate','validUntil','expiry','تاريخ_الانتهاء','تاريخ_انتهاء_العقد','انتهاء_العقد');
+  const contractDateRaw=pick('contractDate','date','issueDate','startDate','signedDate','تاريخ_العقد','تاريخ');
+  const contractNo=pick('contractNo','contractNumber','contract_number','number','رقم_العقد');
+  const normalizeDate=(value:string)=>{
+   if(!value)return '';
+   const clean=value.trim();
+   const iso=clean.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+   if(iso)return iso[1]+'-'+iso[2].padStart(2,'0')+'-'+iso[3].padStart(2,'0');
+   const parts=clean.split(/[/.]/);
+   if(parts.length===3){if(parts[2].length===4)return parts[2]+'-'+parts[1].padStart(2,'0')+'-'+parts[0].padStart(2,'0');if(parts[0].length===4)return parts[0]+'-'+parts[1].padStart(2,'0')+'-'+parts[2].padStart(2,'0');}
+   return '';
+  };
+  const expiryDate=normalizeDate(dateRaw), signedDate=normalizeDate(contractDateRaw);
+  const phone=pick('phone','mobile','mobileNumber','contactNumber','clientPhone','customerPhone','telephone','tel','whatsapp','رقم_الجوال','جوال_العميل','رقم_الهاتف','الهاتف');
+  const client=pick('client','customer','customerName','clientName','owner','ownerName','contactName','اسم_العميل','اسم_صاحب_المنشأة');
+  const facility=pick('facility','facilityName','establishment','establishmentName','siteName','businessName','name','site','اسم_المنشأة','اسم_الموقع');
+  const address=joinAddress||pick('location','place','الموقع');
+  const unified=pick('unified','unifiedNumber','commercialNumber','commercialRegOrId','commercialRegistration','crNumber','nationalNumber','رقم_موحد','الرقم_الموحد','السجل_التجاري','رقم_السجل_التجاري');
+  const email=pick('email','clientEmail','customerEmail','البريد_الإلكتروني','البريد');
+  const license=pick('license','licenseStatus','licenseNumber','permitNumber','حالة_الترخيص','رقم_الرخصة');
+  const extRaw=pick('extCount','extinguisherCount','extinguishers','fireExtinguisherCount','عدد_الطفايات');
+  setX(prev=>({...prev,
+   client:client||prev.client,
+   facility:facility||prev.facility||client||(!data?source:''),
+   phone:phone||prev.phone,
+   email:email||prev.email,
+   address:address||prev.address,
+   contractNo:contractNo||prev.contractNo,
+   contractDate:signedDate||prev.contractDate,
+   contractEnd:expiryDate||prev.contractEnd,
+   unified:unified||prev.unified,
+   license:license||prev.license,
+   extCount:extRaw&&Number.isFinite(Number(extRaw))?Number(extRaw):prev.extCount,
+   barcode:source
+  }));
+ setScanOpen(false);
  };
  return <Modal title={initial?'تعديل بيانات المنشأة':'إضافة منشأة'} close={close}>
   <button type="button" className="primary wide" onClick={()=>setScanOpen(true)}>▦ قراءة باركود العقد / المنشأة</button>

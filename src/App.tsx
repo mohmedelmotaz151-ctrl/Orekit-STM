@@ -842,7 +842,7 @@ function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSa
  const applyBarcode=(raw:string)=>{
   let data:any=null;
   try { data=JSON.parse(raw); } catch {}
-  if(!data && (raw.startsWith('http://') || raw.startsWith('https://'))) {
+  if(!data && (raw.slice(0,7)==='http://' || raw.slice(0,8)==='https://')) {
    try { const u=new URL(raw); data=Object.fromEntries(u.searchParams.entries()); } catch {}
   }
   if(!data && raw.includes('|')) {
@@ -851,8 +851,7 @@ function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSa
   const pick=(...keys:string[])=>{for(const key of keys){const val=data?.[key];if(val!==undefined&&val!==null&&String(val).trim())return String(val).trim();}return '';};
   const dateRaw=pick('contractEnd','endDate','expiryDate','contract_expiry','تاريخ_الانتهاء','انتهاء_العقد');
   let date=dateRaw;
-  if(dateRaw.split('/').length===3 && dateRaw.split('/')[2].length===4){const [d,m,y]=dateRaw.split('/');date= y+'-'+m.padStart(2,'0')+'-'+d.padStart(2,'0');}
-  else if(dateRaw.split('/').length===3 && dateRaw.split('/')[0].length===4)date=dateRaw.replaceAll('/','-');
+  const dm=dateRaw.match(/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})$/);\n  const yd=dateRaw.match(/^(\\d{4})\\/(\\d{1,2})\\/(\\d{1,2})$/);\n  if(dm)date=dm[3]+'-'+dm[2].padStart(2,'0')+'-'+dm[1].padStart(2,'0');\n  else if(yd)date=yd[1]+'-'+yd[2].padStart(2,'0')+'-'+yd[3].padStart(2,'0');
   setX(prev=>({...prev,
    client:pick('client','customer','customerName','owner','اسم_العميل')||prev.client,
    facility:pick('facility','establishment','establishmentName','name','site','اسم_المنشأة')||(!data?raw:prev.facility),

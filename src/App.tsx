@@ -714,7 +714,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
       alert('تم حفظ المنشأة على هذا الجهاز فقط لأن قاعدة البيانات السحابية غير مهيأة.');
       setOpen(null);
     }
-  }}/>
+  }}/ >}
   {open==='visit'&&<VisitForm sites={sites} delegates={delegates} initial={editing} close={()=>setOpen(null)} onSave={x=>{setVisitsSafe([x,...visits.filter(v=>v.id!==x.id)]);setOpen(null)}}/>}
   {open==='maintenance'&&<MaintenanceForm sites={sites} delegates={delegates} initial={editing} close={()=>setOpen(null)} onSave={x=>{setMaintenanceSafe([x,...maintenance.filter(m=>m.id!==x.id)]);setOpen(null)}}/>}
   {open==='delegate'&&<DelegateForm initial={editing} close={()=>setOpen(null)} onSave={async x=>{if(!firebaseConfigured)throw new Error('Firebase غير مهيأ؛ لم يتم إنشاء الحساب. اضبط متغيرات Firebase في Vercel ثم أعد المحاولة.');const duplicate=delegates.some(d=>d.id!==x.id&&d.phone.replace(/[\s()-]/g,'')===x.phone.replace(/[\s()-]/g,''));if(duplicate)throw new Error('رقم الجوال مستخدم بالفعل لحساب مندوب آخر.');await saveCloud('delegates',x);const next=[x,...delegates.filter(d=>d.id!==x.id)];setDelegates(next);save('/delegates',next);try{await saveCloud('auditLog',{id:uid(),action:editing?'update':'create',entity:'delegates',entityId:x.id,summary:(editing?'تعديل حساب المندوب — ':'إنشاء حساب المندوب — ')+x.name,actor:'admin',createdAt:Date.now()})}catch(e){console.warn('Delegate audit log failed',e)}setOpen(null)}}/>}

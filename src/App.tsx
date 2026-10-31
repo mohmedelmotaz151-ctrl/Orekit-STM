@@ -7,10 +7,11 @@ import DocumentArchive from './DocumentArchive';
 import AdminReports from './AdminReports';
 import CashAccounting from './CashAccounting';
 import CustomerProfile from './CustomerProfile';
+import BarcodeScanner from './BarcodeScanner';
 import { OrkeitIcon } from './OrkeitIcon';
 import * as XLSX from 'xlsx-js-style';
 
-type Site={id:string;client:string;facility:string;phone:string;address:string;contractEnd:string;extCount:number;email?:string;unified?:string;license?:string;notes?:string;ownerDelegateId?:string;createdByRole?:'admin'|'delegate'|'customer'};
+type Site={id:string;client:string;facility:string;phone:string;address:string;contractEnd:string;extCount:number;barcode?:string;email?:string;unified?:string;license?:string;notes?:string;ownerDelegateId?:string;createdByRole?:'admin'|'delegate'|'customer'};
 type ContractRecord={id:string;siteId?:string;facility?:string;client?:string;contractNo?:string;startDate?:string;endDate?:string;status?:string;value?:string;scope?:string;updatedAt?:number};
 type Visit={id:string;siteId:string;date:string;status:string;notes:string;delegateId?:string};
 type Maintenance={id:string;siteId:string;client?:string;facility?:string;address?:string;latitude?:number;longitude?:number;date:string;expiryDate:string;service:string;count:number;technician:string;delegateId?:string;ownerDelegateId?:string;createdByRole?:'admin'|'delegate'|'customer'};
@@ -835,7 +836,53 @@ function Card({title,lines,badge,del,edit}:{title:string;lines:string[];badge?:s
 function Empty(){return <div className="empty">لا توجد سجلات حتى الآن.</div>}
 function Modal({title,close,children}:{title:string;close:()=>void;children:any}){return <div className="modalBg"><div className="modal"><div className="modalHead"><h2>{title}</h2><button onClick={close}>×</button></div>{children}</div></div>}
 function Input({label,value,onChange,type='text',required=false,placeholder}:{label:string;value:any;onChange:(v:string)=>void;type?:string;required?:boolean;placeholder?:string}){return <label>{label}<input type={type} value={value??''} onChange={e=>onChange(e.target.value)} required={required} placeholder={placeholder}/></label>}
-function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSave:(x:Site)=>void}){const [x,setX]=useState<Site>(initial||{id:uid(),client:'',facility:'',phone:'',address:'',contractEnd:'',extCount:0});return <Modal title={initial?'تعديل بيانات المنشأة':'إضافة منشأة'} close={close}><form onSubmit={e=>{e.preventDefault();onSave({...x,extCount:Number(x.extCount||0)})}}><Input label="اسم العميل" value={x.client} onChange={v=>setX({...x,client:v})} required/><Input label="اسم المنشأة" value={x.facility} onChange={v=>setX({...x,facility:v})} required/><Input label="رقم الجوال" value={x.phone} onChange={v=>setX({...x,phone:v})}/><Input label="البريد الإلكتروني" value={x.email||''} onChange={v=>setX({...x,email:v})}/><Input label="الرقم الموحد" value={x.unified||''} onChange={v=>setX({...x,unified:v})}/><Input label="حالة الترخيص" value={x.license||''} onChange={v=>setX({...x,license:v})}/><Input label="العنوان" value={x.address} onChange={v=>setX({...x,address:v})}/><Input label="تاريخ انتهاء العقد" value={x.contractEnd} onChange={v=>setX({...x,contractEnd:v})} type="date"/><Input label="عدد الطفايات" value={x.extCount} onChange={v=>setX({...x,extCount:v as any})} type="number"/><button className="primary wide">حفظ المنشأة</button></form></Modal>}
+function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSave:(x:Site)=>void}) {
+ const [x,setX]=useState<Site>(initial||{id:uid(),client:'',facility:'',phone:'',address:'',contractEnd:'',extCount:0});
+ const [scanOpen,setScanOpen]=useState(false);
+ const applyBarcode=(raw:string)=>{
+  let data:any=null;
+  try { data=JSON.parse(raw); } catch {}
+  if(!data && /^https?:\\/\\//i.test(raw)) {
+   try { const u=new URL(raw); data=Object.fromEntries(u.searchParams.entries()); } catch {}
+  }
+  if(!data && raw.includes('|')) {
+   const p=raw.split('|'); data={client:p[0],facility:p[1],phone:p[2],address:p[3],contractEnd:p[4],unified:p[5]};
+  }
+  const pick=(...keys:string[])=>{for(const key of keys){const val=data?.[key];if(val!==undefined&&val!==null&&String(val).trim())return String(val).trim();}return '';};
+  const dateRaw=pick('contractEnd','endDate','expiryDate','contract_expiry','تاريخ_الانتهاء','انتهاء_العقد');
+  let date=dateRaw;
+  if(/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(dateRaw)){const [d,m,y]=dateRaw.split('/');date= y+'-'+m+'-'+d;}
+  else if(/^\\d{4}\\/\\d{2}\\/\\d{2}$/.test(dateRaw))date=dateRaw.replaceAll('/','-');
+  setX(prev=>({...prev,
+   client:pick('client','customer','customerName','owner','اسم_العميل')||prev.client,
+   facility:pick('facility','establishment','establishmentName','name','site','اسم_المنشأة')||(!data?raw:prev.facility),
+   phone:pick('phone','mobile','contact','رقم_الجوال')||prev.phone,
+   address:pick('address','location','العنوان')||prev.address,
+   contractEnd:/^\\d{4}-\\d{2}-\\d{2}$/.test(date)?date:prev.contractEnd,
+   unified:pick('unified','unifiedNumber','commercialNumber','رقم_موحد')||prev.unified,
+   license:pick('license','licenseStatus','حالة_الترخيص')||prev.license,
+   barcode:raw
+  }));
+  setScanOpen(false);
+ };
+ return <Modal title={initial?'تعديل بيانات المنشأة':'إضافة منشأة'} close={close}>
+  <button type="button" className="primary wide" onClick={()=>setScanOpen(true)}>▦ قراءة باركود العقد / المنشأة</button>
+  {x.barcode&&<p className="muted">تمت قراءة الباركود: {x.barcode}</p>}
+  {scanOpen&&<BarcodeScanner onScan={applyBarcode} onClose={()=>setScanOpen(false)}/>}
+  <form onSubmit={e=>{e.preventDefault();onSave({...x,extCount:Number(x.extCount||0)})}}>
+   <Input label="اسم العميل" value={x.client} onChange={v=>setX({...x,client:v})} required/>
+   <Input label="اسم المنشأة" value={x.facility} onChange={v=>setX({...x,facility:v})} required/>
+   <Input label="رقم الجوال" value={x.phone} onChange={v=>setX({...x,phone:v})}/>
+   <Input label="البريد الإلكتروني" value={x.email||''} onChange={v=>setX({...x,email:v})}/>
+   <Input label="الرقم الموحد" value={x.unified||''} onChange={v=>setX({...x,unified:v})}/>
+   <Input label="حالة الترخيص" value={x.license||''} onChange={v=>setX({...x,license:v})}/>
+   <Input label="العنوان" value={x.address} onChange={v=>setX({...x,address:v})}/>
+   <Input label="تاريخ انتهاء العقد" value={x.contractEnd} onChange={v=>setX({...x,contractEnd:v})} type="date"/>
+   <Input label="عدد الطفايات" value={x.extCount} onChange={v=>setX({...x,extCount:v as any})} type="number"/>
+   <button className="primary wide">حفظ المنشأة</button>
+  </form>
+ </Modal>;
+}
 function LeadForm({initial,close,onSave}:{initial?:Lead|null;close:()=>void;onSave:(x:Lead)=>void}){const [x,setX]=useState<Lead>(initial||{id:uid(),client:'',facility:'',phone:'',address:'',createdAt:Date.now()});return <Modal title={initial?'تعديل العميل المحتمل':'إضافة عميل محتمل'} close={close}><form onSubmit={e=>{e.preventDefault();onSave({...x,createdAt:initial?.createdAt||Date.now()})}}><Input label="اسم العميل" value={x.client} onChange={v=>setX({...x,client:v})} required/><Input label="اسم المنشأة" value={x.facility} onChange={v=>setX({...x,facility:v})} required/><Input label="رقم الهاتف / واتساب" value={x.phone} onChange={v=>setX({...x,phone:v})} required/><Input label="الموقع / العنوان" value={x.address} onChange={v=>setX({...x,address:v})} required/><button className="primary wide">حفظ التعديلات</button></form></Modal>}
 function VisitForm({sites,delegates,initial,close,onSave}:{sites:Site[];delegates:Delegate[];initial?:Visit|null;close:()=>void;onSave:(x:Visit)=>void}){const [x,setX]=useState<Visit>(initial||{id:uid(),siteId:sites[0]?.id||'',date:new Date().toISOString().slice(0,10),status:'مجدولة',notes:''});return <Modal title="تسجيل زيارة" close={close}><form onSubmit={e=>{e.preventDefault();onSave(x)}}><label>المنشأة<select value={x.siteId} onChange={e=>setX({...x,siteId:e.target.value})}>{sites.map(s=><option key={s.id} value={s.id}>{s.facility}</option>)}</select></label><label>المندوب المسؤول<select value={x.delegateId||''} onChange={e=>setX({...x,delegateId:e.target.value||undefined})}><option value="">غير محدد</option>{delegates.filter(d=>d.active).map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label><Input label="التاريخ" value={x.date} onChange={v=>setX({...x,date:v})} type="date" required/><Input label="الحالة" value={x.status} onChange={v=>setX({...x,status:v})}/><Input label="ملاحظات" value={x.notes} onChange={v=>setX({...x,notes:v})}/><button className="primary wide" disabled={!sites.length}>حفظ الزيارة</button></form></Modal>}
 function MaintenanceForm({sites,delegates,initial,close,onSave}:{sites:Site[];delegates:Delegate[];initial?:Maintenance|null;close:()=>void;onSave:(x:Maintenance)=>void}){

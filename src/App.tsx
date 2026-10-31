@@ -616,10 +616,30 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const setSitesSafe=update(setSites,'/sites','sites'),setVisitsSafe=update(setVisits,'/visits','visits'),setMaintenanceSafe=update(setMaintenance,'/maintenance','maintenance'),setDelegatesSafe=update(setDelegates,'/delegates','delegates'),setRequestsSafe=update(setRequests,'/requests','requests'),setLeadsSafe=update(setLeads,'/leads','leads'),setContractsSafe=update(setContracts,'/contracts','contracts');
  const expiryAlerts=useMemo(()=>{
    const alerts:string[]=[];
-   sites.forEach(s=>{if(s.contractEnd){const d=daysUntil(s.contractEnd);const label=expiryLabel(d);if(label)alerts.push(`${label}: عقد ${s.facility||s.client} ينتهي في ${s.contractEnd}`)}});
-   maintenance.forEach(m=>{if(m.expiryDate){const d=daysUntil(m.expiryDate);const label=expiryLabel(d);if(label)alerts.push(`${label}: صيانة طفايات ${sites.find(s=>s.id===m.siteId)?.facility||'منشأة'} تنتهي في ${m.expiryDate}`)}});
-   return alerts;
- },[sites,maintenance]);
+   sites.forEach(s=>{if(s.contractEnd){const d=daysUntil(s.contractEnd);const label=expiryLabel(d);if(label)alerts.push(label+': عقد '+(s.contractNo||s.facility||s.client)+' ينتهي في '+s.contractEnd)}});
+   contracts.forEach(c=>{if(c.endDate){const d=daysUntil(c.endDate);const label=expiryLabel(d);if(label)alerts.push(label+': عقد '+(c.contractNo||c.facility||c.client||'مسجل')+' ينتهي في '+c.endDate)}});
+   maintenance.forEach(m=>{if(m.expiryDate){const d=daysUntil(m.expiryDate);const label=expiryLabel(d);if(label)alerts.push(label+': صيانة طفايات '+(sites.find(s=>s.id===m.siteId)?.facility||m.facility||'منشأة')+' تنتهي في '+m.expiryDate)}});
+   return [...new Set(alerts)];
+ },[sites,contracts,maintenance]);
+ useEffect(()=>{
+   const milestones=[30,15,7,3,0];
+   const candidates:Array<{id:string;name:string;date:string;kind:string}>=[
+     ...sites.filter(s=>s.contractEnd).map(s=>({id:'site-'+s.id,name:s.contractNo||s.facility||s.client||'منشأة',date:s.contractEnd,kind:'انتهاء العقد'})),
+     ...contracts.filter(c=>c.endDate).map(c=>({id:'contract-'+c.id,name:c.contractNo||c.facility||c.client||'عقد',date:c.endDate!,kind:'انتهاء العقد'})),
+     ...maintenance.filter(m=>m.expiryDate).map(m=>({id:'maintenance-'+m.id,name:sites.find(s=>s.id===m.siteId)?.facility||m.facility||'منشأة',date:m.expiryDate,kind:'انتهاء صيانة الطفايات'}))
+   ];
+   candidates.forEach(item=>{
+     const days=daysUntil(item.date);
+     const milestone=days<0?'expired':milestones.find(value=>days<=value);
+     if(milestone===undefined)return;
+     const key='orkeit-expiry-reminder-v1:'+item.id+':'+String(milestone);
+     try{if(localStorage.getItem(key))return;localStorage.setItem(key,String(Date.now()))}catch{return}
+     const timing=days<0?'انتهت الصلاحية':days===0?'تنتهي اليوم':'متبقي '+days+' يوم';
+     const message=item.kind+': '+item.name+' — '+timing+' ('+item.date+')';
+     setNoticeItems(previous=>previous.includes(message)?previous:[message,...previous].slice(0,30));
+     notifyOutside('تذكير أوريكيت بانتهاء الصلاحية',message);
+   });
+ },[sites,contracts,maintenance]);
  const expiring=expiryAlerts.length;
  const nowForDashboard=new Date();
  const todayKeyForDashboard=nowForDashboard.getFullYear()+'-'+String(nowForDashboard.getMonth()+1).padStart(2,'0')+'-'+String(nowForDashboard.getDate()).padStart(2,'0');
@@ -849,26 +869,36 @@ function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSa
    const p=raw.split('|'); data={client:p[0],facility:p[1],phone:p[2],address:p[3],contractEnd:p[4],unified:p[5]};
   }
   const pick=(...keys:string[])=>{for(const key of keys){const val=data?.[key];if(val!==undefined&&val!==null&&String(val).trim())return String(val).trim();}return '';};
-  const dateRaw=pick('contractEnd','endDate','expiryDate','contract_expiry','تاريخ_الانتهاء','انتهاء_العقد');
-   const contractDateRaw=pick('contractDate','date','issueDate','تاريخ_العقد','تاريخ');
-   const contractNo=pick('contractNo','contractNumber','contract_number','رقم_العقد');
-  let date=dateRaw;
-  const parts = dateRaw.split('/');
-  if (parts.length === 3) {
-   if (parts[2].length === 4) date = parts[2] + '-' + parts[1].padStart(2, '0') + '-' + parts[0].padStart(2, '0');
-   else if (parts[0].length === 4) date = parts[0] + '-' + parts[1].padStart(2, '0') + '-' + parts[2].padStart(2, '0');
-  }
-  setX(prev=>({...prev,
-   client:pick('client','customer','customerName','owner','اسم_العميل')||prev.client,
-   facility:pick('facility','establishment','establishmentName','name','site','اسم_المنشأة')||(!data?raw:prev.facility),
-   phone:pick('phone','mobile','contact','رقم_الجوال')||prev.phone,
-   address:pick('address','location','العنوان')||prev.address,
-   contractEnd:(date.length===10 && date[4]==='-' && date[7]==='-')?date:prev.contractEnd,
-   unified:pick('unified','unifiedNumber','commercialNumber','رقم_موحد')||prev.unified,
-   license:pick('license','licenseStatus','حالة_الترخيص')||prev.license,
-   barcode:raw
-  }));
-  setScanOpen(false);
+   const dateRaw=pick('contractEnd','endDate','expiryDate','contractExpiry','contract_expiry','expirationDate','validUntil','expiry','تاريخ_الانتهاء','تاريخ_انتهاء_العقد','انتهاء_العقد');
+   const contractDateRaw=pick('contractDate','date','issueDate','startDate','تاريخ_العقد','تاريخ');
+   const contractNo=pick('contractNo','contractNumber','contract_number','number','رقم_العقد');
+   const normalizeDate=(value:string)=>{
+    if(!value)return '';
+    const clean=value.trim();
+    const iso=clean.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if(iso)return iso[1]+'-'+iso[2].padStart(2,'0')+'-'+iso[3].padStart(2,'0');
+    const parts=clean.split(/[/.]/);
+    if(parts.length===3){
+     if(parts[2].length===4)return parts[2]+'-'+parts[1].padStart(2,'0')+'-'+parts[0].padStart(2,'0');
+     if(parts[0].length===4)return parts[0]+'-'+parts[1].padStart(2,'0')+'-'+parts[2].padStart(2,'0');
+    }
+    return '';
+   };
+   const expiryDate=normalizeDate(dateRaw);
+   const signedDate=normalizeDate(contractDateRaw);
+   setX(prev=>({...prev,
+    client:pick('client','customer','customerName','owner','اسم_العميل')||prev.client,
+    facility:pick('facility','establishment','establishmentName','name','site','اسم_المنشأة')||(!data?raw:prev.facility),
+    phone:pick('phone','mobile','contact','رقم_الجوال')||prev.phone,
+    address:pick('address','location','العنوان')||prev.address,
+    contractNo:contractNo||prev.contractNo,
+    contractDate:signedDate||prev.contractDate,
+    contractEnd:expiryDate||prev.contractEnd,
+    unified:pick('unified','unifiedNumber','commercialNumber','رقم_موحد')||prev.unified,
+    license:pick('license','licenseStatus','حالة_الترخيص')||prev.license,
+    barcode:raw
+   }));
+setScanOpen(false);
  };
  return <Modal title={initial?'تعديل بيانات المنشأة':'إضافة منشأة'} close={close}>
   <button type="button" className="primary wide" onClick={()=>setScanOpen(true)}>▦ قراءة باركود العقد / المنشأة</button>

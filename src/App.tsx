@@ -888,7 +888,7 @@ function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSa
    const signedDate=normalizeDate(contractDateRaw);
    setX(prev=>({...prev,
     client:pick('client','customer','customerName','owner','اسم_العميل')||prev.client,
-    facility:pick('facility','establishment','establishmentName','name','site','اسم_المنشأة')||(!data?raw:prev.facility),
+    facility:pick('facility','establishment','establishmentName','name','site','اسم_المنشأة')||prev.facility||pick('client','customer','customerName','owner','اسم_العميل')||(!data?raw:''),
     phone:pick('phone','mobile','contact','رقم_الجوال')||prev.phone,
     address:pick('address','location','العنوان')||prev.address,
     contractNo:contractNo||prev.contractNo,

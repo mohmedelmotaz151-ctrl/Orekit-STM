@@ -574,3 +574,49 @@ button.primary .orkeitIcon,button.heroGhost .orkeitIcon{color:currentColor}
 .barcodeVideo{display:block;width:100%;max-height:320px;object-fit:cover;background:#101827;border-radius:10px}
 .barcodeScanner .muted{font-size:13px;color:#64748b;line-height:1.7}
 .barcodeScanner form{display:grid;gap:10px}
+
+/* Professional establishment directory */
+.siteDirectory{display:grid;gap:18px;direction:rtl}
+.siteDirectoryHero{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:26px 28px;border-radius:22px;background:linear-gradient(120deg,#172638 0%,#263d56 62%,#304c64 100%);color:#fff;box-shadow:0 14px 32px #1726381a}
+.siteDirectoryEyebrow{font-size:10px;letter-spacing:1.7px;color:#f1b7b2;font-weight:800}
+.siteDirectoryHero h1{font-size:29px;margin:8px 0}
+.siteDirectoryHero p{color:#d8e1eb;margin:0;line-height:1.8}
+.siteAddButton{white-space:nowrap;background:#b63c36}
+.siteDirectoryMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.siteMetric{border:1px solid #e2e8ef;background:#fff;border-radius:16px;padding:16px;text-align:right;display:grid;grid-template-columns:42px 1fr;column-gap:10px;align-items:center;cursor:pointer;box-shadow:0 5px 16px #14233808}
+.siteMetricIcon{grid-row:span 3;width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:#edf2f8;color:#2d4868}
+.siteMetric>span:nth-child(2){font-size:12px;color:#687587}
+.siteMetric strong{font-size:27px;line-height:1.3;color:#1d2b3b}
+.siteMetric small{font-size:10px;color:#8a95a3}
+.siteMetricGood .siteMetricIcon{background:#e8f6ee;color:#218052}.siteMetricWarn .siteMetricIcon{background:#fff4dd;color:#a56b0d}.siteMetricDanger .siteMetricIcon{background:#fdebea;color:#b83a35}
+.siteDirectoryToolbar{display:grid;grid-template-columns:minmax(220px,1fr) 190px 170px;gap:12px;padding:14px;background:#fff;border:1px solid #e3e8ef;border-radius:16px}
+.siteSearch{display:flex!important;align-items:center;gap:10px;border:1px solid #dbe2eb;border-radius:11px;padding:0 12px;color:#728196;background:#fbfcfe;min-width:0}
+.siteSearch input{border:0!important;outline:none!important;box-shadow:none!important;background:transparent!important;width:100%;min-width:0;padding:12px 0!important}
+.siteFilterLabel{display:grid;gap:5px;font-size:11px;color:#6e7b8d}
+.siteFilterLabel select{padding:10px;border-color:#dbe2eb;border-radius:10px;font-size:12px;min-width:0}
+.siteDirectoryResults{display:flex;align-items:center;gap:9px;color:#8290a1;font-size:12px}
+.siteDirectoryResults strong{color:#27384b;font-size:14px}.siteDirectoryResults .textBtn{margin-right:auto}
+.siteDirectoryGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.siteDirectoryCard{min-width:0;background:#fff;border:1px solid #e0e7ef;border-radius:18px;padding:18px;box-shadow:0 6px 22px #1c304308;transition:transform .18s,box-shadow .18s}
+.siteDirectoryCard:hover{transform:translateY(-2px);box-shadow:0 12px 28px #1c304312}
+.siteCardTop{display:flex;align-items:flex-start;gap:11px;min-width:0}
+.siteBuildingMark{width:46px;height:46px;flex:0 0 46px;display:grid;place-items:center;border-radius:13px;background:#edf2f8;color:#294565}
+.siteCardHeading{min-width:0;flex:1}.siteCardHeading h2{font-size:17px;line-height:1.5;margin:0;color:#203247;overflow-wrap:anywhere}.siteCardHeading p{margin:3px 0 0;color:#7a8796;font-size:12px}
+.siteContractStatus{font-size:10px;font-weight:800;padding:6px 8px;border-radius:9px;white-space:nowrap;background:#f0f3f6;color:#687587}
+.siteContractStatus.active{background:#e8f6ee;color:#218052}.siteContractStatus.soon{background:#fff3d9;color:#9a650c}.siteContractStatus.expired{background:#fdebea;color:#b53833}.siteContractStatus.missing{background:#f0f3f6;color:#697789}
+.siteCardDetails{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px;margin:19px 0;padding:16px 0;border-top:1px solid #eef1f5;border-bottom:1px solid #eef1f5}
+.siteCardDetails>div{display:flex;gap:8px;align-items:flex-start;min-width:0}
+.siteDetailIcon{color:#8795a7;padding-top:2px;flex:0 0 auto}
+.siteCardDetails>div>span:last-child{display:grid;gap:4px;min-width:0}
+.siteCardDetails small{font-size:10px;color:#8792a1}
+.siteCardDetails strong{font-size:12px;color:#344459;line-height:1.7;overflow-wrap:anywhere;white-space:normal}
+.siteCardFooter{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.siteExtinguisherCount{display:inline-flex;align-items:center;gap:6px;color:#65768b;background:#f3f6f9;padding:7px 9px;border-radius:9px;font-size:11px;white-space:nowrap}
+.siteCardActions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.siteDirectoryCard .siteCardActions .primary,.siteDirectoryCard .siteCardActions .secondaryBtn,.siteDirectoryCard .siteCardActions .delete{margin:0;padding:9px 11px;font-size:11px;min-height:36px}
+.siteDirectoryCard .siteCardActions .delete{margin-top:0}
+.siteDirectoryEmpty{background:#fff;border:1px dashed #cbd5e1;border-radius:18px;text-align:center;padding:42px 18px;color:#738195}
+.siteDirectoryEmpty>span{display:grid;place-items:center;margin:0 auto 12px;width:60px;height:60px;background:#edf2f8;border-radius:18px;color:#304e70}
+.siteDirectoryEmpty h2{font-size:18px;color:#2b3d52;margin:8px 0}.siteDirectoryEmpty p{font-size:13px;line-height:1.8}
+@media(max-width:900px){.siteDirectoryMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.siteDirectoryGrid{grid-template-columns:1fr}.siteDirectoryToolbar{grid-template-columns:1fr 1fr}.siteSearch{grid-column:1/-1}}
+@media(max-width:560px){.siteDirectoryHero{padding:21px;align-items:stretch;flex-direction:column}.siteDirectoryHero h1{font-size:24px}.siteAddButton{width:100%}.siteDirectoryMetrics{gap:9px}.siteMetric{padding:12px;grid-template-columns:34px 1fr;column-gap:8px}.siteMetricIcon{width:34px;height:34px}.siteMetric strong{font-size:23px}.siteDirectoryToolbar{grid-template-columns:1fr}.siteSearch{grid-column:auto}.siteCardTop{flex-wrap:wrap}.siteContractStatus{margin-right:auto}.siteCardDetails{grid-template-columns:1fr}.siteCardFooter{align-items:flex-start}.siteCardActions{width:100%}.siteCardActions .primary{flex:1}}

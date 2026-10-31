@@ -851,9 +851,11 @@ function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSa
   const pick=(...keys:string[])=>{for(const key of keys){const val=data?.[key];if(val!==undefined&&val!==null&&String(val).trim())return String(val).trim();}return '';};
   const dateRaw=pick('contractEnd','endDate','expiryDate','contract_expiry','تاريخ_الانتهاء','انتهاء_العقد');
   let date=dateRaw;
-  const dateParts=dateRaw.split('/');
-  if(dateParts.length===3 && dateParts[2].length===4)date=dateParts[2]+'-'+dateParts[1].padStart(2,'0')+'-'+dateParts[0].padStart(2,'0');
-  else if(dateParts.length===3 && dateParts[0].length===4)date=dateParts[0]+'-'+dateParts[1].padStart(2,'0')+'-'+dateParts[2].padStart(2,'0');
+  const parts = dateRaw.split('/');
+  if (parts.length === 3) {
+   if (parts[2].length === 4) date = parts[2] + '-' + parts[1].padStart(2, '0') + '-' + parts[0].padStart(2, '0');
+   else if (parts[0].length === 4) date = parts[0] + '-' + parts[1].padStart(2, '0') + '-' + parts[2].padStart(2, '0');
+  }
   setX(prev=>({...prev,
    client:pick('client','customer','customerName','owner','اسم_العميل')||prev.client,
    facility:pick('facility','establishment','establishmentName','name','site','اسم_المنشأة')||(!data?raw:prev.facility),

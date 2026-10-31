@@ -842,7 +842,7 @@ function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSa
  const applyBarcode=(raw:string)=>{
   let data:any=null;
   try { data=JSON.parse(raw); } catch {}
-  if(!data && /^https?:\\/\\//i.test(raw)) {
+  if(!data && (raw.startsWith('http://') || raw.startsWith('https://'))) {
    try { const u=new URL(raw); data=Object.fromEntries(u.searchParams.entries()); } catch {}
   }
   if(!data && raw.includes('|')) {
@@ -851,14 +851,14 @@ function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSa
   const pick=(...keys:string[])=>{for(const key of keys){const val=data?.[key];if(val!==undefined&&val!==null&&String(val).trim())return String(val).trim();}return '';};
   const dateRaw=pick('contractEnd','endDate','expiryDate','contract_expiry','تاريخ_الانتهاء','انتهاء_العقد');
   let date=dateRaw;
-  if(/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(dateRaw)){const [d,m,y]=dateRaw.split('/');date= y+'-'+m+'-'+d;}
-  else if(/^\\d{4}\\/\\d{2}\\/\\d{2}$/.test(dateRaw))date=dateRaw.replaceAll('/','-');
+  if(dateRaw.split('/').length===3 && dateRaw.split('/')[2].length===4){const [d,m,y]=dateRaw.split('/');date= y+'-'+m.padStart(2,'0')+'-'+d.padStart(2,'0');}
+  else if(dateRaw.split('/').length===3 && dateRaw.split('/')[0].length===4)date=dateRaw.replaceAll('/','-');
   setX(prev=>({...prev,
    client:pick('client','customer','customerName','owner','اسم_العميل')||prev.client,
    facility:pick('facility','establishment','establishmentName','name','site','اسم_المنشأة')||(!data?raw:prev.facility),
    phone:pick('phone','mobile','contact','رقم_الجوال')||prev.phone,
    address:pick('address','location','العنوان')||prev.address,
-   contractEnd:/^\\d{4}-\\d{2}-\\d{2}$/.test(date)?date:prev.contractEnd,
+   contractEnd:(date.length===10 && date[4]==='-' && date[7]==='-')?date:prev.contractEnd,
    unified:pick('unified','unifiedNumber','commercialNumber','رقم_موحد')||prev.unified,
    license:pick('license','licenseStatus','حالة_الترخيص')||prev.license,
    barcode:raw

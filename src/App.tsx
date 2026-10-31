@@ -591,7 +591,8 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
      // write failed, then retries syncing those missing records.
      const mergedSites=[...cloudSites];
      const cloudSiteIds=new Set(cloudSites.map(site=>site.id));
-     const localOnlySites=sites.filter(site=>!cloudSiteIds.has(site.id));
+     const latestLocalSites=load<Site[]>('/sites',[]);
+     const localOnlySites=latestLocalSites.filter(site=>!cloudSiteIds.has(site.id));
      mergedSites.push(...localOnlySites);
      setSites(mergedSites);
      save('/sites',mergedSites);

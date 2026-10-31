@@ -11,7 +11,7 @@ import BarcodeScanner from './BarcodeScanner';
 import { OrkeitIcon } from './OrkeitIcon';
 import * as XLSX from 'xlsx-js-style';
 
-type Site={id:string;client:string;facility:string;phone:string;address:string;contractEnd:string;extCount:number;barcode?:string;email?:string;unified?:string;license?:string;notes?:string;ownerDelegateId?:string;createdByRole?:'admin'|'delegate'|'customer'};
+type Site={id:string;client:string;facility:string;phone:string;address:string;contractEnd:string;extCount:number;barcode?:string;contractNo?:string;contractDate?:string;email?:string;unified?:string;license?:string;notes?:string;ownerDelegateId?:string;createdByRole?:'admin'|'delegate'|'customer'};
 type ContractRecord={id:string;siteId?:string;facility?:string;client?:string;contractNo?:string;startDate?:string;endDate?:string;status?:string;value?:string;scope?:string;updatedAt?:number};
 type Visit={id:string;siteId:string;date:string;status:string;notes:string;delegateId?:string};
 type Maintenance={id:string;siteId:string;client?:string;facility?:string;address?:string;latitude?:number;longitude?:number;date:string;expiryDate:string;service:string;count:number;technician:string;delegateId?:string;ownerDelegateId?:string;createdByRole?:'admin'|'delegate'|'customer'};
@@ -850,6 +850,8 @@ function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSa
   }
   const pick=(...keys:string[])=>{for(const key of keys){const val=data?.[key];if(val!==undefined&&val!==null&&String(val).trim())return String(val).trim();}return '';};
   const dateRaw=pick('contractEnd','endDate','expiryDate','contract_expiry','تاريخ_الانتهاء','انتهاء_العقد');
+   const contractDateRaw=pick('contractDate','date','issueDate','تاريخ_العقد','تاريخ');
+   const contractNo=pick('contractNo','contractNumber','contract_number','رقم_العقد');
   let date=dateRaw;
   const parts = dateRaw.split('/');
   if (parts.length === 3) {
@@ -877,6 +879,8 @@ function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSa
    <Input label="اسم المنشأة" value={x.facility} onChange={v=>setX({...x,facility:v})} required/>
    <Input label="رقم الجوال" value={x.phone} onChange={v=>setX({...x,phone:v})}/>
    <Input label="البريد الإلكتروني" value={x.email||''} onChange={v=>setX({...x,email:v})}/>
+   <Input label="رقم العقد" value={x.contractNo||''} onChange={v=>setX({...x,contractNo:v})}/>
+   <Input label="تاريخ العقد" value={x.contractDate||''} onChange={v=>setX({...x,contractDate:v})} type="date"/>
    <Input label="الرقم الموحد" value={x.unified||''} onChange={v=>setX({...x,unified:v})}/>
    <Input label="حالة الترخيص" value={x.license||''} onChange={v=>setX({...x,license:v})}/>
    <Input label="العنوان" value={x.address} onChange={v=>setX({...x,address:v})}/>

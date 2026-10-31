@@ -889,12 +889,12 @@ function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSa
    setX(prev=>({...prev,
     client:pick('client','customer','customerName','owner','اسم_العميل')||prev.client,
     facility:pick('facility','establishment','establishmentName','name','site','اسم_المنشأة')||prev.facility||pick('client','customer','customerName','owner','اسم_العميل')||(!data?raw:''),
-    phone:pick('phone','mobile','contact','رقم_الجوال')||prev.phone,
-    address:pick('address','location','العنوان')||prev.address,
+    phone:pick('phone','mobile','contact','clientPhone','رقم_الجوال','جوال_العميل')||prev.phone,
+    address:pick('address','location','city','العنوان','الموقع')||prev.address,
     contractNo:contractNo||prev.contractNo,
     contractDate:signedDate||prev.contractDate,
     contractEnd:expiryDate||prev.contractEnd,
-    unified:pick('unified','unifiedNumber','commercialNumber','رقم_موحد')||prev.unified,
+    unified:pick('unified','unifiedNumber','commercialNumber','commercialRegOrId','رقم_موحد','السجل_التجاري')||prev.unified,
     license:pick('license','licenseStatus','حالة_الترخيص')||prev.license,
     barcode:raw
    }));

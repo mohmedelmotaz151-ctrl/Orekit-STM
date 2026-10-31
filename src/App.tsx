@@ -919,7 +919,7 @@ function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSa
   }
   if(typeof data==='string'){try{data=JSON.parse(data)}catch{}}
   const pick=(...keys:string[])=>{
-   const sources=[data,data?.facilityDetails,data?.facilityData,data?.establishment,data?.customer,data?.client,data?.contract,data?.contact,data?.addressDetails];
+   const sources=[data,data?.payload,data?.data,data?.facilityDetails,data?.facilityData,data?.establishment,data?.facility,data?.contract,data?.customer,data?.client,data?.contact,data?.addressDetails,typeof data?.address==='object'?data.address:null];
    for(const key of keys)for(const src of sources){const val=src?.[key];if(val!==undefined&&val!==null&&String(val).trim()&&typeof val!=='object')return String(val).trim();}
    return '';
   };
@@ -938,8 +938,8 @@ function SiteForm({initial,close,onSave}:{initial?:Site|null;close:()=>void;onSa
   };
   const expiryDate=normalizeDate(dateRaw), signedDate=normalizeDate(contractDateRaw);
   const phone=pick('phone','mobile','mobileNumber','contactNumber','clientPhone','customerPhone','telephone','tel','whatsapp','رقم_الجوال','جوال_العميل','رقم_الهاتف','الهاتف');
-  const client=pick('client','customer','customerName','clientName','owner','ownerName','contactName','اسم_العميل','اسم_صاحب_المنشأة');
-  const facility=pick('facility','facilityName','establishment','establishmentName','siteName','businessName','name','site','اسم_المنشأة','اسم_الموقع');
+  const client=pick('clientName','customerName','client','customer','ownerName','owner','contactName','name','اسم_العميل','اسم_صاحب_المنشأة');
+  const facility=pick('facilityName','establishmentName','facility','establishment','siteName','businessName','site','name','اسم_المنشأة','اسم_الموقع');
   const address=joinAddress||pick('location','place','الموقع');
   const unified=pick('unified','unifiedNumber','commercialNumber','commercialRegOrId','commercialRegistration','crNumber','nationalNumber','رقم_موحد','الرقم_الموحد','السجل_التجاري','رقم_السجل_التجاري');
   const email=pick('email','clientEmail','customerEmail','البريد_الإلكتروني','البريد');

@@ -567,3 +567,10 @@ button.primary .orkeitIcon,button.heroGhost .orkeitIcon{color:currentColor}
 .financeTableWrap{overflow-x:auto;width:100%}.financeTable{width:100%;border-collapse:collapse;min-width:650px}.financeTable th,.financeTable td{padding:13px 11px;text-align:right;border-bottom:1px solid #e7edf4;vertical-align:middle}.financeTable th{font-size:13px;color:#52647b;background:#f7f9fc}.financeTable td strong,.financeTable td small{display:block}.financeTable td small{color:#64748b;margin-top:4px;max-width:260px;overflow-wrap:anywhere}.financeBadge{display:inline-block;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:700}.badgeIncome{background:#e9f7f0;color:#16845b}.badgeExpense{background:#fff0f1;color:#E11D2E}.financeActions{display:flex;gap:7px}.financeActions button{padding:7px 10px;white-space:nowrap}
 .financeError,.financeWarning{padding:12px 14px;border-radius:10px;background:#fff0f1;color:#a51b2a;border:1px solid #fecdd3}.financeWarning{background:#fff8e6;color:#805b12;border-color:#f3d99a}
 @media(max-width:650px){.financeSummary{grid-template-columns:1fr;gap:10px}.financeStat{padding:15px}.financeForm{grid-template-columns:1fr}.financeForm>label,.financeTypeSwitch,.financeFormActions{grid-column:1}.financeLedgerHead{align-items:stretch}.financeLedgerHead>div{width:100%}.financeLedgerHead label{min-width:0;flex:1}.financeFormPanel,.financeLedger{padding:14px}.financePage .pageTitle>.secondaryBtn{width:100%}}
+
+.barcodeScanner{margin:14px 0;padding:14px;border:1px solid #dbe3ed;border-radius:14px;background:#f8fafc}
+.barcodeScannerHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.barcodeScannerHead button{background:#fff;border:1px solid #dbe3ed;border-radius:8px;padding:7px 11px}
+.barcodeVideo{display:block;width:100%;max-height:320px;object-fit:cover;background:#101827;border-radius:10px}
+.barcodeScanner .muted{font-size:13px;color:#64748b;line-height:1.7}
+.barcodeScanner form{display:grid;gap:10px}

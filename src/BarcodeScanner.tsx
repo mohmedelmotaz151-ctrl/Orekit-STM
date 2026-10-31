@@ -96,6 +96,10 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
         }
 
         setStatus('جارٍ تشغيل قارئ متوافق مع أنواع متعددة من الباركود…');
+        // Release the first stream before the fallback reader opens its own camera stream.
+        stream?.getTracks().forEach(track => track.stop());
+        stream = undefined;
+        if (videoRef.current) videoRef.current.srcObject = null;
         const zxing = await loadZXing();
         if (stopped || !videoRef.current) return;
         zxingControls = await new zxing.BrowserMultiFormatReader().decodeFromVideoDevice(

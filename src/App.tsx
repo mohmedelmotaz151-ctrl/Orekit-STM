@@ -622,7 +622,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
    return [...new Set(alerts)];
  },[sites,contracts,maintenance]);
  useEffect(()=>{
-   const milestones=[30,15,7,3,0];
+   const milestones=[0,3,7,15,30];
    const candidates:Array<{id:string;name:string;date:string;kind:string}>=[
      ...sites.filter(s=>s.contractEnd).map(s=>({id:'site-'+s.id,name:s.contractNo||s.facility||s.client||'منشأة',date:s.contractEnd,kind:'انتهاء العقد'})),
      ...contracts.filter(c=>c.endDate).map(c=>({id:'contract-'+c.id,name:c.contractNo||c.facility||c.client||'عقد',date:c.endDate!,kind:'انتهاء العقد'})),

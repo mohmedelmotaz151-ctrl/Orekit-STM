@@ -586,7 +586,19 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
        }
      };
 
-     await migrate('sites','/sites',cloudSites,sites,setSites);
+     // Preserve local sites that are missing from Firestore instead of replacing them
+     // with a partial cloud list. This recovers sites saved on this device when a cloud
+     // write failed, then retries syncing those missing records.
+     const mergedSites=[...cloudSites];
+     const cloudSiteIds=new Set(cloudSites.map(site=>site.id));
+     const localOnlySites=sites.filter(site=>!cloudSiteIds.has(site.id));
+     mergedSites.push(...localOnlySites);
+     setSites(mergedSites);
+     save('/sites',mergedSites);
+     if(localOnlySites.length){
+       try{await Promise.all(localOnlySites.map(site=>saveCloud('sites',site)));}
+       catch(syncError){console.error('Local site recovery sync failed',syncError);}
+     }
      await migrate('visits','/visits',cloudVisits,visits,setVisits);
      await migrate('maintenance','/maintenance',cloudMaintenance,maintenance,setMaintenance);
      await migrate('delegates','/delegates',cloudDelegates,delegates,setDelegates);
@@ -689,7 +701,19 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
     <div className="mobileDockBell"><NotificationBell items={[...notificationRecords,...noticeItems,...expiryAlerts]} title="الإشعارات" onRead={markNotificationRead} onMarkAllRead={()=>void markAllNotificationsRead()} onSelect={item=>{const id=item.match(/ORK-\d{4}-\d+/)?.[0];if(id){setRequestSearch(id);go('requests');}else if(item.includes('صيانة طفايات'))go('maintenance');else go('sites');}}/></div>
     <button type="button" onClick={onLogout} aria-label="تسجيل الخروج"><OrkeitIcon name="logout" size={22}/><small>خروج</small></button>
   </nav>
-  {open==='lead'&&<LeadForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setLeadsSafe([x,...leads.filter(l=>l.id!==x.id)]);setOpen(null)}}/>}\n  {open==='site'&&<SiteForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setSitesSafe([x,...sites.filter(s=>s.id!==x.id)]);setOpen(null)}}/>}
+  {open==='lead'&&<LeadForm initial={editing} close={()=>setOpen(null)} onSave={x=>{setLeadsSafe([x,...leads.filter(l=>l.id!==x.id)]);setOpen(null)}}/>}\n  {open==='site'&&<SiteForm initial={editing} close={()=>setOpen(null)} onSave={async x=>{
+    const next=[x,...sites.filter(s=>s.id!==x.id)];
+    // Always persist locally first so a transient Firebase failure cannot lose the form.
+    save('/sites',next);
+    setSites(next);
+    if(firebaseConfigured){
+      try{await saveCloud('sites',x);setOpen(null);}
+      catch(err){console.error('Site cloud save failed',err);alert('تم حفظ المنشأة على هذا الجهاز، لكن تعذّر حفظها في قاعدة البيانات السحابية. ستبقى محليًا، ويرجى التحقق من اتصال Firebase قبل الاعتماد على المزامنة بين الأجهزة.');setOpen(null);}
+    }else{
+      alert('تم حفظ المنشأة على هذا الجهاز فقط لأن قاعدة البيانات السحابية غير مهيأة.');
+      setOpen(null);
+    }
+  }}/>
   {open==='visit'&&<VisitForm sites={sites} delegates={delegates} initial={editing} close={()=>setOpen(null)} onSave={x=>{setVisitsSafe([x,...visits.filter(v=>v.id!==x.id)]);setOpen(null)}}/>}
   {open==='maintenance'&&<MaintenanceForm sites={sites} delegates={delegates} initial={editing} close={()=>setOpen(null)} onSave={x=>{setMaintenanceSafe([x,...maintenance.filter(m=>m.id!==x.id)]);setOpen(null)}}/>}
   {open==='delegate'&&<DelegateForm initial={editing} close={()=>setOpen(null)} onSave={async x=>{if(!firebaseConfigured)throw new Error('Firebase غير مهيأ؛ لم يتم إنشاء الحساب. اضبط متغيرات Firebase في Vercel ثم أعد المحاولة.');const duplicate=delegates.some(d=>d.id!==x.id&&d.phone.replace(/[\s()-]/g,'')===x.phone.replace(/[\s()-]/g,''));if(duplicate)throw new Error('رقم الجوال مستخدم بالفعل لحساب مندوب آخر.');await saveCloud('delegates',x);const next=[x,...delegates.filter(d=>d.id!==x.id)];setDelegates(next);save('/delegates',next);try{await saveCloud('auditLog',{id:uid(),action:editing?'update':'create',entity:'delegates',entityId:x.id,summary:(editing?'تعديل حساب المندوب — ':'إنشاء حساب المندوب — ')+x.name,actor:'admin',createdAt:Date.now()})}catch(e){console.warn('Delegate audit log failed',e)}setOpen(null)}}/>}

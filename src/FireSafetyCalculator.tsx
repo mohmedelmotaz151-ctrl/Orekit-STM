@@ -19,7 +19,6 @@ export default function FireSafetyCalculator() {
   const area = Math.max(0, Number(form.area) || 0);
   const rooms = Math.max(0, Number(form.rooms) || 0);
   const floors = Math.max(1, Number(form.floors) || 1);
-  const people = Math.max(0, Number(form.people) || 0);
   const exits = Math.max(0, Number(form.exits) || 0);
   const result = useMemo(() => {
     const inputComplete = area > 0 && rooms > 0 && form.activity && form.height.trim() !== '';

@@ -33,7 +33,7 @@ export default function FirePlanEditor(){
  const upload=(file?:File)=>{
   if(!file)return;
   if(!file.type.startsWith('image/')){setNotice('يرجى رفع المخطط كصورة PNG أو JPG حتى يمكن وضع الرموز فوقه.');return}
-  if(file.size>10*1024*1024){setNotice('حجم الصورة أكبر من 10 ميغابايت. يرجى تصغيرها أولًا.');return}
+  if(file.size>3.5*1024*1024){setNotice('حجم الصورة أكبر من 3.5 ميغابايت. يرجى تصغيرها أولًا.');return}
   const reader=new FileReader();
   reader.onload=()=>{setImage(String(reader.result||''));setFileName(file.name);setMarks([]);setNotice('تم رفع المخطط. اختر رمزًا ثم اضغط على موضعه.');};
   reader.onerror=()=>setNotice('تعذر قراءة الصورة.');

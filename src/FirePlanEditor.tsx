@@ -103,9 +103,18 @@ export default function FirePlanEditor(){
      if(m.type==='door'){const dx=x2-x,dy=y2-y;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo((x+x2)/2-dy*0.7,(y+y2)/2+dx*0.7,x2,y2);ctx.stroke();}
      return;
     }
-    const rad=Math.max(12,canvas.width/100);
-    ctx.beginPath();ctx.arc(x,y,rad,0,Math.PI*2);ctx.fillStyle='white';ctx.fill();ctx.stroke();
-    ctx.fillStyle=t.color;ctx.font='bold '+Math.max(13,canvas.width/75)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(t.symbol,x,y);
+    const rad=Math.max(8,symbolSize*canvas.width/Math.max(600,stage.current?.getBoundingClientRect().width||1000)/2);
+    ctx.fillStyle='#fff';ctx.strokeStyle=t.color;ctx.lineWidth=Math.max(2,canvas.width/700);
+    if(m.type==='smoke'){ctx.beginPath();ctx.arc(x,y,rad*.72,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(x,y,rad*.4,0,Math.PI*2);ctx.stroke();}
+    else if(m.type==='heat'||m.type==='light'){ctx.beginPath();ctx.moveTo(x,y-rad);ctx.lineTo(x+rad,y);ctx.lineTo(x,y+rad);ctx.lineTo(x-rad,y);ctx.closePath();ctx.stroke();}
+    else if(m.type==='sprinkler'||m.type==='manual'){ctx.beginPath();ctx.moveTo(x,y-rad);ctx.lineTo(x+rad,y+rad);ctx.lineTo(x-rad,y+rad);ctx.closePath();ctx.stroke();}
+    else if(m.type==='extinguisher'){ctx.strokeRect(x-rad*.45,y-rad*.7,rad*.9,rad*1.4);ctx.beginPath();ctx.moveTo(x,y-rad*.7);ctx.lineTo(x+rad*.5,y-rad);ctx.stroke();}
+    else if(m.type==='hose'){ctx.strokeRect(x-rad,y-rad*.7,rad*2,rad*1.4);ctx.beginPath();ctx.arc(x,y,rad*.48,0,Math.PI*2);ctx.stroke();}
+    else if(m.type==='panel'){ctx.strokeRect(x-rad*.7,y-rad,rad*1.4,rad*2);ctx.beginPath();ctx.moveTo(x-rad*.4,y-rad*.3);ctx.lineTo(x+rad*.4,y-rad*.3);ctx.moveTo(x-rad*.4,y+rad*.2);ctx.lineTo(x+rad*.4,y+rad*.2);ctx.stroke();}
+    else if(m.type==='horn'){ctx.beginPath();ctx.moveTo(x-rad,y-rad*.5);ctx.lineTo(x+rad*.2,y-rad*.5);ctx.lineTo(x+rad,y-rad);ctx.lineTo(x+rad,y+rad);ctx.lineTo(x+rad*.2,y+rad*.5);ctx.lineTo(x-rad,y+rad*.5);ctx.closePath();ctx.stroke();}
+    else if(m.type==='pump'){ctx.beginPath();ctx.arc(x,y,rad*.75,0,Math.PI*2);ctx.moveTo(x-rad*.4,y-rad*.4);ctx.lineTo(x+rad*.4,y+rad*.4);ctx.moveTo(x+rad*.4,y-rad*.4);ctx.lineTo(x-rad*.4,y+rad*.4);ctx.stroke();}
+    else if(m.type==='exit'){ctx.beginPath();ctx.moveTo(x-rad,y);ctx.lineTo(x+rad,y);ctx.moveTo(x+rad*.4,y-rad*.6);ctx.lineTo(x+rad,y);ctx.lineTo(x+rad*.4,y+rad*.6);ctx.stroke();}
+    else {ctx.strokeRect(x-rad*.7,y-rad*.7,rad*1.4,rad*1.4);}
    });
    canvas.toBlob(blob=>{if(!blob)return;const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='Orkeit-'+(planType==='alarm'?'fire-alarm':'fire-extinguishing')+'-plan-marked.png';a.click();URL.revokeObjectURL(url)},'image/png');
   };

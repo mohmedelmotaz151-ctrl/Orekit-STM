@@ -62,7 +62,7 @@ export default function FirePlanEditor(){
   e.currentTarget.setPointerCapture(e.pointerId);
   setMarks(old=>[...old,{id:newId,type:active,x:p.x,y:p.y,x2:p.x,y2:p.y}]);
  };
- const updateSegment=(e:PointerEvent<HTMLDivElement>)=>{
+ const updateSegment=(e:ReactPointerEvent<HTMLDivElement>)=>{
   if(!drawing.current)return;const p=point(e.clientX,e.clientY),drawingId=drawing.current;
   setMarks(old=>old.map(m=>m.id===drawingId?{...m,x2:p.x,y2:p.y}:m));
  };

@@ -2,6 +2,7 @@ import { useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEve
 
 type Mark = { id:string; type:string; x:number; y:number; x2?:number; y2?:number };
 const STORE='orkeit-fire-plan-v2';
+const LEGACY_STORE='orkeit-fire-plan-v1';
 const planKey=(kind:string)=>STORE+'-'+kind;
 const tools=[
  {type:'smoke',label:'كاشف دخان',symbol:'د',color:'#c62828'},
@@ -20,7 +21,7 @@ const tools=[
 ];
 const id=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
 const segmentTypes=['line','door'];
-function saved(kind='alarm'){try{return JSON.parse(localStorage.getItem(planKey(kind))||'null')}catch{return null}}
+function saved(kind='alarm'){try{return JSON.parse(localStorage.getItem(planKey(kind))|| (kind==='alarm'?localStorage.getItem(LEGACY_STORE):null) ||'null')}catch{return null}}
 export default function FirePlanEditor(){
  const [planType,setPlanType]=useState<'alarm'|'extinguishing'>(()=>{try{return (localStorage.getItem(STORE+'-active') as 'alarm'|'extinguishing')||'alarm'}catch{return 'alarm'}});
  const old=saved(planType);

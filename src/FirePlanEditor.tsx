@@ -126,11 +126,12 @@ export default function FirePlanEditor(){
    const ctx=canvas.getContext('2d');if(!ctx)return;ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);if(img)ctx.drawImage(img,0,0);
    marks.filter(isLayerVisible).forEach(m=>{const t=tools.find(x=>x.type===m.type);if(!t)return;
     const x=m.x*canvas.width/100,y=m.y*canvas.height/100,x2=(m.x2??m.x)*canvas.width/100,y2=(m.y2??m.y)*canvas.height/100;
+    ctx.save();ctx.translate((x+x2)/2,(y+y2)/2);ctx.rotate((m.rotation||0)*Math.PI/180);ctx.translate(-(x+x2)/2,-(y+y2)/2);
     ctx.strokeStyle=t.color;ctx.lineWidth=Math.max(lineWidth,canvas.width/1600);
     if(segmentTypes.includes(m.type)){
      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x2,y2);ctx.stroke();
      if(m.type==='door'){const dx=x2-x,dy=y2-y;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo((x+x2)/2-dy*0.7,(y+y2)/2+dx*0.7,x2,y2);ctx.stroke();}
-     return;
+     ctx.restore();return;
     }
     const rad=Math.max(8,symbolSize*canvas.width/Math.max(600,stage.current?.getBoundingClientRect().width||1000)/2);
     ctx.fillStyle='#fff';ctx.strokeStyle=t.color;ctx.lineWidth=Math.max(2,canvas.width/700);
@@ -144,6 +145,7 @@ export default function FirePlanEditor(){
     else if(m.type==='pump'){ctx.beginPath();ctx.arc(x,y,rad*.75,0,Math.PI*2);ctx.moveTo(x-rad*.4,y-rad*.4);ctx.lineTo(x+rad*.4,y+rad*.4);ctx.moveTo(x+rad*.4,y-rad*.4);ctx.lineTo(x-rad*.4,y+rad*.4);ctx.stroke();}
     else if(m.type==='exit'){ctx.beginPath();ctx.moveTo(x-rad,y);ctx.lineTo(x+rad,y);ctx.moveTo(x+rad*.4,y-rad*.6);ctx.lineTo(x+rad,y);ctx.lineTo(x+rad*.4,y+rad*.6);ctx.stroke();}
     else {ctx.strokeRect(x-rad*.7,y-rad*.7,rad*1.4,rad*1.4);}
+    ctx.restore();
    });
    canvas.toBlob(blob=>{if(!blob)return;const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='Orkeit-'+(planType==='alarm'?'fire-alarm':'fire-extinguishing')+'-plan-marked.png';a.click();URL.revokeObjectURL(url)},'image/png');
   };

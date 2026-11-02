@@ -1,4 +1,4 @@
-import { useRef, useState, type MouseEvent, type PointerEvent } from 'react';
+import { useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 
 type Mark = { id:string; type:string; x:number; y:number; x2?:number; y2?:number };
 const STORE='orkeit-fire-plan-v1';
@@ -53,7 +53,7 @@ export default function FirePlanEditor(){
   const r=stage.current?.getBoundingClientRect();if(!r)return {x:1,y:1};
   return {x:Math.max(1,Math.min(99,(clientX-r.left)/r.width*100)),y:Math.max(1,Math.min(99,(clientY-r.top)/r.height*100))};
  };
- const startSegment=(e:PointerEvent<HTMLDivElement>)=>{
+ const startSegment=(e:ReactPointerEvent<HTMLDivElement>)=>{
   if(!image||!segmentTypes.includes(active)||(e.target as HTMLElement).closest('[data-mark]'))return;
   e.preventDefault();const p=point(e.clientX,e.clientY),newId=id();drawing.current=newId;
   e.currentTarget.setPointerCapture(e.pointerId);
@@ -68,12 +68,12 @@ export default function FirePlanEditor(){
   const x2=m.x2??m.x,y2=m.y2??m.y,dx=x2-m.x,dy=y2-m.y;
   return `M ${m.x} ${m.y} Q ${(m.x+x2)/2-dy*0.7} ${(m.y+y2)/2+dx*0.7} ${x2} ${y2}`;
  };
- const move=(e:PointerEvent<HTMLButtonElement>,mark:Mark)=>{
+ const move=(e:ReactPointerEvent<HTMLButtonElement>,mark:Mark)=>{
   e.preventDefault();e.stopPropagation();
   const r=stage.current?.getBoundingClientRect();if(!r)return;
   const setPos=(cx:number,cy:number)=>setMarks(old=>old.map(m=>m.id===mark.id?{...m,x:Math.max(1,Math.min(99,(cx-r.left)/r.width*100)),y:Math.max(1,Math.min(99,(cy-r.top)/r.height*100))}:m));
   setPos(e.clientX,e.clientY);
-  const onMove=(ev:PointerEvent)=>setPos(ev.clientX,ev.clientY);
+  const onMove=(ev:globalThis.PointerEvent)=>setPos(ev.clientX,ev.clientY);
   const onUp=()=>{window.removeEventListener('pointermove',onMove);window.removeEventListener('pointerup',onUp)};
   window.addEventListener('pointermove',onMove);window.addEventListener('pointerup',onUp,{once:true});
  };

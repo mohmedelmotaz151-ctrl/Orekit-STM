@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 
 type Mark = { id:string; type:string; x:number; y:number; x2?:number; y2?:number; layer?:string; rotation?:number };
+type SelectedMarkId = string | null;
 const STORE='orkeit-fire-plan-v2';
 const LEGACY_STORE='orkeit-fire-plan-v1';
 const planKey=(kind:string)=>STORE+'-'+kind;
@@ -35,7 +36,7 @@ export default function FirePlanEditor(){
  const [fileName,setFileName]=useState(old?.fileName||'');
  const [marks,setMarks]=useState<Mark[]>(old?.marks||[]);
  const [active,setActive]=useState('smoke');
- const [selectedMark,setSelectedMark]=useState<string|null>(null);
+ const [selectedMark,setSelectedMark]=useState<SelectedMarkId>(null);
  const [symbolSize,setSymbolSize]=useState(30);
  const [lineWidth,setLineWidth]=useState(2);
  const [zoom,setZoom]=useState(100);

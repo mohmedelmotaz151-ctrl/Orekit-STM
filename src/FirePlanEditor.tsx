@@ -38,7 +38,9 @@ export default function FirePlanEditor(){
  const [selectedMark,setSelectedMark]=useState<string|null>(null);
  const [symbolSize,setSymbolSize]=useState(30);
  const [lineWidth,setLineWidth]=useState(2);
- const [zoom,setZoom]=useState(100);\n const [visibleLayers,setVisibleLayers]=useState<Record<string,boolean>>({architecture:true,fire:true,alarm:true,dimensions:true});\n const isLayerVisible=(m:Mark)=>visibleLayers[m.layer||layerFor(m.type)]!==false;
+ const [zoom,setZoom]=useState(100);
+ const [visibleLayers,setVisibleLayers]=useState<Record<string,boolean>>({architecture:true,fire:true,alarm:true,dimensions:true});
+ const isLayerVisible=(m:Mark)=>visibleLayers[m.layer||layerFor(m.type)]!==false;
  const [snapEnabled,setSnapEnabled]=useState(true);
  const [unit,setUnit]=useState('m');
  const [pixelsPerUnit,setPixelsPerUnit]=useState(50);

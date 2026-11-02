@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 
 type Mark = { id:string; type:string; x:number; y:number };
 const STORE='orkeit-fire-plan-v1';
@@ -39,14 +39,14 @@ export default function FirePlanEditor(){
   reader.onerror=()=>setNotice('تعذر قراءة الصورة.');
   reader.readAsDataURL(file);
  };
- const add=(e:React.MouseEvent<HTMLDivElement>)=>{
+ const add=(e:MouseEvent<HTMLDivElement>)=>{
   if(!stage.current||(e.target as HTMLElement).closest('[data-mark]')||!image)return;
   const r=stage.current.getBoundingClientRect();
   const x=Math.max(1,Math.min(99,(e.clientX-r.left)/r.width*100));
   const y=Math.max(1,Math.min(99,(e.clientY-r.top)/r.height*100));
   setMarks(old=>[...old,{id:id(),type:active,x,y}]);
  };
- const move=(e:React.PointerEvent<HTMLButtonElement>,mark:Mark)=>{
+ const move=(e:PointerEvent<HTMLButtonElement>,mark:Mark)=>{
   e.preventDefault();e.stopPropagation();
   const r=stage.current?.getBoundingClientRect();if(!r)return;
   const setPos=(cx:number,cy:number)=>setMarks(old=>old.map(m=>m.id===mark.id?{...m,x:Math.max(1,Math.min(99,(cx-r.left)/r.width*100)),y:Math.max(1,Math.min(99,(cy-r.top)/r.height*100))}:m));

@@ -52,6 +52,8 @@ export default function FirePlanEditor(){
  const [snapEnabled,setSnapEnabled]=useState(true);
  const [unit,setUnit]=useState('m');
  const [pixelsPerUnit,setPixelsPerUnit]=useState(50);
+ const [angleSnap,setAngleSnap]=useState(true);
+ const [gridStep,setGridStep]=useState(0.25);
  const history=useRef<Mark[][]>([old?.marks||[]]);
  const historyIndex=useRef(0);
  const skipHistory=useRef(false);
@@ -82,7 +84,7 @@ export default function FirePlanEditor(){
  const point=(clientX:number,clientY:number)=>{
   const r=stage.current?.getBoundingClientRect();if(!r)return {x:1,y:1};
   let x=Math.max(1,Math.min(99,(clientX-r.left)/r.width*100)),y=Math.max(1,Math.min(99,(clientY-r.top)/r.height*100));
-  if(snapEnabled){x=Math.round(x);y=Math.round(y)}
+  if(snapEnabled){x=Math.round(x/gridStep)*gridStep;y=Math.round(y/gridStep)*gridStep}
   return {x,y};
  };
  const startSegment=(e:ReactPointerEvent<HTMLDivElement>)=>{
@@ -93,7 +95,7 @@ export default function FirePlanEditor(){
  };
  const updateSegment=(e:ReactPointerEvent<HTMLDivElement>)=>{
   if(!drawing.current)return;const p=point(e.clientX,e.clientY),drawingId=drawing.current;
-  setMarks(old=>old.map(m=>m.id===drawingId?{...m,x2:p.x,y2:p.y}:m));
+  setMarks(old=>old.map(m=>{if(m.id!==drawingId)return m;let x2=p.x,y2=p.y;if(angleSnap){const dx=x2-m.x,dy=y2-m.y,len=Math.hypot(dx,dy),step=Math.PI/12,a=Math.round(Math.atan2(dy,dx)/step)*step;x2=m.x+Math.cos(a)*len;y2=m.y+Math.sin(a)*len;}return {...m,x2:Math.max(0,Math.min(100,x2)),y2:Math.max(0,Math.min(100,y2))};}));
  };
  const endSegment=()=>{drawing.current=null};
  const doorPath=(m:Mark)=>{

@@ -130,19 +130,26 @@ export default function FirePlanEditor(){
  const exportPlan=()=>{
   if(!image&&!blankSheet)return;
   const render=(img?:HTMLImageElement)=>{
-   const canvas=document.createElement('canvas');canvas.width=img?.naturalWidth||1600;canvas.height=img?.naturalHeight||1131;
-   const ctx=canvas.getContext('2d');if(!ctx)return;ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);if(img)ctx.drawImage(img,0,0);
-   marks.filter(isLayerVisible).forEach(m=>{const t=tools.find(x=>x.type===m.type);if(!t)return;
-    const x=m.x*canvas.width/100,y=m.y*canvas.height/100,x2=(m.x2??m.x)*canvas.width/100,y2=(m.y2??m.y)*canvas.height/100;
-    ctx.save();ctx.translate((x+x2)/2,(y+y2)/2);ctx.rotate((m.rotation||0)*Math.PI/180);ctx.translate(-(x+x2)/2,-(y+y2)/2);
-    ctx.strokeStyle=t.color;ctx.lineWidth=Math.max(lineWidth,canvas.width/1600);
-    if(segmentTypes.includes(m.type)){
-     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x2,y2);ctx.stroke();
-     if(m.type==='door'){const dx=x2-x,dy=y2-y;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo((x+x2)/2-dy*0.7,(y+y2)/2+dx*0.7,x2,y2);ctx.stroke();}
-     ctx.restore();return;
-    }
-    const rad=Math.max(8,symbolSize*canvas.width/Math.max(600,stage.current?.getBoundingClientRect().width||1000)/2);
-    ctx.fillStyle='#fff';ctx.strokeStyle=t.color;ctx.lineWidth=Math.max(2,canvas.width/700);
+   const W=1800,H=1540,drawBox={x:60,y:235,w:1680,h:850};
+   const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
+   const ctx=canvas.getContext('2d');if(!ctx)return;
+   ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#26364d';ctx.lineWidth=3;ctx.strokeRect(18,18,W-36,H-36);
+   ctx.direction='rtl';ctx.textAlign='right';ctx.fillStyle='#13233d';ctx.font='bold 38px Arial, sans-serif';
+   ctx.fillText(planName||fileName||facility||'مخطط نظام الحريق',W-65,68);
+   ctx.font='bold 24px Arial, sans-serif';ctx.fillStyle='#a51f2b';ctx.fillText(planType==='alarm'?'مخطط نظام إنذار الحريق':'مخطط نظام إطفاء الحريق',W-65,108);
+   ctx.strokeStyle='#9aa8ba';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(55,130);ctx.lineTo(W-55,130);ctx.stroke();
+   const fields=[['المنشأة / المشروع',facility||'—'],['المالك',ownerName||'—'],['الشركة المنفذة',contractorName||'—'],['المهندس المصمم',designerName||'—'],['رقم المخطط',drawingNumber||'—'],['الإصدار',revision||'00'],['التاريخ',planDate||'—']];
+   const colW=(W-130)/4;ctx.font='20px Arial, sans-serif';
+   fields.forEach((f,i)=>{const row=i<4?0:1,col=i<4?i:i-4,x=W-65-col*colW,y=166+row*35;ctx.fillStyle='#526176';ctx.textAlign='right';ctx.fillText(f[0]+':',x,y);ctx.fillStyle='#172438';ctx.textAlign='left';ctx.fillText(String(f[1]),x-colW+12,y,{maxWidth:colW-105});});
+   let dw=drawBox.w,dh=drawBox.h,aspect=img?(img.naturalWidth/img.naturalHeight):(1600/1131);
+   if(aspect>dw/dh)dh=dw/aspect;else dw=dh*aspect;
+   const dx=drawBox.x+(drawBox.w-dw)/2,dy=drawBox.y+(drawBox.h-dh)/2;
+   ctx.fillStyle='#f8fafc';ctx.fillRect(drawBox.x,drawBox.y,drawBox.w,drawBox.h);ctx.strokeStyle='#aeb9c8';ctx.lineWidth=2;ctx.strokeRect(drawBox.x,drawBox.y,drawBox.w,drawBox.h);
+   if(img)ctx.drawImage(img,dx,dy,dw,dh);else{ctx.fillStyle='#fff';ctx.fillRect(dx,dy,dw,dh);ctx.strokeStyle='#dce3ec';ctx.lineWidth=1;ctx.strokeRect(dx,dy,dw,dh);ctx.fillStyle='#aab4c2';ctx.font='22px Arial, sans-serif';ctx.textAlign='right';ctx.fillText('ورقة مخطط جديدة',dx+dw-20,dy+30);}
+   const sx=dw/100,sy=dh/100,baseScale=dw/Math.max(1,stage.current?.getBoundingClientRect().width||1000);
+   marks.filter(isLayerVisible).forEach(m=>{const t=tools.find(x=>x.type===m.type);if(!t)return;const x=dx+m.x*sx,y=dy+m.y*sy,x2=dx+(m.x2??m.x)*sx,y2=dy+(m.y2??m.y)*sy;ctx.save();ctx.translate((x+x2)/2,(y+y2)/2);ctx.rotate((m.rotation||0)*Math.PI/180);ctx.translate(-(x+x2)/2,-(y+y2)/2);ctx.strokeStyle=t.color;ctx.lineWidth=Math.max(2,lineWidth*baseScale);
+    if(segmentTypes.includes(m.type)){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x2,y2);ctx.stroke();if(m.type==='door'){const ddx=x2-x,ddy=y2-y;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo((x+x2)/2-ddy*.7,(y+y2)/2+ddx*.7,x2,y2);ctx.stroke();}ctx.restore();return;}
+    const rad=Math.max(10,symbolSize*baseScale/2);ctx.fillStyle='#fff';ctx.strokeStyle=t.color;ctx.lineWidth=Math.max(2,2.5*baseScale);
     if(m.type==='smoke'){ctx.beginPath();ctx.arc(x,y,rad*.72,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(x,y,rad*.4,0,Math.PI*2);ctx.stroke();}
     else if(m.type==='heat'||m.type==='light'){ctx.beginPath();ctx.moveTo(x,y-rad);ctx.lineTo(x+rad,y);ctx.lineTo(x,y+rad);ctx.lineTo(x-rad,y);ctx.closePath();ctx.stroke();}
     else if(m.type==='sprinkler'||m.type==='manual'){ctx.beginPath();ctx.moveTo(x,y-rad);ctx.lineTo(x+rad,y+rad);ctx.lineTo(x-rad,y+rad);ctx.closePath();ctx.stroke();}
@@ -152,10 +159,15 @@ export default function FirePlanEditor(){
     else if(m.type==='horn'){ctx.beginPath();ctx.moveTo(x-rad,y-rad*.5);ctx.lineTo(x+rad*.2,y-rad*.5);ctx.lineTo(x+rad,y-rad);ctx.lineTo(x+rad,y+rad);ctx.lineTo(x+rad*.2,y+rad*.5);ctx.lineTo(x-rad,y+rad*.5);ctx.closePath();ctx.stroke();}
     else if(m.type==='pump'){ctx.beginPath();ctx.arc(x,y,rad*.75,0,Math.PI*2);ctx.moveTo(x-rad*.4,y-rad*.4);ctx.lineTo(x+rad*.4,y+rad*.4);ctx.moveTo(x+rad*.4,y-rad*.4);ctx.lineTo(x-rad*.4,y+rad*.4);ctx.stroke();}
     else if(m.type==='exit'){ctx.beginPath();ctx.moveTo(x-rad,y);ctx.lineTo(x+rad,y);ctx.moveTo(x+rad*.4,y-rad*.6);ctx.lineTo(x+rad,y);ctx.lineTo(x+rad*.4,y+rad*.6);ctx.stroke();}
-    else {ctx.strokeRect(x-rad*.7,y-rad*.7,rad*1.4,rad*1.4);}
+    else{ctx.strokeRect(x-rad*.7,y-rad*.7,rad*1.4,rad*1.4);}
     ctx.restore();
    });
-   canvas.toBlob(blob=>{if(!blob)return;const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='Orkeit-'+(planType==='alarm'?'fire-alarm':'fire-extinguishing')+'-plan-marked.png';a.click();URL.revokeObjectURL(url)},'image/png');
+   ctx.fillStyle='#13233d';ctx.textAlign='right';ctx.direction='rtl';ctx.font='bold 25px Arial, sans-serif';ctx.fillText('جدول الرموز والأعداد',W-65,1140);
+   ctx.strokeStyle='#9aa8ba';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(55,1155);ctx.lineTo(W-55,1155);ctx.stroke();
+   const activeTools=tools.filter(t=>marks.some(m=>m.type===t.type));const cellW=(W-130)/2,rowH=42;
+   activeTools.forEach((t,i)=>{const col=i%2,row=Math.floor(i/2),x=W-65-col*cellW,y=1190+row*rowH;ctx.fillStyle='#f8fafc';ctx.fillRect(x-cellW+10,y-27,cellW-8,35);ctx.strokeStyle='#dce3ec';ctx.lineWidth=1;ctx.strokeRect(x-cellW+10,y-27,cellW-8,35);ctx.strokeStyle=t.color;ctx.lineWidth=3;ctx.beginPath();ctx.arc(x-18,y-10,10,0,Math.PI*2);ctx.stroke();ctx.fillStyle=t.color;ctx.font='bold 14px Arial, sans-serif';ctx.textAlign='center';ctx.fillText(t.symbol,x-18,y-5);ctx.fillStyle='#243247';ctx.font='19px Arial, sans-serif';ctx.textAlign='right';ctx.fillText(t.label,x-38,y-4,{maxWidth:cellW-155});ctx.textAlign='left';ctx.font='bold 20px Arial, sans-serif';ctx.fillText(String(marks.filter(m=>m.type===t.type).length),x-cellW+22,y-4);});
+   ctx.textAlign='left';ctx.direction='ltr';ctx.fillStyle='#667387';ctx.font='15px Arial, sans-serif';ctx.fillText('ORKEIT STM • '+(planType==='alarm'?'FIRE ALARM':'FIRE EXTINGUISHING')+' • '+new Date().toLocaleDateString('en-CA'),65,H-35);
+   canvas.toBlob(blob=>{if(!blob){setNotice('تعذر إنشاء صورة التصدير.');return;}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='Orkeit-'+(planType==='alarm'?'fire-alarm':'fire-extinguishing')+'-plan-marked.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setNotice('تم تصدير صورة المخطط مع بيانات المشروع ومفتاح الرموز، والمخطط في المنتصف.');},'image/png');
   };
   if(image){const img=new Image();img.onload=()=>render(img);img.onerror=()=>setNotice('تعذر تجهيز المخطط للتصدير.');img.src=image;}else render();
  };

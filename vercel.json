@@ -1,1 +1,1 @@
-{"crons":[{"path":"/api/cron/expiry","schedule":"0 6 * * *"}]}
+{"cleanUrls":true,"crons":[{"path":"/api/cron/expiry","schedule":"0 6 * * *"}]}

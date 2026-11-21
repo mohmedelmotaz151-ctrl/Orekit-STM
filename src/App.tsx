@@ -6,6 +6,7 @@ import AdminSearch from './AdminSearch';
 import DocumentArchive from './DocumentArchive';
 import AdminReports from './AdminReports';
 import CashAccounting from './CashAccounting';
+import ProjectProfitability from './ProjectProfitability';
 import FireSafetyCalculator from './FireSafetyCalculator';
 import FirePlanEditor from './FirePlanEditor';
 import CustomerProfile from './CustomerProfile';
@@ -678,7 +679,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
  const profileMaintenance=profileSite?maintenance.filter(m=>m.siteId===profileSite.id).sort((a,b)=>String(b.date).localeCompare(String(a.date))):[];
  const profileContracts=profileSite?contracts.filter(c=>c.siteId===profileSite.id||(!c.siteId&&String(c.facility||'').trim()===profileSite.facility.trim())).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)):[];
  const profileRequests=profileSite?requests.filter(r=>(r.facility||'').trim()===profileSite.facility.trim()||(profileSite.phone&&r.phone===profileSite.phone)).sort((a,b)=>b.updatedAt-a.updatedAt):[];
- const nav=[['home','الرئيسية'],['search','بحث شامل'],['archive','أرشيف المستندات'],['reports','التقارير الإدارية'],['audit','سجل التعديلات'],['finance','المحاسبة المالية'],['cashAccounting','المحاسبة النقدية'], ['messages','مركز الرسائل'],['leads','عميل محتمل'],['sites','المواقع والمنشآت'],['visits','الزيارات'],['maintenance','صيانة الطفايات'],['delegates','المناديب'],['requests','طلبات العملاء'],['documents','إنشاء عقد ومشهد'],['invite','بوابة دعوة واتساب'],['fireSafety','حاسبة متطلبات السلامة'],['firePlan','مخطط الإطفاء والإنذار'],['about','من نحن']] as const;
+ const nav=[['home','الرئيسية'],['search','بحث شامل'],['archive','أرشيف المستندات'],['reports','التقارير الإدارية'],['audit','سجل التعديلات'],['finance','المحاسبة المالية'],['projectFinance','حسابات المشاريع والأرباح'],['cashAccounting','المحاسبة النقدية'], ['messages','مركز الرسائل'],['leads','عميل محتمل'],['sites','المواقع والمنشآت'],['visits','الزيارات'],['maintenance','صيانة الطفايات'],['delegates','المناديب'],['requests','طلبات العملاء'],['documents','إنشاء عقد ومشهد'],['invite','بوابة دعوة واتساب'],['fireSafety','حاسبة متطلبات السلامة'],['firePlan','مخطط الإطفاء والإنذار'],['about','من نحن']] as const;
  const go=(p:any)=>{if(p==='documents'){window.location.href='https://contract-nine-sage.vercel.app/';return;}if(p==='about'){window.location.href='https://profile-five-kappa-47.vercel.app/#credentials';return;}setPage(p);setMenu(false);setOpen(null);setEditing(null)};
  const add=(kind:string)=>{setEditing(null);setOpen(kind)};
  const verifyDeletePassword=()=>{const entered=window.prompt('أدخل كلمة سر الحذف للمتابعة:');if(entered===null)return false;if(entered!==('115'+'520')){window.alert('كلمة سر الحذف غير صحيحة. لم يتم حذف السجل.');return false;}return true};
@@ -688,6 +689,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}){
   {menu&&<><div className="backdrop" onClick={()=>setMenu(false)}/><aside>{nav.map(([k,l])=><button className={page===k?'active':''} key={k} onClick={()=>go(k)}><OrkeitIcon name={k} size={20}/><span>{l}</span></button>)}</aside></>}
   <main>
    {page==='finance'&&<FinancePage/>}
+   {page==='projectFinance'&&<ProjectProfitability sites={sites} contracts={contracts}/>}
    {page==='fireSafety'&&<FireSafetyCalculator/>}
    {page==='firePlan'&&<FirePlanEditor/>}
    {page==='cashAccounting'&&<CashAccounting/>}

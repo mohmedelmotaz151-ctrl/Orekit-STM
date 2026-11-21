@@ -20,6 +20,7 @@ export const cloudCollections = [
   'auditLog',
   'finance',
   'cashAccounting',
+  'projectFinance',
 ] as const;
 
 export type CloudCollection = typeof cloudCollections[number];
